@@ -1,6 +1,5 @@
-# java_network_base_framework
-## 정의
+# MPEG DASH Server
 ~~~
-Netty 기반 네트워크 프로그램 제작을 위한 프레임워크
+비디오 라이브 스트리밍 서버
 ~~~
   
