@@ -8,12 +8,16 @@ public class DashTest {
 
     @Test
     public void test() {
-        MPD mpd = parseMpdTest();
+        DashManager dashManager = new DashManager();
+        dashManager.start();
+
+        MPD mpd = parseMpdTest(dashManager);
         Assert.assertNotNull(mpd);
+
+        dashManager.stop();
     }
 
-    public static MPD parseMpdTest() {
-        DashManager dashManager = new DashManager();
+    public static MPD parseMpdTest(DashManager dashManager) {
         return dashManager.parseXml("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example1.xml");
     }
 

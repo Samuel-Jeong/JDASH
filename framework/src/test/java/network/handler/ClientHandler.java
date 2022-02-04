@@ -16,12 +16,12 @@ public class ClientHandler extends SimpleChannelInboundHandler<DatagramPacket> {
         logger.debug("ClientHandler is created.");
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-
     @Override
-    protected void channelRead0 (ChannelHandlerContext ctx, DatagramPacket msg) {
-        // ignore
+    protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
+
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void exceptionCaught (ChannelHandlerContext ctx, Throwable cause) {

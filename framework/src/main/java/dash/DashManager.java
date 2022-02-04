@@ -8,12 +8,20 @@ import dash.component.definition.MpdType;
 import dash.component.segment.*;
 import dash.component.segment.definition.InitializationSegment;
 import dash.component.segment.definition.MediaSegment;
+import dash.handler.HttpMessageManager;
+import instance.BaseEnvironment;
+import instance.DebugLevel;
+import network.definition.NetAddress;
+import network.socket.SocketManager;
+import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import service.ResourceManager;
+import service.scheduler.schedule.ScheduleManager;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,8 +30,66 @@ import java.io.InputStream;
 
 public class DashManager {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashManager.class);
 
+    private final BaseEnvironment baseEnvironment;
+    private final SocketManager socketManager;
+    private HttpMessageManager httpMessageManager;
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public DashManager() {
+        // 인스턴스 생성
+        baseEnvironment = new BaseEnvironment(
+                new ScheduleManager(),
+                new ResourceManager(5000, 7000),
+                DebugLevel.DEBUG
+        );
+
+        // SocketManager 생성
+        socketManager = new SocketManager(
+                baseEnvironment,
+                false, true,
+                10, 500000, 500000
+        );
+
+        httpMessageManager = new HttpMessageManager(
+                baseEnvironment.getScheduleManager(),
+                socketManager
+        );
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void start() {
+        httpMessageManager.start();
+    }
+
+    public void stop() {
+        httpMessageManager.stop();
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public BaseEnvironment getBaseEnvironment() {
+        return baseEnvironment;
+    }
+
+    public SocketManager getSocketManager() {
+        return socketManager;
+    }
+
+    public HttpMessageManager getHttpMessageManager() {
+        return httpMessageManager;
+    }
+
+    public void setHttpMessageManager(HttpMessageManager httpMessageManager) {
+        this.httpMessageManager = httpMessageManager;
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
     /**
      * Durations define the amount of intervening time in a time interval and
      *      are represented by the format P[n]Y[n]M[n]DT[n]H[n]M[n]S or P[n]W as shown on the aside.
@@ -620,5 +686,6 @@ public class DashManager {
 
         return mpd;
     }
+    ////////////////////////////////////////////////////////////
 
 }

@@ -17,11 +17,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<DatagramPacket> {
         logger.debug("ServerHandler is created.");
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-
     @Override
-    protected void channelRead0 (ChannelHandlerContext ctx, DatagramPacket msg) {
-        ByteBuf buf = msg.content();
+    protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
+        ByteBuf buf = datagramPacket.content();
         if (buf == null) {
             return;
         }
@@ -34,6 +32,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<DatagramPacket> {
             logger.warn("Fail to handle UDP Packet.", e);
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void exceptionCaught (ChannelHandlerContext ctx, Throwable cause) {

@@ -37,6 +37,7 @@ public class NettyTcpServerChannel extends NettyChannel {
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+                .option(ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
                 .childHandler(childHandler);
     }
     ////////////////////////////////////////////////////////////
