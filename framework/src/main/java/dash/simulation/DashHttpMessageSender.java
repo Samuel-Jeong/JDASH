@@ -7,6 +7,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import network.definition.DestinationRecord;
 import network.definition.NetAddress;
 import network.socket.GroupSocket;
@@ -23,9 +24,11 @@ public class DashHttpMessageSender {
 
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageSender.class);
 
+    //private static final String URL = System.getProperty("url", "https://127.0.0.1:8080/");
     private static final String URL = System.getProperty("url", "http://127.0.0.1:8080/");
-    private URI uri;
-    private String host;
+    private URI uri = null;
+    private String host = null;
+    private SslContext sslContext = null;
 
     ////////////////////////////////////////////////////////////
     private final BaseEnvironment baseEnvironment;
@@ -48,25 +51,42 @@ public class DashHttpMessageSender {
                 10, 500000, 500000
         );
 
-        localListenAddress = new NetAddress("127.0.0.1", 6000,true, SocketProtocol.TCP);
-        remoteAddress = new NetAddress("127.0.0.1", 5000, true, SocketProtocol.TCP);
+        localListenAddress = new NetAddress(
+                "127.0.0.1", 6000,
+                true, SocketProtocol.TCP
+        );
+        remoteAddress = new NetAddress(
+                "127.0.0.1", 5000,
+                true, SocketProtocol.TCP
+        );
 
         socketManager.addSocket(localListenAddress, new HttpMessageServerInitializer());
 
         try {
             uri = new URI(URL);
+            String scheme = uri.getScheme() == null ? "http" : uri.getScheme();
             host = uri.getHost() == null ? "127.0.0.1" : uri.getHost();
             /*int port = uri.getPort();
             if (port == -1) {
-                String scheme = uri.getScheme() == null ? "http" : uri.getScheme();
                 if ("http".equalsIgnoreCase(scheme)) {
                     port = 80;
                 } else if ("https".equalsIgnoreCase(scheme)) {
                     port = 443;
                 }
             }*/
+
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                logger.warn("[DashHttpMessageSender] Only HTTP(S) is supported.");
+                return;
+            }
+
+            // Configure SSL context if necessary.
+            final boolean isEnabledSsl = "https".equalsIgnoreCase(scheme);
+            if (isEnabledSsl) {
+                sslContext = SslContext.newClientContext();
+            }
         } catch (Exception e) {
-            logger.warn("[DashHttpSender] URI Parsing error", e);
+            logger.warn("[DashHttpMessageSender] URI Parsing error", e);
         }
     }
     ////////////////////////////////////////////////////////////
@@ -80,7 +100,7 @@ public class DashHttpMessageSender {
                 remoteAddress,
                 null,
                 0,
-                new HttpMessageClientInitializer(null)
+                new HttpMessageClientInitializer(sslContext)
         );
     }
 
@@ -166,10 +186,11 @@ public class DashHttpMessageSender {
     }
 
     private static class HttpMessageClientInitializer extends ChannelInitializer<SocketChannel> {
-        private final SslContext sslCtx;
 
-        public HttpMessageClientInitializer(SslContext sslCtx) {
-            this.sslCtx = sslCtx;
+        private final SslContext sslContext;
+
+        public HttpMessageClientInitializer(SslContext sslContext) {
+            this.sslContext = sslContext;
         }
 
         @Override
@@ -177,8 +198,8 @@ public class DashHttpMessageSender {
             final ChannelPipeline p = ch.pipeline();
 
             // Enable HTTPS if necessary.
-            if (sslCtx != null) {
-                p.addLast(sslCtx.newHandler(ch.alloc()));
+            if (sslContext != null) {
+                p.addLast(sslContext.newHandler(ch.alloc()));
             }
 
             p.addLast("encoder", new HttpClientCodec());

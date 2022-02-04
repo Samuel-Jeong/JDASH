@@ -10,6 +10,8 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
 import network.definition.NetAddress;
 import network.socket.GroupSocket;
 import network.socket.SocketManager;
@@ -22,6 +24,16 @@ public class HttpMessageManager {
 
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(HttpMessageManager.class);
+
+    static {
+        System.setProperty("javax.net.ssl.trustStoreType", "jks");
+        System.setProperty("javax.net.ssl.trustStore", "servercert.keystore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
+    }
+
+    //static final boolean SSL = System.getProperty("ssl") != null;
+    //static final boolean SSL = System.getProperty("javax.net.ssl.trustStore") != null;
+    static final boolean SSL = false;
 
     public static final String SERVER_NAME = "JDASH";
     public static final String TYPE_PLAIN = "text/plain; charset=UTF-8";
@@ -41,8 +53,24 @@ public class HttpMessageManager {
         this.socketManager = socketManager;
         this.routeTable = new HttpMessageRouteTable();
 
-        localListenAddress = new NetAddress("127.0.0.1", 5000,true, SocketProtocol.TCP);
-        socketManager.addSocket(localListenAddress, new HttpMessageServerInitializer());
+        SslContext sslContext = null;
+        try {
+            if (SSL) {
+                SelfSignedCertificate ssc = new SelfSignedCertificate();
+                sslContext = SslContext.newServerContext(ssc.certificate(), ssc.privateKey());
+                logger.debug("[HttpMessageManager] SSL is enabled.");
+            } else {
+                logger.debug("[HttpMessageManager] SSL is disabled.");
+            }
+        } catch (Exception e) {
+            logger.warn("[HttpMessageManager] SSL Initialization error.", e);
+        }
+
+        localListenAddress = new NetAddress(
+                "127.0.0.1", 5000,
+                true, SocketProtocol.TCP
+        );
+        socketManager.addSocket(localListenAddress, new HttpMessageServerInitializer(sslContext));
     }
     ////////////////////////////////////////////////////////////
 
@@ -78,9 +106,21 @@ public class HttpMessageManager {
     ////////////////////////////////////////////////////////////
     private class HttpMessageServerInitializer extends ChannelInitializer<SocketChannel> {
 
+        private final SslContext sslContext;
+
+        public HttpMessageServerInitializer(SslContext sslContext) {
+            this.sslContext = sslContext;
+        }
+
         @Override
         public void initChannel(SocketChannel ch) {
             final ChannelPipeline p = ch.pipeline();
+
+            // Enable HTTPS if necessary.
+            if (sslContext != null) {
+                p.addLast(sslContext.newHandler(ch.alloc()));
+            }
+
             p.addLast("decoder", new HttpRequestDecoder(4096, 8192, 8192, false));
             p.addLast("aggregator", new HttpObjectAggregator(100 * 1024 * 1024));
             p.addLast("encoder", new HttpResponseEncoder());

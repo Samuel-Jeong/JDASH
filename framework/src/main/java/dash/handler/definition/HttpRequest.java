@@ -17,6 +17,10 @@ public class HttpRequest {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
+    public FullHttpRequest getRequest() {
+        return request;
+    }
+
     public String body() {
         return request.content().toString(StandardCharsets.UTF_8);
     }

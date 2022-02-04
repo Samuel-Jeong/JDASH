@@ -14,9 +14,10 @@ public class DashMessageHandler implements HttpMessageHandler {
     public Object handle(HttpRequest request, HttpResponse response) {
         if (request == null) { return null; }
 
-        // TODO
+        String uri = request.getRequest().uri();
+        logger.debug("[DashMessageHandler] URI: [{}]", uri);
 
-        return "DONE";
+        return uri;
     }
 
 }
