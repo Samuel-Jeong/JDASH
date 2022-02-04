@@ -18,16 +18,22 @@ public class DashTest {
         DashManager dashManager = new DashManager();
         dashManager.start();
 
+        /////////////////////////////////////////////
+        // 1) MPD PARSING TEST
         MPD mpd = parseMpdTest(dashManager);
         Assert.assertNotNull(mpd);
+        /////////////////////////////////////////////
 
         /////////////////////////////////////////////
-        // HTTP TEST
+        // 2) HTTP COMMUNICATION TEST
         DashHttpMessageSender dashHttpSender = new DashHttpMessageSender();
         dashHttpSender.start();
 
         TimeUnit timeUnit = TimeUnit.SECONDS;
         try {
+            dashHttpSender.sendSampleMessage();
+
+            timeUnit.sleep(1);
             dashHttpSender.sendSampleMessage();
 
             timeUnit.sleep(2);

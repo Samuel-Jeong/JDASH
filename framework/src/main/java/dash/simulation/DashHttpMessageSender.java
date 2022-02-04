@@ -82,9 +82,6 @@ public class DashHttpMessageSender {
                 0,
                 new HttpMessageClientInitializer(null)
         );
-
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(0);
-        destinationRecord.getNettyChannel().openConnectChannel(remoteAddress.getAddressString(), remoteAddress.getPort());
     }
 
     public void stop() {

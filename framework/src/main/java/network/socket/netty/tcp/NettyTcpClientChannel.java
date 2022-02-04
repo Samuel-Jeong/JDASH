@@ -23,6 +23,9 @@ public class NettyTcpClientChannel extends NettyChannel {
     private final Bootstrap bootstrap;
     private Channel listenChannel = null;
     private Channel connectChannel = null;
+
+    private String curRemoteIp = null;
+    private int curRemotePort = 0;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -98,6 +101,10 @@ public class NettyTcpClientChannel extends NettyChannel {
             ChannelFuture channelFuture = bootstrap.connect(address, port).sync();
             Channel channel =  channelFuture.channel();
             connectChannel = channel;
+
+            curRemoteIp = ip;
+            curRemotePort = port;
+
             return channel;
         } catch (Exception e) {
             return null;
@@ -114,15 +121,60 @@ public class NettyTcpClientChannel extends NettyChannel {
 
     @Override
     public void sendData(byte[] data, int dataLength) {
-        if (connectChannel == null || !connectChannel.isActive()) { return; }
+        if (connectChannel == null || !connectChannel.isActive()) {
+            if (curRemoteIp != null && curRemotePort > 0) {
+                connectChannel = openConnectChannel(curRemoteIp, curRemotePort);
+            }
 
-        ByteBuf buf = Unpooled.copiedBuffer(data);
-        connectChannel.writeAndFlush(buf);
+            if (connectChannel == null || !connectChannel.isActive()) {
+                return;
+            }
+        }
+
+        try {
+            ByteBuf buf = Unpooled.copiedBuffer(data);
+            connectChannel.writeAndFlush(buf);
+            connectChannel.writeAndFlush(buf);
+            connectChannel.closeFuture().sync();
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     @Override
     public void sendHttpRequest(HttpRequest httpRequest) {
-        connectChannel.writeAndFlush(httpRequest);
+        if (connectChannel == null || !connectChannel.isActive()) {
+            if (curRemoteIp != null && curRemotePort > 0) {
+                connectChannel = openConnectChannel(curRemoteIp, curRemotePort);
+            }
+
+            if (connectChannel == null || !connectChannel.isActive()) {
+                return;
+            }
+        }
+
+        try {
+            connectChannel.writeAndFlush(httpRequest);
+            connectChannel.closeFuture().sync();
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    public String getCurRemoteIp() {
+        return curRemoteIp;
+    }
+
+    public void setCurRemoteIp(String curRemoteIp) {
+        this.curRemoteIp = curRemoteIp;
+    }
+
+    public int getCurRemotePort() {
+        return curRemotePort;
+    }
+
+    public void setCurRemotePort(int curRemotePort) {
+        this.curRemotePort = curRemotePort;
     }
 
     ////////////////////////////////////////////////////////////
