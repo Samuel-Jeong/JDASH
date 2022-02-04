@@ -5,22 +5,20 @@ import dash.component.MPD;
 import dash.component.Period;
 import dash.component.Representation;
 import dash.component.definition.MpdType;
-import javafx.beans.WeakInvalidationListener;
-import jdk.internal.org.xml.sax.SAXException;
+import dash.component.segment.*;
+import dash.component.segment.definition.InitializationSegment;
+import dash.component.segment.definition.MediaSegment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DashManager {
 
@@ -119,7 +117,12 @@ public class DashManager {
         return time;
     }
 
-    // TODO
+    /**
+     * @fn public MPD parseXml(String filePath)
+     * @brief MPD Parsing Function
+     * @param filePath File absolute path
+     * @return Media Presentation Description object
+     */
     public MPD parseXml(String filePath) {
         if (filePath == null) { return null; }
 
@@ -131,174 +134,489 @@ public class DashManager {
             return null;
         }
 
+        //////////////////////////////
+        // Media Presentation Description (MPD)
         MPD mpd = new MPD();
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 
         try {
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             Document manifest = documentBuilder.parse(inputStream);
-            NodeList mpdList = manifest.getElementsByTagName("MPD");
-            if (mpdList == null) {
+            if (manifest == null) {
+                logger.warn("[DashManager] Fail to get the MPD manifest (document). (filePath={})", filePath);
+                return null;
+            }
+            mpd.setManifest(manifest);
+
+            NodeList mpdNodeList = manifest.getElementsByTagName("MPD");
+            if (mpdNodeList == null) {
                 logger.warn("[DashManager] Fail to get the MPD node list. (filePath={})", filePath);
                 return null;
             }
 
-            if (mpdList.getLength() != 1) {
-                logger.warn("[DashManager] Duplicated MPD is defined. (filePath={}, mpdCount={})", filePath, mpdList.getLength());
+            if (mpdNodeList.getLength() != 1) {
+                logger.warn("[DashManager] Duplicated MPD is defined. (filePath={}, mpdCount={})", filePath, mpdNodeList.getLength());
                 return null;
             }
 
-            String type = ((Element) mpdList.item(0)).getAttribute("type");
+            Element mpdElement = (Element) mpdNodeList.item(0);
+
+            String type = mpdElement.getAttribute("type");
             if (type != null && !type.isEmpty()) {
                 mpd.setMpdType(type.equals("static") ? MpdType.STATIC : MpdType.DYNAMIC);
                 logger.debug("[DashManager] MPD Type: {}", type);
-            } else {
-                logger.warn("[DashManager] MPD type is not defined. (filePath={})", filePath);
-                return null;
             }
 
-            String minBufferTime = ((Element) mpdList.item(0)).getAttribute("mediaPresentationDuration");
+            // MPD minBufferTime
+            String minBufferTime = mpdElement.getAttribute("minBufferTime");
             if (minBufferTime != null && !minBufferTime.isEmpty()) {
                 mpd.setMinBufferTime(parseTime(minBufferTime));
                 logger.debug("[DashManager] MPD MinBufferTime: {} > {} sec", minBufferTime, mpd.getMinBufferTime());
             }
 
-            String duration = ((Element) mpdList.item(0)).getAttribute("mediaPresentationDuration");
+            // MPD duration
+            String duration = mpdElement.getAttribute("duration");
             if (duration != null && !duration.isEmpty()) {
                 mpd.setMediaPresentationDuration(parseTime(duration));
                 logger.debug("[DashManager] MPD Duration: {} > {} sec", duration, mpd.getMediaPresentationDuration());
-            } else {
-                logger.warn("[DashManager] MPD Duration is not defined. (filePath={})", filePath);
-                return null;
             }
 
-            NodeList baseUrlList = ((Element) mpdList.item(0)).getElementsByTagName("BaseURL");
-            if (baseUrlList != null) {
-                List<String> baseUrls = new ArrayList<>();
-                for (int i = 0; i < baseUrlList.getLength(); i++) {
-                    String url = baseUrlList.item(i).getTextContent();
-                    if (url != null && !url.isEmpty()) {
-                        baseUrls.add(url);
+            // MPD BaseURL
+            NodeList baseUrlNodeList = mpdElement.getElementsByTagName("BaseURL");
+            if (baseUrlNodeList != null) {
+                Node baseUrlNode = baseUrlNodeList.item(0);
+                if (baseUrlNode != null) {
+                    if (baseUrlNode.getParentNode() == mpdElement) {
+                        String url = baseUrlNode.getTextContent();
+                        if (url != null && !url.isEmpty()) {
+                            mpd.setBaseUrl(url);
+                            logger.debug("[DashManager] MPD BaseUrl: {}", mpd.getBaseUrl());
+                        }
                     }
                 }
-                mpd.setBaseUrlList(baseUrls);
-                logger.debug("[DashManager] MPD BaseUrl: {}", baseUrls);
-            } else {
-                logger.warn("[DashManager] MPD BaseUrl is not defined. (filePath={})", filePath);
-            }
-
-            NodeList periodList = ((Element) mpdList.item(0)).getElementsByTagName("Period");
-            if (periodList == null) {
-                logger.warn("[DashManager] MPD Period is not defined. (filePath={})", filePath);
-                return null;
             }
 
             //////////////////////////////
             // PERIOD
-            for (int periodIndex = 0; periodIndex < periodList.getLength(); periodIndex++) {
-                Period period = new Period(String.valueOf(periodIndex));
+            NodeList periodNodeList = mpdElement.getElementsByTagName("Period");
+            if (periodNodeList == null) {
+                logger.warn("[DashManager] MPD Period is not defined. (filePath={})", filePath);
+                return null;
+            }
 
-                String start = ((Element) periodList.item(periodIndex)).getAttribute("start");
+            for (int periodIterator = 0; periodIterator < periodNodeList.getLength(); periodIterator++) {
+                Element curPeriodElement = ((Element) periodNodeList.item(periodIterator));
+                if (curPeriodElement == null) {
+                    logger.debug("\t[DashManager] Period[{}] element is not exist.", periodIterator);
+                    continue;
+                }
+                Period period = new Period(String.valueOf(periodIterator));
+
+                // Period start
+                String start = curPeriodElement.getAttribute("start");
                 if (start != null && !start.isEmpty()) {
-                    logger.debug("\t[DashManager] Period[{}] start: {} > {} sec", periodIndex, start, parseTime(start));
+                    logger.debug("\t[DashManager] Period[{}] start: {} > {} sec", periodIterator, start, parseTime(start));
+                }
+
+                // Period duration
+                duration = curPeriodElement.getAttribute("duration");
+                if (duration != null && !duration.isEmpty()) {
+                    logger.debug("\t[DashManager] Period[{}] duration: {} > {} sec", periodIterator, duration, parseTime(duration));
+                }
+
+                // Period BaseURL
+                baseUrlNodeList = curPeriodElement.getElementsByTagName("BaseURL");
+                if (baseUrlNodeList != null) {
+                    Node baseUrlNode = baseUrlNodeList.item(0);
+                    if (baseUrlNode != null) {
+                        if (baseUrlNode.getParentNode() == curPeriodElement) {
+                            String url = baseUrlNode.getTextContent();
+                            if (url != null && !url.isEmpty()) {
+                                period.setBaseUrl(url);
+                                logger.debug("\t[DashManager] Period[{}] BaseURL: {}", periodIterator, period.getBaseUrl());
+                            }
+                        }
+                    }
+                } else {
+                    logger.debug("\t[DashManager] Period[{}] BaseURL is not defined.", periodIterator);
                 }
 
                 //////////////////////////////
                 // ADAPTATION SET
-                NodeList adaptationList = ((Element) mpdList.item(0)).getElementsByTagName("AdaptationSet");
-                if (adaptationList == null || adaptationList.getLength() == 0) {
-                    logger.warn("[DashManager] Period[{}] AdaptationSet is not defined. (filePath={})", periodIndex, filePath);
+                NodeList adaptationSetNodeList = curPeriodElement.getElementsByTagName("AdaptationSet");
+                if (adaptationSetNodeList == null || adaptationSetNodeList.getLength() == 0) {
+                    logger.warn("[DashManager] Period[{}] AdaptationSet is not defined. (filePath={})", periodIterator, filePath);
                     continue;
                 }
 
-                for (int adapdationSetIndex = 0; adapdationSetIndex < adaptationList.getLength(); adapdationSetIndex++) {
-                    AdaptationSet adaptationSet = new AdaptationSet(String.valueOf(adapdationSetIndex));
+                for (int adapdationSetIterator = 0; adapdationSetIterator < adaptationSetNodeList.getLength(); adapdationSetIterator++) {
+                    Element curAdaptationSetElement = ((Element) adaptationSetNodeList.item(adapdationSetIterator));
+                    if (curAdaptationSetElement == null) {
+                        logger.debug("\t\t[DashManager] AdaptationSet[{}] element is not exist.", periodIterator);
+                        continue;
+                    }
+                    AdaptationSet adaptationSet = new AdaptationSet(String.valueOf(adapdationSetIterator));
 
-                    String mimeType = ((Element) adaptationList.item(adapdationSetIndex)).getAttribute("mimeType");
+                    // Adaptation mimeType
+                    String mimeType = curAdaptationSetElement.getAttribute("mimeType");
                     if (mimeType != null && !mimeType.isEmpty()) {
                         adaptationSet.setMimeType(mimeType);
-                        logger.debug("\t\t[DashManager] AdaptationSet[{}] mimeType: {}", adapdationSetIndex, adaptationSet.getMimeType());
+                        logger.debug("\t\t[DashManager] AdaptationSet[{}] mimeType: {}", adapdationSetIterator, adaptationSet.getMimeType());
                     }
 
-                    String bitstreamSwitching = ((Element) adaptationList.item(adapdationSetIndex)).getAttribute("bitstreamSwitching");
+                    // Adaptation bitstreamSwitching
+                    String bitstreamSwitching = curAdaptationSetElement.getAttribute("bitstreamSwitching");
                     if (bitstreamSwitching != null && !bitstreamSwitching.isEmpty()) {
                         adaptationSet.setBitstreamSwitching(bitstreamSwitching.equals("true"));
-                        logger.debug("\t\t[DashManager] AdaptationSet[{}] bitstreamSwitching: {}", adapdationSetIndex, adaptationSet.isBitstreamSwitching());
+                        logger.debug("\t\t[DashManager] AdaptationSet[{}] bitstreamSwitching: {}", adapdationSetIterator, adaptationSet.isBitstreamSwitching());
+                    }
+
+                    // Adaptation BaseURL
+                    baseUrlNodeList = curAdaptationSetElement.getElementsByTagName("BaseURL");
+                    if (baseUrlNodeList != null) {
+                        Node baseUrlNode = baseUrlNodeList.item(0);
+                        if (baseUrlNode != null) {
+                            if (baseUrlNode.getParentNode() == curAdaptationSetElement) {
+                                String url = baseUrlNode.getTextContent();
+                                if (url != null && !url.isEmpty()) {
+                                    period.setBaseUrl(url);
+                                    logger.debug("\t\t[DashManager] AdaptationSet[{}] BaseURL: {}", adapdationSetIterator, period.getBaseUrl());
+                                }
+                            }
+                        }
                     }
 
                     //////////////////////////////
                     // REPRESENTATION
-                    NodeList representationList = ((Element) adaptationList.item(adapdationSetIndex)).getElementsByTagName("Representation");
-                    if (representationList == null || representationList.getLength() == 0) {
-                        logger.warn("\t\t[DashManager] AdaptationSet[{}] Representation is not defined. (filePath={})", adapdationSetIndex, filePath);
+                    NodeList representationNodeList = curAdaptationSetElement.getElementsByTagName("Representation");
+                    if (representationNodeList == null || representationNodeList.getLength() == 0) {
+                        logger.warn("\t\t[DashManager] AdaptationSet[{}] Representation is not defined. (filePath={})", adapdationSetIterator, filePath);
                         continue;
                     }
 
-                    for (int representationIndex = 0; representationIndex < representationList.getLength(); representationIndex++) {
-                        Element curRepresentation = (Element) representationList.item(representationIndex);
-                        if (curRepresentation == null) { continue; }
+                    for (int representationIterator = 0; representationIterator < representationNodeList.getLength(); representationIterator++) {
+                        Element curRepresentation = (Element) representationNodeList.item(representationIterator);
+                        if (curRepresentation == null) {
+                            logger.debug("\t\t\t[DashManager] Representation[{}] element is not exist.", periodIterator);
+                            continue;
+                        }
 
                         Representation representation;
+                        SegmentInformation segmentInformation;
+
+                        // Representation id
                         String id = curRepresentation.getAttribute("id");
                         if (id == null || id.isEmpty()) {
-                            logger.warn("\t\t\t[DashManager] Representation[{}] id is not defined. (filePath={})", representationIndex, filePath);
+                            logger.warn("\t\t\t[DashManager] Representation[{}] id is not defined. (filePath={})", representationIterator, filePath);
                             continue;
                         } else {
                             representation = new Representation(id);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] id: {}", representationIndex, id);
+                            segmentInformation = new SegmentInformation();
+                            representation.setSegmentInformation(segmentInformation);
+                            logger.debug("\t\t\t[DashManager] Representation[{}] id: {}", representationIterator, id);
                         }
 
+                        // Representation BaseURL
+                        baseUrlNodeList = curRepresentation.getElementsByTagName("BaseURL");
+                        if (baseUrlNodeList != null) {
+                            Node baseUrlNode = baseUrlNodeList.item(0);
+                            if (baseUrlNode != null) {
+                                if (baseUrlNode.getParentNode() == curRepresentation) {
+                                    String url = baseUrlNode.getTextContent();
+                                    if (url != null && !url.isEmpty()) {
+                                        period.setBaseUrl(url);
+                                        logger.debug("\t\t\t[DashManager] Representation[{}] BaseURL: {}", representationIterator, period.getBaseUrl());
+                                    }
+                                }
+                            }
+                        }
+
+                        // Representation codecs
                         String codecs = curRepresentation.getAttribute("codecs");
                         if (codecs != null && !codecs.isEmpty()) {
                             representation.setCodecs(codecs);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] codecs: {}", representationIndex, representation.getCodecs());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] codecs: {}", representationIterator, representation.getCodecs());
                         }
 
+                        // Representation mimeType
                         mimeType = curRepresentation.getAttribute("mimeType");
                         if (mimeType != null && !mimeType.isEmpty()) {
                             representation.setMimeType(mimeType);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] mimeType: {}", representationIndex, representation.getMimeType());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] mimeType: {}", representationIterator, representation.getMimeType());
                         }
 
+                        // Representation width
                         String width = curRepresentation.getAttribute("width");
                         if (width != null && !width.isEmpty()) {
                             representation.setWidth(width);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] width: {}", representationIndex, representation.getWidth());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] width: {}", representationIterator, representation.getWidth());
                         }
 
+                        // Representation height
                         String height = curRepresentation.getAttribute("height");
                         if (height != null && !height.isEmpty()) {
                             representation.setHeight(height);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] height: {}", representationIndex, representation.getHeight());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] height: {}", representationIterator, representation.getHeight());
                         }
 
+                        // Representation startWithSAP
                         String startWitSAP = curRepresentation.getAttribute("startWithSAP");
                         if (startWitSAP != null && !startWitSAP.isEmpty()) {
                             representation.setStartWithSAP(startWitSAP);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] startWitSAP: {}", representationIndex, representation.getStartWithSAP());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] startWitSAP: {}", representationIterator, representation.getStartWithSAP());
                         }
 
+                        // Representation bandwidth
                         String bandWidth = curRepresentation.getAttribute("bandwidth");
                         if (bandWidth != null && !bandWidth.isEmpty()) {
                             representation.setBandwidth(bandWidth);
-                            logger.debug("\t\t\t[DashManager] Representation[{}] bandWidth: {}", representationIndex, representation.getBandwidth());
+                            logger.debug("\t\t\t[DashManager] Representation[{}] bandWidth: {}", representationIterator, representation.getBandwidth());
                         }
 
+                        //////////////////////////////
+                        // SegmentBase
+                        NodeList segmentBaseNodeList = curRepresentation.getElementsByTagName("SegmentBase");
+                        if (segmentBaseNodeList != null && segmentBaseNodeList.getLength() > 0) {
+                            Element segmentBaseElement = (Element) segmentBaseNodeList.item(0);
+                            if (segmentBaseElement != null) {
+                                SegmentBase segmentBase = new SegmentBase();
+
+                                // SegmentBase indexRange
+                                String indexRange = segmentBaseElement.getAttribute("indexRange");
+                                if (indexRange != null && !indexRange.isEmpty()) {
+                                    segmentBase.setIndexRange(indexRange);
+                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentBase indexRange: {}", representationIterator, segmentBase.getIndexRange());
+                                }
+
+                                // SegmentBase Initialization
+                                NodeList initializationList = segmentBaseElement.getElementsByTagName("Initialization");
+                                if (initializationList != null) {
+                                    Node initializationNode = initializationList.item(0);
+                                    if (initializationNode != null) {
+                                        if (initializationNode.getParentNode() == segmentBaseElement) {
+                                            String sourceUrl = ((Element) initializationNode).getAttribute("sourceURL");
+                                            if (sourceUrl != null && !sourceUrl.isEmpty()) {
+                                                InitializationSegment initializationSegment = new InitializationSegment(representation.getIndex(), sourceUrl);
+
+                                                segmentBase.setInitializationSegment(initializationSegment);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentBase InitializationSegment sourceURL: {}", representationIterator, segmentBase.getInitializationSegment().getUrl());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // SegmentBase RepresentationIndex
+                                NodeList representationIndexList = segmentBaseElement.getElementsByTagName("RepresentationIndex");
+                                if (representationIndexList != null) {
+                                    Node representationIndexNode = representationIndexList.item(0);
+                                    if (representationIndexNode != null) {
+                                        if (representationIndexNode.getParentNode() == segmentBaseElement) {
+                                            String sourceUrl = ((Element) representationIndexNode).getAttribute("sourceURL");
+                                            if (sourceUrl != null && !sourceUrl.isEmpty()) {
+                                                RepresentationIndex representationIndex = new RepresentationIndex();
+                                                representationIndex.setSourceUrl(sourceUrl);
+
+                                                segmentBase.setRepresentationIndex(representationIndex);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentBase RepresentationIndex sourceURL: {}", representationIterator, segmentBase.getRepresentationIndex().getSourceUrl());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                segmentInformation.setSegmentBase(segmentBase);
+                                logger.debug("\t\t\t\t----");
+                            }
+                        }
+                        // SegmentBase END
+                        //////////////////////////////
+
+                        //////////////////////////////
+                        // SegmentList
+                        NodeList segmentNodeList = curRepresentation.getElementsByTagName("SegmentList");
+                        if (segmentNodeList != null) {
+                            Element segmentListElement = (Element) segmentNodeList.item(0);
+                            if (segmentListElement != null) {
+                                SegmentList segmentList = new SegmentList();
+
+                                // SegmentList timescale
+                                String timeScale = segmentListElement.getAttribute("timescale");
+                                if (timeScale != null && !timeScale.isEmpty()) {
+                                    segmentList.setTimeScale(timeScale);
+                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList timescale: {}", representationIterator, segmentList.getTimeScale());
+                                }
+
+                                // SegmentList duration
+                                duration = segmentListElement.getAttribute("duration");
+                                if (duration != null && !duration.isEmpty()) {
+                                    segmentList.setDuration(duration);
+                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList duration: {}", representationIterator, segmentList.getDuration());
+                                }
+
+                                // SegmentList Initialization
+                                NodeList initializationList = segmentListElement.getElementsByTagName("Initialization");
+                                if (initializationList != null) {
+                                    Node initializationNode = initializationList.item(0);
+                                    if (initializationNode != null) {
+                                        if (initializationNode.getParentNode() == segmentListElement) {
+                                            String sourceUrl = ((Element) initializationNode).getAttribute("sourceURL");
+                                            if (sourceUrl != null && !sourceUrl.isEmpty()) {
+                                                InitializationSegment initializationSegment = new InitializationSegment(representation.getIndex(), sourceUrl);
+
+                                                segmentList.setInitializationSegment(initializationSegment);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList InitializationSegment sourceURL: {}", representationIterator, segmentList.getInitializationSegment().getUrl());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // SegmentList RepresentationIndex
+                                NodeList representationIndexList = segmentListElement.getElementsByTagName("RepresentationIndex");
+                                if (representationIndexList != null) {
+                                    Node representationIndexNode = representationIndexList.item(0);
+                                    if (representationIndexNode != null) {
+                                        if (representationIndexNode.getParentNode() == segmentListElement) {
+                                            String sourceUrl = ((Element) representationIndexNode).getAttribute("sourceURL");
+                                            if (sourceUrl != null && !sourceUrl.isEmpty()) {
+                                                RepresentationIndex representationIndex = new RepresentationIndex();
+                                                representationIndex.setSourceUrl(sourceUrl);
+
+                                                segmentList.setRepresentationIndex(representationIndex);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList RepresentationIndex sourceURL: {}", representationIterator, segmentList.getRepresentationIndex().getSourceUrl());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // SegmentList SegmentURL
+                                NodeList segmentURLNodeList = segmentListElement.getElementsByTagName("SegmentURL");
+                                if (segmentURLNodeList != null) {
+                                    for (int segmentURLNodeIterator = 0; segmentURLNodeIterator < segmentURLNodeList.getLength(); segmentURLNodeIterator++) {
+                                        Node curSegmentUrlNode = segmentURLNodeList.item(segmentURLNodeIterator);
+                                        if (curSegmentUrlNode == null) {
+                                            logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList SegmentURL[{}] is not defined.", representationIterator, segmentURLNodeIterator);
+                                            continue;
+                                        }
+
+                                        if (curSegmentUrlNode.getParentNode() == segmentListElement) {
+                                            String media = ((Element) curSegmentUrlNode).getAttribute("media");
+                                            if (media != null && !media.isEmpty()) {
+                                                MediaSegment mediaSegment = new MediaSegment(
+                                                        String.valueOf(segmentURLNodeIterator),
+                                                        media
+                                                );
+                                                segmentList.addSegmentLast(mediaSegment);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentList SegmentURL[{}] media: {}",
+                                                        representationIterator, segmentURLNodeIterator, segmentList.getSegmentByIndex(String.valueOf(segmentURLNodeIterator)).getUrl()
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+
+                                segmentInformation.setSegmentList(segmentList);
+                                logger.debug("\t\t\t\t----");
+                            }
+                        }
+                        // SegmentList END
+                        //////////////////////////////
+
+                        //////////////////////////////
+                        // SegmentTemplate
+                        NodeList segmentTemplateNodeList = curRepresentation.getElementsByTagName("SegmentTemplate");
+                        if (segmentTemplateNodeList != null) {
+                            Element segmentTemplateNodeElement = (Element) segmentTemplateNodeList.item(0);
+                            if (segmentTemplateNodeElement != null) {
+                                SegmentTemplate segmentTemplate = new SegmentTemplate();
+
+                                // SegmentTemplate RepresentationIndex
+                                NodeList representationIndexList = segmentTemplateNodeElement.getElementsByTagName("RepresentationIndex");
+                                if (representationIndexList != null) {
+                                    Node representationIndexNode = representationIndexList.item(0);
+                                    if (representationIndexNode != null) {
+                                        if (representationIndexNode.getParentNode() == segmentTemplateNodeElement) {
+                                            String sourceUrl = ((Element) representationIndexNode).getAttribute("sourceURL");
+                                            if (sourceUrl != null && !sourceUrl.isEmpty()) {
+                                                RepresentationIndex representationIndex = new RepresentationIndex();
+                                                representationIndex.setSourceUrl(sourceUrl);
+
+                                                segmentTemplate.setRepresentationIndex(representationIndex);
+                                                logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentTemplate RepresentationIndex sourceURL: {}", representationIterator, segmentTemplate.getRepresentationIndex().getSourceUrl());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // SegmentTemplate SegmentTimeline
+                                NodeList segmentTimelineList = segmentTemplateNodeElement.getElementsByTagName("SegmentTimeline");
+                                if (segmentTimelineList != null) {
+                                    Node segmentTimelineNode = segmentTimelineList.item(0);
+                                    if (segmentTimelineNode != null) {
+                                        NodeList sList = segmentTemplateNodeElement.getElementsByTagName("S");
+                                        if (sList != null) {
+                                            Node sNode = sList.item(0);
+                                            if (sNode != null) {
+                                                SegmentTimeline segmentTimeline = new SegmentTimeline();
+
+                                                String t = ((Element) sNode).getAttribute("t");
+                                                if (t != null && !t.isEmpty()) {
+                                                    segmentTimeline.setT(t);
+                                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentTemplate SegmentTimeline t: {}",
+                                                            representationIterator, segmentTimeline.getT()
+                                                    );
+                                                }
+
+                                                String d = ((Element) sNode).getAttribute("d");
+                                                if (d != null && !d.isEmpty()) {
+                                                    segmentTimeline.setD(d);
+                                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentTemplate SegmentTimeline d: {}",
+                                                            representationIterator, segmentTimeline.getD()
+                                                    );
+                                                }
+
+                                                String r = ((Element) sNode).getAttribute("r");
+                                                if (r != null && !r.isEmpty()) {
+                                                    segmentTimeline.setR(r);
+                                                    logger.debug("\t\t\t\t[DashManager] Representation[{}] SegmentTemplate SegmentTimeline r: {}",
+                                                            representationIterator, segmentTimeline.getR()
+                                                    );
+                                                }
+
+                                                segmentTemplate.setSegmentTimeline(segmentTimeline);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                segmentInformation.setSegmentTemplate(segmentTemplate);
+                                logger.debug("\t\t\t\t----");
+                            }
+                        }
+                        // SegmentTemplate END
+                        //////////////////////////////
+
+                        adaptationSet.addRepresentationLast(representation);
                         logger.debug("\t\t\t----");
                     }
+                    // Representation END
                     //////////////////////////////
 
-                    period.addLast(adaptationSet);
+                    period.addAdaptationSetLast(adaptationSet);
                     logger.debug("\t\t----");
                 }
+                // AdaptationSet END
                 //////////////////////////////
                 logger.debug("\t----");
+
+                mpd.addPeriodLast(period);
             }
+            // Period END
             //////////////////////////////
         } catch (Exception e) {
             logger.warn("[DashManager] Fail to parse the mpd xml. (filePath={})", filePath, e);
             return null;
         }
+        // MPD END
+        //////////////////////////////
 
         return mpd;
     }

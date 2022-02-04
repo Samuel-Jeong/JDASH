@@ -1,34 +1,25 @@
-package dash.component;
+package dash.component.segment;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dash.component.segment.SegmentBase;
-import dash.component.segment.SegmentList;
 
-/**
- * Segment list for Representation
- */
-public class SegmentInformation {
+public class RepresentationIndex {
 
     ////////////////////////////////////////////////////////////
-    private final SegmentBase segmentBase;
-    private final SegmentList segmentList;
+    private String sourceUrl = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public SegmentInformation(SegmentBase segmentBase, SegmentList segmentList) {
-        this.segmentBase = segmentBase;
-        this.segmentList = segmentList;
-    }
+    public RepresentationIndex() {}
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public SegmentBase getSegmentBase() {
-        return segmentBase;
+    public String getSourceUrl() {
+        return sourceUrl;
     }
 
-    public SegmentList getSegmentList() {
-        return segmentList;
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
     }
 
     @Override

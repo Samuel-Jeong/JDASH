@@ -103,6 +103,23 @@ public class AdaptationSet {
         return representationHashMap;
     }
 
+    public void addRepresentationLast(Representation representation) {
+        String index = representation.getIndex();
+        if (getRepresentationByIndex(index) != null) {
+            return;
+        }
+
+        representationHashMap.putIfAbsent(index, representation);
+    }
+
+    public boolean removeRepresentationByIndex(String index) {
+        return representationHashMap.remove(index) != null;
+    }
+
+    public Representation getRepresentationByIndex(String index) {
+        return representationHashMap.get(index);
+    }
+
     @Override
     public String toString() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();

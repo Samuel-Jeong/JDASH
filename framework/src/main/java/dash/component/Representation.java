@@ -2,6 +2,7 @@ package dash.component;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dash.component.segment.SegmentInformation;
 
 /**
  * Representation: Describes a deliverable encoded version of
@@ -34,6 +35,7 @@ public class Representation {
 
     ////////////////////////////////////////////////////////////
     private final String index;
+    private String baseUrl;
     private String codecs;
     private String mimeType;
     private String startWithSAP;
@@ -41,6 +43,7 @@ public class Representation {
     private String audioSamplingRate;
     private String width;
     private String height;
+
     private SegmentInformation segmentInformation = null;
     ////////////////////////////////////////////////////////////
 
@@ -53,6 +56,14 @@ public class Representation {
     ////////////////////////////////////////////////////////////
     public String getIndex() {
         return index;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     public String getCodecs() {

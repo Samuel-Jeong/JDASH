@@ -6,7 +6,6 @@ import dash.component.definition.MpdType;
 import org.w3c.dom.Document;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,9 +84,14 @@ import java.util.Map;
  */
 public class MPD {
 
+    /**
+     * The MPEG-DASH Media Presentation Description (MPD)
+     *          is an XML document containing information about media segments,
+     *          their relationships and information necessary to choose between them,
+     *          and other metadata that may be needed by clients.
+     */
+
     ////////////////////////////////////////////////////////////
-    private String uriPrefix;
-    private String uriPostfix;
     private Document manifest;
 
     private MpdType mpdType;
@@ -96,7 +100,7 @@ public class MPD {
     private double minBufferTime;
     private String availabilityStartTime;
     private double mediaPresentationDuration;
-    private List<String> baseUrlList;
+    private String baseUrl;
     private final Map<String, Period> periodMap = new HashMap<>();
     ////////////////////////////////////////////////////////////
 
@@ -105,6 +109,14 @@ public class MPD {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
+    public Document getManifest() {
+        return manifest;
+    }
+
+    public void setManifest(Document manifest) {
+        this.manifest = manifest;
+    }
+
     public MpdType getMpdType() {
         return mpdType;
     }
@@ -153,32 +165,32 @@ public class MPD {
         this.mediaPresentationDuration = mediaPresentationDuration;
     }
 
-    public List<String> getBaseUrlList() {
-        return baseUrlList;
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
-    public void setBaseUrlList(List<String> baseUrlList) {
-        this.baseUrlList = baseUrlList;
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     public Map<String, Period> getPeriodMap() {
         return periodMap;
     }
 
-    public void addLast(Period period) {
+    public void addPeriodLast(Period period) {
         String index = period.getIndex();
-        if (getByIndex(index) != null) {
+        if (getPeriodByIndex(index) != null) {
             return;
         }
 
         periodMap.putIfAbsent(index, period);
     }
 
-    public boolean removeByIndex(String index) {
+    public boolean removePeriodByIndex(String index) {
         return periodMap.remove(index) != null;
     }
 
-    public Period getByIndex(String index) {
+    public Period getPeriodByIndex(String index) {
         return periodMap.get(index);
     }
 

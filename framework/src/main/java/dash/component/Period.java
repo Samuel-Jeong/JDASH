@@ -65,6 +65,10 @@ public class Period {
         return baseUrl;
     }
 
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
     public long getStart() {
         return start;
     }
@@ -85,20 +89,20 @@ public class Period {
         return adaptationSetMap;
     }
 
-    public void addLast(AdaptationSet adaptationSet) {
+    public void addAdaptationSetLast(AdaptationSet adaptationSet) {
         String index = adaptationSet.getIndex();
-        if (getByIndex(index) != null) {
+        if (getAdaptationSetByIndex(index) != null) {
             return;
         }
 
         adaptationSetMap.putIfAbsent(index, adaptationSet);
     }
 
-    public boolean removeByIndex(String index) {
+    public boolean removeAdaptationSetByIndex(String index) {
         return adaptationSetMap.remove(index) != null;
     }
 
-    public AdaptationSet getByIndex(String index) {
+    public AdaptationSet getAdaptationSetByIndex(String index) {
         return adaptationSetMap.get(index);
     }
 
