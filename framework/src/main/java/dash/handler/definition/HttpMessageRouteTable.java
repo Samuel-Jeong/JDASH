@@ -5,12 +5,18 @@ import io.netty.handler.codec.http.HttpMethod;
 import java.util.ArrayList;
 
 public class HttpMessageRouteTable {
-    private final ArrayList<HttpMessageRoute> routes;
 
+    ////////////////////////////////////////////////////////////
+    private final ArrayList<HttpMessageRoute> routes;
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
     public HttpMessageRouteTable() {
         this.routes = new ArrayList<>();
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     public void addRoute(final HttpMessageRoute route) {
         this.routes.add(route);
     }
@@ -24,4 +30,6 @@ public class HttpMessageRouteTable {
 
         return null;
     }
+    ////////////////////////////////////////////////////////////
+
 }

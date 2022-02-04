@@ -17,9 +17,6 @@ import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.schedule.ScheduleManager;
-import util.module.ConcurrentCyclicFIFO;
-
-import java.util.concurrent.TimeUnit;
 
 public class HttpMessageManager {
 
@@ -36,7 +33,6 @@ public class HttpMessageManager {
     private final HttpMessageRouteTable routeTable;
 
     private final NetAddress localListenAddress;
-    private final ConcurrentCyclicFIFO<Object[]> httpMessageQueue;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -44,7 +40,6 @@ public class HttpMessageManager {
         this.scheduleManager = scheduleManager;
         this.socketManager = socketManager;
         this.routeTable = new HttpMessageRouteTable();
-        this.httpMessageQueue = new ConcurrentCyclicFIFO<>();
 
         localListenAddress = new NetAddress("127.0.0.1", 5000,true, SocketProtocol.TCP);
         socketManager.addSocket(localListenAddress, new HttpMessageServerInitializer());
@@ -67,12 +62,6 @@ public class HttpMessageManager {
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
         localGroupSocket.getListenSocket().closeListenChannel();
         logger.debug("[HttpMessageManager] CLOSE [{}]", localGroupSocket);
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    public void putMessage(Object[] httpObject) {
-        this.httpMessageQueue.offer(httpObject);
     }
     ////////////////////////////////////////////////////////////
 

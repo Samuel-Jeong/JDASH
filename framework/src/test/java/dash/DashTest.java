@@ -2,6 +2,7 @@ package dash;
 
 import dash.component.MPD;
 import dash.simulation.DashHttpMessageSender;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +18,8 @@ public class DashTest {
         DashManager dashManager = new DashManager();
         dashManager.start();
 
-        //MPD mpd = parseMpdTest(dashManager);
-        //Assert.assertNotNull(mpd);
+        MPD mpd = parseMpdTest(dashManager);
+        Assert.assertNotNull(mpd);
 
         /////////////////////////////////////////////
         // HTTP TEST
