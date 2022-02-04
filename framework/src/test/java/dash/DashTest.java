@@ -18,7 +18,7 @@ public class DashTest {
     }
 
     public static MPD parseMpdTest(DashManager dashManager) {
-        return dashManager.parseXml("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example1.xml");
+        return dashManager.parseXml("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example3.xml");
     }
 
 }

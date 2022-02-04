@@ -3,6 +3,9 @@ package dash.component;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dash.component.segment.SegmentInformation;
+import dash.component.segment.definition.SubRepresentation;
+
+import java.util.Map;
 
 /**
  * Representation: Describes a deliverable encoded version of
@@ -45,6 +48,7 @@ public class Representation {
     private String height;
 
     private SegmentInformation segmentInformation = null;
+    private Map<Integer, SubRepresentation> subRepresentationMap;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -128,6 +132,14 @@ public class Representation {
 
     public void setSegmentInformation(SegmentInformation segmentInformation) {
         this.segmentInformation = segmentInformation;
+    }
+
+    public Map<Integer, SubRepresentation> getSubRepresentationMap() {
+        return subRepresentationMap;
+    }
+
+    public void setSubRepresentationMap(Map<Integer, SubRepresentation> subRepresentationMap) {
+        this.subRepresentationMap = subRepresentationMap;
     }
 
     @Override

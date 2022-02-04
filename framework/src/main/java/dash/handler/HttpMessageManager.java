@@ -1,7 +1,6 @@
 package dash.handler;
 
 import dash.handler.definition.HttpMessageHandler;
-import dash.handler.definition.HttpMessageParseType;
 import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
 import io.netty.channel.ChannelInitializer;
@@ -89,10 +88,6 @@ public class HttpMessageManager {
 
     ////////////////////////////////////////////////////////////
     public void putMessage(Object[] httpObject) {
-        if (httpObject.length != HttpMessageParseType.PARSE_SIZE) {
-            logger.warn("HttpMessage is too long. ({}) {}", httpObject.length, httpObject);
-            return;
-        }
         this.httpMessageQueue.offer(httpObject);
     }
     ////////////////////////////////////////////////////////////

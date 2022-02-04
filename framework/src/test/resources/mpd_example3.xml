@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns="urn:mpeg:dash:schema:mpd:2011"
+     xsi:schemaLocation="urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd"
+     type="dynamic"
+     minimumUpdatePeriod="PT30S"
+     availabilityStartTime="2016-05-04T20:47:25"
+     minBufferTime="PT12S"
+     profiles="urn:mpeg:dash:profile:isoff-live:2011">
+    <Period start="PT0S" id="1">
+        <AdaptationSet mimeType="video/mp4" codecs="avc1.4d401e,mp4a.40.2">
+            <ContentComponent contentType="video" id="1"/>
+            <ContentComponent contentType="audio" id="2"/>
+            <SegmentTemplate timescale="600"
+                             media="/dash_upload?cid=ug50-xg26-cbc1-2p0h;staging=1;copy=0;file=media$Number%09d$.mp4"
+                             initialization="data:video/mp4;base64,AAAAGGZ0eXBpc281AA...AA"
+                             duration="306"
+                             startNumber="1"/>
+            <Representation id="1" width="640" height="360" bandwidth="526952">
+                <SubRepresentation contentComponent="1" bandwidth="526952"
+                                   codecs="avc1.4d401e"/>
+                <SubRepresentation contentComponent="2" bandwidth="125584" codecs="mp4a.40.2"/>
+            </Representation>
+        </AdaptationSet>
+    </Period>
+</MPD>

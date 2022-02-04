@@ -3,6 +3,7 @@ package dash.component;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dash.component.definition.MediaType;
+import dash.component.segment.ContentComponent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class AdaptationSet {
     private MediaType mediaType;
 
     private final Map<String, Representation> representationHashMap = new HashMap<>();
+    private Map<Integer, ContentComponent> contentComponentMap = null;
     ////////////////////////////////////////////////////////////
 
     public AdaptationSet(String index) {
@@ -118,6 +120,14 @@ public class AdaptationSet {
 
     public Representation getRepresentationByIndex(String index) {
         return representationHashMap.get(index);
+    }
+
+    public Map<Integer, ContentComponent> getContentComponentMap() {
+        return contentComponentMap;
+    }
+
+    public void setContentComponentMap(Map<Integer, ContentComponent> contentComponentMap) {
+        this.contentComponentMap = contentComponentMap;
     }
 
     @Override
