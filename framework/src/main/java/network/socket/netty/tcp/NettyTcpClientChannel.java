@@ -9,6 +9,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.HttpRequest;
 import network.socket.netty.NettyChannel;
 
 import java.net.InetAddress;
@@ -118,6 +119,12 @@ public class NettyTcpClientChannel extends NettyChannel {
         ByteBuf buf = Unpooled.copiedBuffer(data);
         connectChannel.writeAndFlush(buf);
     }
+
+    @Override
+    public void sendHttpRequest(HttpRequest httpRequest) {
+        connectChannel.writeAndFlush(httpRequest);
+    }
+
     ////////////////////////////////////////////////////////////
 
 }

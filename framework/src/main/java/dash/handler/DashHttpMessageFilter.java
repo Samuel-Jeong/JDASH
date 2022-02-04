@@ -1,8 +1,8 @@
 package dash.handler;
 
-import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
+import dash.handler.definition.HttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -16,16 +16,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class DashHttpHandler extends SimpleChannelInboundHandler<Object> {
+public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashHttpHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageFilter.class);
 
     private final HttpMessageRouteTable routeTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashHttpHandler(HttpMessageRouteTable routeTable) {
+    public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
         this.routeTable = routeTable;
     }
     ////////////////////////////////////////////////////////////

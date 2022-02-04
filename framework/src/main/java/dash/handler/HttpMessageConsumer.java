@@ -27,9 +27,11 @@ public class HttpMessageConsumer extends Job {
     public void run() {
         try {
             // TODO
-            Object[] data = httpMessageQueue.take();
-
-        } catch (InterruptedException e) {
+            Object[] data = httpMessageQueue.poll();
+            if (data != null && data.length > 0) {
+                logger.debug("[HttpMessageConsumer] DATA: {}", data);
+            }
+        } catch (Exception e) {
             logger.error("HttpMessageConsumer.queueProcessing.Exception", e);
         }
     }

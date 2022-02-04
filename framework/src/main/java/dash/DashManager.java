@@ -9,12 +9,11 @@ import dash.component.segment.*;
 import dash.component.segment.definition.InitializationSegment;
 import dash.component.segment.definition.MediaSegment;
 import dash.component.segment.definition.SubRepresentation;
+import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
-import network.definition.NetAddress;
 import network.socket.SocketManager;
-import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -67,6 +66,8 @@ public class DashManager {
     ////////////////////////////////////////////////////////////
     public void start() {
         httpMessageManager.start();
+
+        httpMessageManager.get("/", new DashMessageHandler());
     }
 
     public void stop() {

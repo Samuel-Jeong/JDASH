@@ -2,6 +2,7 @@ package network.socket.netty;
 
 import instance.BaseEnvironment;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpRequest;
 import util.module.ConcurrentCyclicFIFO;
 
 public class NettyChannel {
@@ -96,6 +97,8 @@ public class NettyChannel {
     public void closeConnectChannel() {}
 
     public void sendData(byte[] data, int dataLength) {}
+
+    public void sendHttpRequest(HttpRequest httpRequest) {}
     ////////////////////////////////////////////////////////////
 
 }

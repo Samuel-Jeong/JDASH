@@ -53,22 +53,6 @@ public class HttpMessageManager {
 
     ////////////////////////////////////////////////////////////
     public void start() {
-        // INITIALIZE JOB
-        scheduleManager.initJob(
-                HTTP_SCHEDULE_KEY, 10, 10
-        );
-
-        scheduleManager.startJob(
-                HTTP_SCHEDULE_KEY,
-                new HttpMessageConsumer(
-                        scheduleManager,
-                        HttpMessageConsumer.class.getSimpleName(),
-                        0, 1, TimeUnit.MILLISECONDS,
-                        1, 0, true,
-                        httpMessageQueue
-                )
-        );
-
         // OPEN LISTEN CHANNEL
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
         localGroupSocket.getListenSocket().openListenChannel();
@@ -111,7 +95,7 @@ public class HttpMessageManager {
             p.addLast("decoder", new HttpRequestDecoder(4096, 8192, 8192, false));
             p.addLast("aggregator", new HttpObjectAggregator(100 * 1024 * 1024));
             p.addLast("encoder", new HttpResponseEncoder());
-            p.addLast("handler", new DashHttpHandler(routeTable));
+            p.addLast("handler", new DashHttpMessageFilter(routeTable));
         }
     }
     ////////////////////////////////////////////////////////////
