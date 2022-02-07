@@ -1,6 +1,8 @@
 package dash;
+
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
+import dash.unit.DashUnit;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.lindstrom.mpd.MPDParser;
@@ -8,32 +10,29 @@ import io.lindstrom.mpd.data.MPD;
 import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import service.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DashManager {
 
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashManager.class);
 
+    private static DashManager dashManager = null;
+
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
     private HttpMessageManager httpMessageManager;
 
     private final MPDParser mpdParser = new MPDParser();
+    private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
+    private final ReentrantLock dashUnitMapLock = new ReentrantLock();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -57,13 +56,30 @@ public class DashManager {
                 socketManager
         );
     }
+
+    public static DashManager getInstance() {
+        if (dashManager == null) {
+            dashManager = new DashManager();
+        }
+
+        return dashManager;
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public void start() {
         httpMessageManager.start();
 
-        httpMessageManager.get("/", new DashMessageHandler());
+        // TODO : Set Allowed URLs
+        httpMessageManager.get(
+                "/",
+                new DashMessageHandler("/")
+        );
+
+        httpMessageManager.get(
+                "/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4",
+                new DashMessageHandler("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4")
+        );
     }
 
     public void stop() {
@@ -88,6 +104,68 @@ public class DashManager {
         this.httpMessageManager = httpMessageManager;
     }
     ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void addDashUnit(String dashUnitId, MPD mpd) {
+        try {
+            dashUnitMapLock.lock();
+
+            DashUnit dashUnit = new DashUnit(dashUnitId, mpd);
+            dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
+        } catch (Exception e) {
+            logger.warn("Fail to open the dash unit. (id={})", dashUnitId, e);
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+    }
+
+    public void deleteDashUnit(String dashUnitId) {
+        try {
+            dashUnitMapLock.lock();
+            dashUnitMap.remove(dashUnitId);
+        } catch (Exception e) {
+            logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+    }
+
+    public HashMap<String, DashUnit> getCloneDashMap( ) {
+        HashMap<String, DashUnit> cloneMap;
+
+        try {
+            dashUnitMapLock.lock();
+
+            cloneMap = (HashMap<String, DashUnit>) dashUnitMap.clone();
+        } catch (Exception e) {
+            logger.warn("Fail to clone the dash unit map.", e);
+            cloneMap = dashUnitMap;
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+
+        return cloneMap;
+    }
+
+    public void deleteAllDashUnits() {
+        try {
+            dashUnitMapLock.lock();
+            dashUnitMap.entrySet().removeIf(Objects::nonNull);
+        } catch (Exception e) {
+            logger.warn("Fail to close all dash units.", e);
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+    }
+
+    public DashUnit getDashUnit(String dashUnitId) {
+        return dashUnitMap.get(dashUnitId);
+    }
+
+    public int getDashUnitMapSize() {
+        return dashUnitMap.size();
+    }
+    /////////////////////////////////////////////1///////////////
 
     ////////////////////////////////////////////////////////////
     /**
@@ -215,6 +293,14 @@ public class DashManager {
         //////////////////////////////
 
         return mpd;
+    }
+
+    public MPDParser getMpdParser() {
+        return mpdParser;
+    }
+
+    public void makeMpdFileFromMp4() {
+        // ffmpeg -i file.mp4 -vcodec copy -acodec copy output.mpd
     }
     ////////////////////////////////////////////////////////////
 

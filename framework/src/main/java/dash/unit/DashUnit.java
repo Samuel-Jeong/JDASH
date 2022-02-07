@@ -3,29 +3,73 @@ package dash.unit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.lindstrom.mpd.data.MPD;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class DashUnit {
 
-    ////////////////////////////////////////////////////////////
-    private MPD mpd;
-
-    private String inputFilePath;
-    private String outputFilePath;
-
-    private String url;
-    private double duration;
-    private double minBufferTime;
-    private String curSegmentName;
-    private double curNetworkBitRate;
-    private double curSelectedBitRate;
-    private double curBufferTime;
-    ////////////////////////////////////////////////////////////
+    private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
     ////////////////////////////////////////////////////////////
-    public DashUnit() {}
+    private final long initiationTime;
+    private final String id;
+
+    transient private final MPD mpd;
+
+    private String inputFilePath = null;
+    private String outputFilePath = null;
+
+    private String url = null;
+    private String curSegmentName = null;
+
+    private double duration = 0.0;
+    private double minBufferTime= 0.0;
+    private double curNetworkBitRate= 0.0;
+    private double curSelectedBitRate= 0.0;
+    private double curBufferTime= 0.0;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
+    public DashUnit(String id, MPD mpd) {
+        this.id = id;
+        this.initiationTime = System.currentTimeMillis();
+        this.mpd = mpd;
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public byte[] getSegmentByteData(String uri) {
+        File m3u8File = new File(uri);
+        if (!m3u8File.exists() || !m3u8File.isFile()) {
+            logger.warn("[DashUnit({})] Fail to get the segment data. URI is not exists. (uri={})", id, uri);
+            return null;
+        }
+
+        try {
+            return Files.readAllBytes(Paths.get(uri));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public long getInitiationTime() {
+        return initiationTime;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public MPD getMpd() {
+        return mpd;
+    }
+
     public String getInputFilePath() {
         return inputFilePath;
     }

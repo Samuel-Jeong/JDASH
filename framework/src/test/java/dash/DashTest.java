@@ -1,11 +1,15 @@
 package dash;
 
+import config.ConfigManager;
 import dash.simulation.DashHttpMessageSender;
+import dash.unit.DashUnit;
 import io.lindstrom.mpd.data.MPD;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
+import service.ServiceManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -15,13 +19,10 @@ public class DashTest {
 
     @Test
     public void test() {
-        DashManager dashManager = new DashManager();
-        dashManager.start();
-
         /////////////////////////////////////////////
         // 1) MPD PARSING TEST
-        MPD mpd = parseMpdTest(dashManager);
-        Assert.assertNotNull(mpd);
+        /*MPD mpd = parseMpdTest(dashManager);
+        Assert.assertNotNull(mpd);*/
         /////////////////////////////////////////////
 
         /////////////////////////////////////////////
@@ -33,11 +34,11 @@ public class DashTest {
         try {
             dashHttpSender.sendSampleMessage();
 
-            timeUnit.sleep(1);
+            /*timeUnit.sleep(1);
             dashHttpSender.sendSampleMessage();
 
             timeUnit.sleep(1);
-            dashHttpSender.sendSampleMessage();
+            dashHttpSender.sendSampleMessage();*/
 
             timeUnit.sleep(2);
         } catch (Exception e) {
@@ -46,12 +47,10 @@ public class DashTest {
 
         dashHttpSender.stop();
         /////////////////////////////////////////////
-
-        dashManager.stop();
     }
 
     public static MPD parseMpdTest(DashManager dashManager) {
-        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example3.xml");
+        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example4.xml");
     }
 
 }
