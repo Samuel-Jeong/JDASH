@@ -1,7 +1,7 @@
 package dash;
 
-import dash.component.MPD;
 import dash.simulation.DashHttpMessageSender;
+import io.lindstrom.mpd.data.MPD;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -36,6 +36,9 @@ public class DashTest {
             timeUnit.sleep(1);
             dashHttpSender.sendSampleMessage();
 
+            timeUnit.sleep(1);
+            dashHttpSender.sendSampleMessage();
+
             timeUnit.sleep(2);
         } catch (Exception e) {
             logger.warn("DashTest.test.Exception", e);
@@ -48,7 +51,7 @@ public class DashTest {
     }
 
     public static MPD parseMpdTest(DashManager dashManager) {
-        return dashManager.parseXml("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example3.xml");
+        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/mpd_example3.xml");
     }
 
 }

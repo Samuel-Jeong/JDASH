@@ -134,8 +134,6 @@ public class NettyTcpClientChannel extends NettyChannel {
         try {
             ByteBuf buf = Unpooled.copiedBuffer(data);
             connectChannel.writeAndFlush(buf);
-            connectChannel.writeAndFlush(buf);
-            connectChannel.closeFuture().sync();
         } catch (Exception e) {
             // ignore
         }
@@ -155,7 +153,6 @@ public class NettyTcpClientChannel extends NettyChannel {
 
         try {
             connectChannel.writeAndFlush(httpRequest);
-            connectChannel.closeFuture().sync();
         } catch (Exception e) {
             // ignore
         }
