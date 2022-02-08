@@ -26,7 +26,7 @@ public class DashHttpMessageSender {
     private static final String URL =
             System.getProperty(
                     "url",
-                    "http://127.0.0.1:5000/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4"
+                    "http://127.0.0.1:5000/Seoul.mp4"
             );
 
     private URI uri = null;

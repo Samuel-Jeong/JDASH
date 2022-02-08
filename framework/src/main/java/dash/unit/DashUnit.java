@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tool.parser.data.MPD;
+import util.module.FileManager;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -21,6 +22,7 @@ public class DashUnit {
 
     transient private final MPD mpd;
 
+    private String uriFileName = null;
     private String inputFilePath = null;
     private String outputFilePath = null;
     private String curSegmentName = null;
@@ -39,17 +41,7 @@ public class DashUnit {
 
     ////////////////////////////////////////////////////////////
     public byte[] getSegmentByteData(String uri) {
-        File m3u8File = new File(uri);
-        if (!m3u8File.exists() || !m3u8File.isFile()) {
-            logger.warn("[DashUnit({})] Fail to get the segment data. URI is not exists. (uri={})", id, uri);
-            return null;
-        }
-
-        try {
-            return Files.readAllBytes(Paths.get(uri));
-        } catch (Exception e) {
-            return null;
-        }
+        return FileManager.readAllBytes(uri);
     }
     ////////////////////////////////////////////////////////////
 
@@ -64,6 +56,14 @@ public class DashUnit {
 
     public MPD getMpd() {
         return mpd;
+    }
+
+    public String getUriFileName() {
+        return uriFileName;
+    }
+
+    public void setUriFileName(String uriFileName) {
+        this.uriFileName = uriFileName;
     }
 
     public String getInputFilePath() {

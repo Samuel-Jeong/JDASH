@@ -1,9 +1,7 @@
 package util.module;
 
-import config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.AppInstance;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -86,11 +84,18 @@ public class FileManager {
         if (from == null) { return null; }
         if (to == null) { return from; }
 
-        String resultPath = from;
-        if (!resultPath.endsWith(File.separator)) {
-            resultPath += File.separator;
+        String resultPath = from.trim();
+        if (!to.startsWith(File.separator)) {
+            if (!resultPath.endsWith(File.separator)) {
+                resultPath += File.separator;
+            }
+        } else {
+            if (resultPath.endsWith(File.separator)) {
+                resultPath = resultPath.substring(0, resultPath.lastIndexOf("/"));
+            }
         }
-        resultPath += to;
+
+        resultPath += to.trim();
         return resultPath;
     }
 

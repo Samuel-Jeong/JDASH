@@ -31,7 +31,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         this.uri = uri;
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        scriptPath = FileManager.concatFilePath(configManager.getBasePath(), configManager.getScriptPath());
+        scriptPath = configManager.getScriptPath();
     }
     ////////////////////////////////////////////////////////////////////////////////
 

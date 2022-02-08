@@ -17,7 +17,6 @@ import tool.parser.MPDParser;
 import tool.parser.data.MPD;
 import util.module.FileManager;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -75,8 +74,7 @@ public class DashManager {
         ///////////////////////////
         // MediaManager 생성
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        String mediaListPath = FileManager.concatFilePath(configManager.getBasePath(), configManager.getMediaListPath());
-        mediaManager = new MediaManager(mediaListPath);
+        mediaManager = new MediaManager(configManager.getMediaListPath());
         ///////////////////////////
     }
 

@@ -13,6 +13,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
+import util.module.FileManager;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -23,12 +25,14 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageFilter.class);
 
+    private final String basePath;
     private final HttpMessageRouteTable routeTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
         this.routeTable = routeTable;
+        this.basePath = AppInstance.getInstance().getConfigManager().getMediaBasePath();
     }
     ////////////////////////////////////////////////////////////
 
@@ -47,17 +51,25 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         final HttpMethod method = request.method();
-        final String uri = request.uri();
+        String uri = request.uri(); // /Seoul.mp4 or /Seoul_chunk_1_00001.m4s
         if (uri == null) { return; }
         ///////////////////////////
 
         ///////////////////////////
         // GET DASH UNIT
+        String uriFileName;
         boolean isRegistered = false;
         DashUnit dashUnit = DashManager.getInstance().getDashUnit(uri);
         if (dashUnit != null) {
             isRegistered = true;
+            uriFileName = dashUnit.getUriFileName(); // Seoul
+        } else {
+            uriFileName = getFileNameFromUri(uri); // Seoul
         }
+
+        uri = FileManager.concatFilePath(uriFileName, uri); // Seoul/Seoul.mp4 or Seoul/Seoul_chunk_1_00001.m4s
+        uri = FileManager.concatFilePath(basePath, uri); // /Users/.../Seoul/Seoul.mp4 or /Users/.../Seoul/Seoul_chunk_1_00001.m4s
+        request.setUri(uri);
         ///////////////////////////
 
         ///////////////////////////
@@ -81,6 +93,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 final HttpRequest requestWrapper = new HttpRequest(request);
                 final Object obj = route.getHandler().handle(requestWrapper, null);
                 content = obj == null ? "" : obj.toString();
+
+                dashUnit = DashManager.getInstance().getDashUnit(uri);
+                if (dashUnit != null) {
+                    dashUnit.setUriFileName(uriFileName);
+                }
             } else { // 클라이언트한테 MPD 데이터 전달 후
                 // TODO : SEND SEGMENT DATA
                 /**
@@ -92,7 +109,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                  * NOT FOUND URI: /Users/.../Seoul_chunk_1_00002.m4s
                  */
                 content = new String(dashUnit.getSegmentByteData(uri), StandardCharsets.UTF_8);
-                logger.debug("SEGMENT [{}]", uri);
+                logger.debug("SEGMENT [{}] [len={}]", uri, content.length());
             }
             ///////////////////////////
 
@@ -190,6 +207,19 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.CONTINUE));
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    private String getFileNameFromUri(String uri) {
+        if (!uri.contains(".")) { return null; }
+        if (uri.contains("/")) {
+            int lastSlashIndex = uri.lastIndexOf("/");
+            if (lastSlashIndex == (uri.length() - 1)) { return null; }
+            uri = uri.substring(lastSlashIndex + 1).trim();
+        }
+        uri = uri.substring(0, uri.lastIndexOf(".")).trim();
+        return uri;
     }
     ////////////////////////////////////////////////////////////
 
