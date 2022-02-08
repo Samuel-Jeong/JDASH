@@ -23,7 +23,12 @@ public class DashHttpMessageSender {
 
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageSender.class);
 
-    private static final String URL = System.getProperty("url", "http://127.0.0.1:5000/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4");
+    private static final String URL =
+            System.getProperty(
+                    "url",
+                    "http://127.0.0.1:5000/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4"
+            );
+
     private URI uri = null;
     private String host = null;
     private SslContext sslContext = null;

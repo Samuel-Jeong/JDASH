@@ -2,7 +2,7 @@ package dash.unit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.lindstrom.mpd.data.MPD;
+import tool.parser.mpd.data.MPD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

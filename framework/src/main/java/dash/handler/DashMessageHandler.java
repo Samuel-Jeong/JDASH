@@ -5,14 +5,18 @@ import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpResponse;
 import dash.unit.DashUnit;
-import io.lindstrom.mpd.data.AdaptationSet;
-import io.lindstrom.mpd.data.MPD;
-import io.lindstrom.mpd.data.Period;
+import tool.parser.mpd.data.AdaptationSet;
+import tool.parser.mpd.data.MPD;
+import tool.parser.mpd.data.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashMessageHandler implements HttpMessageHandler {
@@ -54,7 +58,7 @@ public class DashMessageHandler implements HttpMessageHandler {
 
         ///////////////////////////
         // GENERATE MPD FROM MP4 BY GPAC
-        String mpdPath = null;
+        String mpdPath = null; // Absolute path
         try {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
@@ -68,8 +72,18 @@ public class DashMessageHandler implements HttpMessageHandler {
                 return null;
             }
 
+            ///////////////////////////
+            // FOR dash_encoder.py
+            //String mpdDirectoryPath = mpdPath.substring(0, mpdPath.lastIndexOf("/")); // Absolute path
+            //run = run + " --dash_folder " + mpdDirectoryPath + " " + uri; // + " " + mpdPath;
+            ///////////////////////////
+
+            ///////////////////////////
+            // FOR mp4_to_dash.py
             run = run + " " + uri + " " + mpdPath;
-            Runtime.getRuntime().exec(run); // IF mpd path is exists, just return
+            ///////////////////////////
+
+            runProcess(mpdPath, run);
 
             File mpdFile = new File(mpdPath);
             if (!mpdFile.exists()) {
@@ -88,10 +102,10 @@ public class DashMessageHandler implements HttpMessageHandler {
             }
             result = dashManager.getMpdParser().writeAsString(mpd);
 
-            List<Period> periodList = mpd.getPeriods();
+            /*List<Period> periodList = mpd.getPeriods();
             for (Period period : periodList) {
                 List<AdaptationSet> adaptationSetList = period.getAdaptationSets();
-            }
+            }*/
             ///////////////////////////
 
             ///////////////////////////
@@ -112,6 +126,42 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     public String getUri() {
         return uri;
+    }
+
+    public void runProcess(String mpdPath, String command) {
+        BufferedReader stdOut = null;
+        Process process = null;
+        try {
+            process = Runtime.getRuntime().exec(command);
+
+            String str;
+            stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            while ((str = stdOut.readLine()) != null) {
+                logger.debug(str);
+            }
+
+            process.waitFor();
+            int exitValue = process.exitValue();
+            if (exitValue != 0) {
+                throw new RuntimeException("[DashMessageHandler(uri=" + this.uri + ")] exit code is not 0 [" + exitValue + "]");
+            }
+
+            logger.debug("[DashMessageHandler(uri={})] Success to convert. (fileName={})", this.uri, mpdPath);
+        } catch (Exception e) {
+            logger.warn("DashMessageHandler.convertJpegsToM3u8.Exception", e);
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+
+            if (stdOut != null) {
+                try {
+                    stdOut.close();
+                } catch (IOException e) {
+                    logger.warn("[DashMessageHandler(uri={})] Fail to close the BufferReader.", this.uri, e);
+                }
+            }
+        }
     }
     ////////////////////////////////////////////////////////////////////////////////
 

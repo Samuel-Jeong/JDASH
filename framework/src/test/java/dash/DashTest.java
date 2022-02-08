@@ -3,7 +3,7 @@ package dash;
 import config.ConfigManager;
 import dash.simulation.DashHttpMessageSender;
 import dash.unit.DashUnit;
-import io.lindstrom.mpd.data.MPD;
+import tool.parser.mpd.data.MPD;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;

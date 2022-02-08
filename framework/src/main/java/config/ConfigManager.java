@@ -47,7 +47,7 @@ public class ConfigManager {
         File iniFile = new File(configPath);
         if (!iniFile.isFile() || !iniFile.exists()) {
             logger.warn("Not found the config path. (path={})", configPath);
-            return;
+            System.exit(1);
         }
 
         try {
