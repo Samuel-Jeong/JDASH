@@ -1,2 +1,2 @@
-/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4
-/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/CH01_01_GREETINGS/CH01_01_GREETINGS.mp4
+Seoul/Seoul.mp4
+CH01_01_GREETINGS/CH01_01_GREETINGS.mp4

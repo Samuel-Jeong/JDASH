@@ -5,7 +5,7 @@ SERVICE_NAME=jdash
 PATH_TO_JAR=$SERVICE_HOME/lib/jdash_server.jar
 JAVA_CONF=$SERVICE_HOME/config/user_conf.ini
 JAVA_OPT="-Dlogback.configurationFile=$SERVICE_HOME/config/logback.xml"
-JAVA_OPT="$JAVA_OPT -XX:+UseG1GC -XX:G1RSetUpdatingPauseTimePercent=5 -XX:MaxGCPauseMillis=500 -XX:+PrintGCDetails -verbosegc -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintPromotionFailure -XX:PrintFLSStatistics=1 -Xloggc:$SERVICE_HOME/logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M"
+JAVA_OPT="$JAVA_OPT -XX:+UseG1GC -XX:G1RSetUpdatingPauseTimePercent=5 -XX:MaxGCPauseMillis=500 -Xlog:gc* -verbosegc"
 
 function exec_start() {
 	ulimit -n 65535
