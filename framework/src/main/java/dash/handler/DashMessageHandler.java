@@ -37,8 +37,8 @@ public class DashMessageHandler implements HttpMessageHandler {
 
     ////////////////////////////////////////////////////////////////////////////////
     @Override
-    public Object handle(HttpRequest request, HttpResponse response, String originUri) {
-        if (request == null || originUri == null) { return null; }
+    public Object handle(HttpRequest request, HttpResponse response, String uriFileName) {
+        if (request == null || uriFileName == null) { return null; }
 
         ///////////////////////////
         // CHECK URI
@@ -107,8 +107,8 @@ public class DashMessageHandler implements HttpMessageHandler {
 
             ///////////////////////////
             // SAVE META DATA OF MEDIA
-            dashManager.addDashUnit(originUri, mpd);
-            DashUnit dashUnit = dashManager.getDashUnit(uri);
+            dashManager.addDashUnit(uriFileName, mpd);
+            DashUnit dashUnit = dashManager.getDashUnit(uriFileName);
             dashUnit.setInputFilePath(uri);
             dashUnit.setOutputFilePath(mpdPath);
             dashUnit.setMinBufferTime(mpd.getMinBufferTime());

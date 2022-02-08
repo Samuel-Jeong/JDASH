@@ -22,7 +22,6 @@ public class DashUnit {
 
     transient private final MPD mpd;
 
-    private String uriFileName = null;
     private String inputFilePath = null;
     private String outputFilePath = null;
     private String curSegmentName = null;
@@ -56,14 +55,6 @@ public class DashUnit {
 
     public MPD getMpd() {
         return mpd;
-    }
-
-    public String getUriFileName() {
-        return uriFileName;
-    }
-
-    public void setUriFileName(String uriFileName) {
-        this.uriFileName = uriFileName;
     }
 
     public String getInputFilePath() {

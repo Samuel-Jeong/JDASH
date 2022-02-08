@@ -99,4 +99,15 @@ public class FileManager {
         return resultPath;
     }
 
+    public static String getFileNameFromUri(String uri) {
+        if (!uri.contains(".")) { return null; }
+        if (uri.contains("/")) {
+            int lastSlashIndex = uri.lastIndexOf("/");
+            if (lastSlashIndex == (uri.length() - 1)) { return null; }
+            uri = uri.substring(lastSlashIndex + 1).trim();
+        }
+        uri = uri.substring(0, uri.lastIndexOf(".")).trim();
+        return uri;
+    }
+
 }

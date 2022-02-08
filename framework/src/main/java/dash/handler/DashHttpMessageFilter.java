@@ -19,6 +19,7 @@ import util.module.FileManager;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
@@ -53,24 +54,44 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         final HttpMethod method = request.method();
         String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s]
         String originUri = uri;
-        if (uri == null) { return; }
+        if (uri == null) {
+            logger.warn("[DashHttpMessageFilter] URI is not defined.");
+            return;
+        }
+        logger.debug("request: {}", request);
         ///////////////////////////
 
         ///////////////////////////
         // GET DASH UNIT
-        String uriFileName;
-        boolean isMpdUri = true;
         boolean isRegistered = false;
 
-        DashUnit dashUnit = DashManager.getInstance().getDashUnit(uri);
-        if (dashUnit != null) {
-            isRegistered = true;
-            uriFileName = dashUnit.getUriFileName(); // [Seoul]
-            if (!uriFileName.equals(getFileNameFromUri(uri))) { // [Seoul] vs [Seoul_chunk_1_00001]
-                isMpdUri = false;
+        DashUnit dashUnit = null;
+        String uriFileName = FileManager.getFileNameFromUri(uri); // [Seoul] or [Seoul_chunk_1_00001]
+        if (uriFileName == null) {
+            logger.warn("[DashHttpMessageFilter] Fail to get the URI file name.");
+            return;
+        }
+
+        for (Map.Entry<String, DashUnit> entry : DashManager.getInstance().getCloneDashMap().entrySet()) {
+            if (entry == null) { continue; }
+
+            DashUnit curDashUnit = entry.getValue();
+            if (curDashUnit == null) { continue; }
+
+            if (uriFileName.contains(curDashUnit.getId())) {
+                dashUnit = curDashUnit;
+                isRegistered = true;
+                logger.debug("[DashHttpMessageFilter] MATCHED! [{}] <> [{}]", uriFileName, dashUnit.getId());
+                uriFileName = dashUnit.getId();
+                break;
             }
-        } else {
-            uriFileName = getFileNameFromUri(uri); // [Seoul]
+        }
+
+        if (dashUnit == null) {
+            dashUnit = DashManager.getInstance().getDashUnit(uriFileName);
+            if (dashUnit != null) {
+                isRegistered = true;
+            }
         }
 
         uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
@@ -81,7 +102,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         ///////////////////////////
         // ROUTING IF NOT REGISTERED
         HttpMessageRoute uriRoute = null;
-        if (!isRegistered || isMpdUri) {
+        if (!isRegistered) {
             uriRoute = uriRouteTable.findUriRoute(method, uri);
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
@@ -96,9 +117,9 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             // PROCESS URI
             String httpMessageTypeString;
             String content;
-            if (!isRegistered || isMpdUri) { // GET MPD URI 수신 시 (not segment uri)
+            if (!isRegistered) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
-                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri);
+                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, uriFileName);
 
                 if (obj == null) {
                     httpMessageTypeString = HttpMessageManager.TYPE_PLAIN;
@@ -107,16 +128,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                     httpMessageTypeString = HttpMessageManager.TYPE_DASH_XML;
                     content = obj.toString();
                 }
-
-                dashUnit = DashManager.getInstance().getDashUnit(uri);
-                if (dashUnit != null) {
-                    dashUnit.setUriFileName(uriFileName);
-                }
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 // TODO : SEND SEGMENT DATA
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
                 logger.debug("SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                httpMessageTypeString = HttpMessageManager.TYPE_VIDEO_M4S;
+                httpMessageTypeString = HttpMessageManager.TYPE_VIDEO_MP4;
                 content = new String(segmentBytes, StandardCharsets.UTF_8);
             }
             ///////////////////////////
@@ -218,19 +234,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.CONTINUE));
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private String getFileNameFromUri(String uri) {
-        if (!uri.contains(".")) { return null; }
-        if (uri.contains("/")) {
-            int lastSlashIndex = uri.lastIndexOf("/");
-            if (lastSlashIndex == (uri.length() - 1)) { return null; }
-            uri = uri.substring(lastSlashIndex + 1).trim();
-        }
-        uri = uri.substring(0, uri.lastIndexOf(".")).trim();
-        return uri;
     }
     ////////////////////////////////////////////////////////////
 

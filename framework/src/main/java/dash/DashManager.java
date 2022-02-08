@@ -185,24 +185,7 @@ public class DashManager {
     }
 
     public DashUnit getDashUnit(String dashUnitId) { // dashUnitId > MEDIA URI
-        DashUnit dashUnit = dashUnitMap.get(dashUnitId);
-        if (dashUnit == null) {
-            // MEDIA URI 파일의 디렉토리 포함 여부 확인 > FOR SEGMENT
-            Path dashUnitPath = Paths.get(dashUnitId);
-            String lastPathName = dashUnitPath.getParent().toString();
-            for (Map.Entry<String, DashUnit> entry : getCloneDashMap().entrySet()) {
-                if (entry == null) { continue; }
-
-                dashUnit = entry.getValue();
-                if (dashUnit == null) { continue; }
-
-                if (dashUnit.getId().contains(lastPathName)) {
-                    return dashUnit;
-                }
-            }
-        }
-
-        return dashUnit;
+        return dashUnitMap.get(dashUnitId);
     }
 
     public int getDashUnitMapSize() {
