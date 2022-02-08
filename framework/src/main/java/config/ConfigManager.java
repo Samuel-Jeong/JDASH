@@ -19,7 +19,8 @@ public class ConfigManager {
 
     // Section String
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
-    public static final String SECTION_SCRIPT = "SCRIPT"; // FFMPEG Section 이름
+    public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
+    public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
     // Field String
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
@@ -27,6 +28,9 @@ public class ConfigManager {
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
+
+    public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
+    public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
 
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
@@ -36,6 +40,10 @@ public class ConfigManager {
     private long localSessionLimitTime = 0; // ms
     private String mediaBasePath;
     private String mediaListPath;
+
+    // NETWORK
+    private String httpListenIp = null;
+    private int httpListenPort = 0;
 
     // SCRIPT
     private String scriptPath = null;
@@ -58,7 +66,8 @@ public class ConfigManager {
             this.ini = new Ini(iniFile);
 
             loadCommonConfig();
-            loadFfmpegConfig();
+            loadNetworkConfig();
+            loadScriptConfig();
 
             logger.info("Load config [{}]", configPath);
         } catch (IOException e) {
@@ -108,9 +117,34 @@ public class ConfigManager {
 
     /**
      * @fn private void loadFfmpegConfig()
-     * @brief FFMPEG Section 을 로드하는 함수
+     * @brief NETWORK Section 을 로드하는 함수
      */
-    private void loadFfmpegConfig() {
+    private void loadNetworkConfig() {
+        this.httpListenIp = getIniValue(SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
+        if (this.httpListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String httpListenPortString = getIniValue(SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
+        if (httpListenPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.httpListenPort = Integer.parseInt(httpListenPortString);
+            if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
+                this.httpListenPort = 5858; // default
+            }
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_NETWORK);
+    }
+
+    /**
+     * @fn private void loadScriptConfig()
+     * @brief SCRIPT Section 을 로드하는 함수
+     */
+    private void loadScriptConfig() {
         this.scriptPath = getIniValue(SECTION_SCRIPT, FIELD_SCRIPT_PATH);
         if (this.scriptPath == null) {
             logger.error("Fail to load [{}-{}].", SECTION_SCRIPT, FIELD_SCRIPT_PATH);
@@ -180,6 +214,14 @@ public class ConfigManager {
 
     public String getMediaListPath() {
         return mediaListPath;
+    }
+
+    public String getHttpListenIp() {
+        return httpListenIp;
+    }
+
+    public int getHttpListenPort() {
+        return httpListenPort;
     }
 
     public String getScriptPath() {

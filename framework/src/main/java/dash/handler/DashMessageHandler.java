@@ -149,7 +149,7 @@ public class DashMessageHandler implements HttpMessageHandler {
 
             logger.debug("[DashMessageHandler(uri={})] Success to convert. (fileName={})", this.uri, mpdPath);
         } catch (Exception e) {
-            logger.warn("DashMessageHandler.convertJpegsToM3u8.Exception", e);
+            logger.warn("DashMessageHandler.runProcess.Exception", e);
         } finally {
             if (process != null) {
                 process.destroy();

@@ -14,6 +14,7 @@ import network.socket.SocketManager;
 import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 
@@ -59,7 +60,8 @@ public class DashHttpMessageSender {
                 true, SocketProtocol.TCP
         );
         remoteAddress = new NetAddress(
-                "127.0.0.1", 5000,
+                AppInstance.getInstance().getConfigManager().getHttpListenIp(),
+                AppInstance.getInstance().getConfigManager().getHttpListenPort(),
                 true, SocketProtocol.TCP
         );
 

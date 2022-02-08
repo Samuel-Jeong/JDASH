@@ -18,6 +18,7 @@ import network.socket.SocketManager;
 import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
 
 public class HttpMessageManager {
@@ -56,7 +57,8 @@ public class HttpMessageManager {
         this.routeTable = new HttpMessageRouteTable();
 
         localListenAddress = new NetAddress(
-                "127.0.0.1", 5000,
+                AppInstance.getInstance().getConfigManager().getHttpListenIp(),
+                AppInstance.getInstance().getConfigManager().getHttpListenPort(),
                 true, SocketProtocol.TCP
         );
     }
