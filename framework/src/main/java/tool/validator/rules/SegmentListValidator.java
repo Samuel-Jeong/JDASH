@@ -1,7 +1,7 @@
 package tool.validator.rules;
 
-import tool.parser.mpd.data.MPD;
-import tool.parser.mpd.data.SegmentList;
+import tool.parser.data.MPD;
+import tool.parser.data.SegmentList;
 
 import java.util.ArrayList;
 import java.util.Arrays;

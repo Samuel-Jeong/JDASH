@@ -1,8 +1,8 @@
 package tool.validator.rules;
 
-import tool.parser.mpd.data.MPD;
-import tool.parser.mpd.data.SubRepresentation;
-import tool.parser.mpd.data.descriptor.Descriptor;
+import tool.parser.data.MPD;
+import tool.parser.data.SubRepresentation;
+import tool.parser.data.descriptor.Descriptor;
 
 import java.util.ArrayList;
 import java.util.List;

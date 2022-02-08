@@ -25,6 +25,8 @@ public class ConfigManager {
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
     public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
+    public static final String FIELD_BASE_PATH = "BASE_PATH";
+    public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
 
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
@@ -32,6 +34,8 @@ public class ConfigManager {
     private int sendBufSize = 0;
     private int recvBufSize = 0;
     private long localSessionLimitTime = 0; // ms
+    private String basePath;
+    private String mediaListPath;
 
     // SCRIPT
     private String scriptPath = null;
@@ -84,6 +88,18 @@ public class ConfigManager {
         this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
         if (this.localSessionLimitTime < 0) {
             logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
+            System.exit(1);
+        }
+
+        this.basePath = getIniValue(SECTION_COMMON, FIELD_BASE_PATH);
+        if (basePath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_BASE_PATH);
+            System.exit(1);
+        }
+
+        this.mediaListPath = getIniValue(SECTION_COMMON, FIELD_MEDIA_LIST_PATH);
+        if (mediaListPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_MEDIA_LIST_PATH);
             System.exit(1);
         }
 
@@ -156,6 +172,14 @@ public class ConfigManager {
 
     public int getRecvBufSize() {
         return recvBufSize;
+    }
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public String getMediaListPath() {
+        return mediaListPath;
     }
 
     public String getScriptPath() {

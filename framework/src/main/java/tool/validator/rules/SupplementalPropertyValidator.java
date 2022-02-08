@@ -1,7 +1,7 @@
 package tool.validator.rules;
 
-import tool.parser.mpd.data.MPD;
-import tool.parser.mpd.data.descriptor.Descriptor;
+import tool.parser.data.MPD;
+import tool.parser.data.descriptor.Descriptor;
 
 import java.util.Arrays;
 import java.util.List;

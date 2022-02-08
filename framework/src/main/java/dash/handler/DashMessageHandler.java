@@ -1,23 +1,21 @@
 package dash.handler;
 
+import config.ConfigManager;
 import dash.DashManager;
 import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpResponse;
 import dash.unit.DashUnit;
-import tool.parser.mpd.data.AdaptationSet;
-import tool.parser.mpd.data.MPD;
-import tool.parser.mpd.data.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import tool.parser.data.MPD;
+import util.module.FileManager;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DashMessageHandler implements HttpMessageHandler {
 
@@ -25,11 +23,15 @@ public class DashMessageHandler implements HttpMessageHandler {
     private static final Logger logger = LoggerFactory.getLogger(DashMessageHandler.class);
 
     private final String uri;
+    private final String scriptPath;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
     public DashMessageHandler(String uri) {
         this.uri = uri;
+
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        scriptPath = FileManager.concatFilePath(configManager.getBasePath(), configManager.getScriptPath());
     }
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,7 +64,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         try {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
-            String run = "python3 " + AppInstance.getInstance().getConfigManager().getScriptPath();
+            String run = "python3 " + scriptPath;
             if (uri.endsWith(".mp4")) {
                 mpdPath = uri.replace(".mp4", ".mpd");
             }
@@ -101,17 +103,16 @@ public class DashMessageHandler implements HttpMessageHandler {
                 return null;
             }
             result = dashManager.getMpdParser().writeAsString(mpd);
-
-            /*List<Period> periodList = mpd.getPeriods();
-            for (Period period : periodList) {
-                List<AdaptationSet> adaptationSetList = period.getAdaptationSets();
-            }*/
             ///////////////////////////
 
             ///////////////////////////
             // SAVE META DATA OF MEDIA
             dashManager.addDashUnit(uri, mpd);
             DashUnit dashUnit = dashManager.getDashUnit(uri);
+            dashUnit.setInputFilePath(uri);
+            dashUnit.setOutputFilePath(mpdPath);
+            dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+            dashUnit.setDuration(mpd.getMediaPresentationDuration());
             logger.debug("[DashMessageHandler(uri={})] CREATED DashUnit: \n{}", this.uri, dashUnit);
             ///////////////////////////
         } catch (Exception e) {

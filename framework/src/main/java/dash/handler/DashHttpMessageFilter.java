@@ -76,7 +76,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         try {
             ///////////////////////////
             // PROCESS URI
-            String content = null;
+            String content;
             if (!isRegistered) { // URI GET 최초 수신 시
                 final HttpRequest requestWrapper = new HttpRequest(request);
                 final Object obj = route.getHandler().handle(requestWrapper, null);
@@ -84,14 +84,15 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             } else { // 클라이언트한테 MPD 데이터 전달 후
                 // TODO : SEND SEGMENT DATA
                 /**
-                 * 16:52:26.393 [nioEventLoopGroup-3-1] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_init_0.m4s
-                 * 16:52:26.410 [nioEventLoopGroup-3-2] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_init_1.m4s
-                 * 16:52:26.441 [nioEventLoopGroup-3-3] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_chunk_0_00001.m4s
-                 * 16:52:26.455 [nioEventLoopGroup-3-5] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_chunk_1_00001.m4s
-                 * 16:52:26.479 [nioEventLoopGroup-3-6] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_chunk_0_00002.m4s
-                 * 16:52:26.517 [nioEventLoopGroup-3-4] WARN dash.handler.DashHttpMessageFilter - NOT FOUND URI: /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul_chunk_1_00002.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_init_0.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_init_1.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_chunk_0_00001.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_chunk_1_00001.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_chunk_0_00002.m4s
+                 * NOT FOUND URI: /Users/.../Seoul_chunk_1_00002.m4s
                  */
-                //content = dashUnit.getSegmentByteData(uri);
+                content = new String(dashUnit.getSegmentByteData(uri), StandardCharsets.UTF_8);
+                logger.debug("SEGMENT [{}]", uri);
             }
             ///////////////////////////
 

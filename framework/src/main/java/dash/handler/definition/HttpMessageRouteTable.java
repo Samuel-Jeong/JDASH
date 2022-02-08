@@ -1,10 +1,16 @@
 package dash.handler.definition;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.netty.handler.codec.http.HttpMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
 public class HttpMessageRouteTable {
+
+    private static final Logger logger = LoggerFactory.getLogger(HttpMessageRouteTable.class);
 
     ////////////////////////////////////////////////////////////
     private final ArrayList<HttpMessageRoute> routes;
@@ -19,6 +25,7 @@ public class HttpMessageRouteTable {
     ////////////////////////////////////////////////////////////
     public void addRoute(final HttpMessageRoute route) {
         this.routes.add(route);
+        logger.debug("[HttpMessageRouteTable] ROUTE [{}] is added.", route);
     }
 
     public HttpMessageRoute findRoute(final HttpMethod method, final String path) {
@@ -29,6 +36,12 @@ public class HttpMessageRouteTable {
         }
 
         return null;
+    }
+
+    @Override
+    public String toString() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

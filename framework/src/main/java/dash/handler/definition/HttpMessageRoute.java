@@ -1,5 +1,7 @@
 package dash.handler.definition;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.netty.handler.codec.http.HttpMethod;
 
 public class HttpMessageRoute {
@@ -37,6 +39,12 @@ public class HttpMessageRoute {
 
     public boolean matches(final HttpMethod method, final String path) {
         return this.method.equals(method) && this.path.equals(path);
+    }
+
+    @Override
+    public String toString() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

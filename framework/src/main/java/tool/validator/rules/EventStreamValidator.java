@@ -1,6 +1,6 @@
 package tool.validator.rules;
 
-import tool.parser.mpd.data.EventStream;
+import tool.parser.data.EventStream;
 
 import java.util.Arrays;
 import java.util.List;

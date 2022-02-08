@@ -1,9 +1,9 @@
 package tool.validator;
 
-import tool.parser.mpd.MPDParser;
-import tool.parser.mpd.data.MPD;
-import tool.validator.rules.Violation;
 import org.xml.sax.SAXException;
+import tool.parser.MPDParser;
+import tool.parser.data.MPD;
+import tool.validator.rules.Violation;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;

@@ -1,21 +1,29 @@
 package dash;
 
+import config.ConfigManager;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
 import dash.unit.DashUnit;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
-import tool.parser.mpd.MPDParser;
-import tool.parser.mpd.data.MPD;
+import media.MediaManager;
 import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
+import tool.parser.MPDParser;
+import tool.parser.data.MPD;
+import util.module.FileManager;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,7 +36,8 @@ public class DashManager {
 
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
-    private HttpMessageManager httpMessageManager;
+    private final HttpMessageManager httpMessageManager;
+    private final MediaManager mediaManager;
 
     private final MPDParser mpdParser = new MPDParser();
     private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
@@ -37,24 +46,38 @@ public class DashManager {
 
     ////////////////////////////////////////////////////////////
     public DashManager() {
+        ///////////////////////////
         // 인스턴스 생성
         baseEnvironment = new BaseEnvironment(
                 new ScheduleManager(),
                 new ResourceManager(5000, 7000),
                 DebugLevel.DEBUG
         );
+        ///////////////////////////
 
+        ///////////////////////////
         // SocketManager 생성
         socketManager = new SocketManager(
                 baseEnvironment,
                 false, true,
                 10, 500000, 500000
         );
+        ///////////////////////////
 
+        ///////////////////////////
+        // HttpMessageManager 생성
         httpMessageManager = new HttpMessageManager(
                 baseEnvironment.getScheduleManager(),
                 socketManager
         );
+        ///////////////////////////
+
+        ///////////////////////////
+        // MediaManager 생성
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        String mediaListPath = FileManager.concatFilePath(configManager.getBasePath(), configManager.getMediaListPath());
+        mediaManager = new MediaManager(mediaListPath);
+        ///////////////////////////
     }
 
     public static DashManager getInstance() {
@@ -68,18 +91,23 @@ public class DashManager {
 
     ////////////////////////////////////////////////////////////
     public void start() {
+        ///////////////////////////
+        // LOAD MEDIA URI
+        if (mediaManager.loadUriList()) {
+            for (String uri : mediaManager.getUriList()) {
+                httpMessageManager.get(
+                        uri,
+                        new DashMessageHandler(uri)
+                );
+            }
+
+            logger.debug("[MediaManager] Success to load the uri list.");
+        } else {
+            logger.warn("[MediaManager] Fail to load the uri list.");
+        }
+        ///////////////////////////
+
         httpMessageManager.start();
-
-        // TODO : Set Allowed URLs
-        httpMessageManager.get(
-                "/",
-                new DashMessageHandler("/")
-        );
-
-        httpMessageManager.get(
-                "/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4",
-                new DashMessageHandler("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/Seoul/Seoul.mp4")
-        );
     }
 
     public void stop() {
@@ -100,8 +128,8 @@ public class DashManager {
         return httpMessageManager;
     }
 
-    public void setHttpMessageManager(HttpMessageManager httpMessageManager) {
-        this.httpMessageManager = httpMessageManager;
+    public MediaManager getMediaManager() {
+        return mediaManager;
     }
     ////////////////////////////////////////////////////////////
 
@@ -158,8 +186,25 @@ public class DashManager {
         }
     }
 
-    public DashUnit getDashUnit(String dashUnitId) {
-        return dashUnitMap.get(dashUnitId);
+    public DashUnit getDashUnit(String dashUnitId) { // dashUnitId > MEDIA URI
+        DashUnit dashUnit = dashUnitMap.get(dashUnitId);
+        if (dashUnit == null) {
+            // MEDIA URI 파일의 디렉토리 포함 여부 확인 > FOR SEGMENT
+            Path dashUnitPath = Paths.get(dashUnitId);
+            String lastPathName = dashUnitPath.getParent().toString();
+            for (Map.Entry<String, DashUnit> entry : getCloneDashMap().entrySet()) {
+                if (entry == null) { continue; }
+
+                dashUnit = entry.getValue();
+                if (dashUnit == null) { continue; }
+
+                if (dashUnit.getId().contains(lastPathName)) {
+                    return dashUnit;
+                }
+            }
+        }
+
+        return dashUnit;
     }
 
     public int getDashUnitMapSize() {

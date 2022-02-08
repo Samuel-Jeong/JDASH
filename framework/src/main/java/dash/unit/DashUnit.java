@@ -2,13 +2,14 @@ package dash.unit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import tool.parser.mpd.data.MPD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tool.parser.data.MPD;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 
 public class DashUnit {
 
@@ -22,15 +23,10 @@ public class DashUnit {
 
     private String inputFilePath = null;
     private String outputFilePath = null;
-
-    private String url = null;
     private String curSegmentName = null;
 
-    private double duration = 0.0;
-    private double minBufferTime= 0.0;
-    private double curNetworkBitRate= 0.0;
-    private double curSelectedBitRate= 0.0;
-    private double curBufferTime= 0.0;
+    private Duration duration = null;
+    private Duration minBufferTime= null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -86,27 +82,19 @@ public class DashUnit {
         this.outputFilePath = outputFilePath;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public double getDuration() {
+    public Duration getDuration() {
         return duration;
     }
 
-    public void setDuration(double duration) {
+    public void setDuration(Duration duration) {
         this.duration = duration;
     }
 
-    public double getMinBufferTime() {
+    public Duration getMinBufferTime() {
         return minBufferTime;
     }
 
-    public void setMinBufferTime(double minBufferTime) {
+    public void setMinBufferTime(Duration minBufferTime) {
         this.minBufferTime = minBufferTime;
     }
 
@@ -116,30 +104,6 @@ public class DashUnit {
 
     public void setCurSegmentName(String curSegmentName) {
         this.curSegmentName = curSegmentName;
-    }
-
-    public double getCurNetworkBitRate() {
-        return curNetworkBitRate;
-    }
-
-    public void setCurNetworkBitRate(double curNetworkBitRate) {
-        this.curNetworkBitRate = curNetworkBitRate;
-    }
-
-    public double getCurSelectedBitRate() {
-        return curSelectedBitRate;
-    }
-
-    public void setCurSelectedBitRate(double curSelectedBitRate) {
-        this.curSelectedBitRate = curSelectedBitRate;
-    }
-
-    public double getCurBufferTime() {
-        return curBufferTime;
-    }
-
-    public void setCurBufferTime(double curBufferTime) {
-        this.curBufferTime = curBufferTime;
     }
 
     @Override

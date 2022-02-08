@@ -53,6 +53,15 @@ public class HttpMessageManager {
         this.socketManager = socketManager;
         this.routeTable = new HttpMessageRouteTable();
 
+        localListenAddress = new NetAddress(
+                "127.0.0.1", 5000,
+                true, SocketProtocol.TCP
+        );
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void start() {
         SslContext sslContext = null;
         try {
             if (SSL) {
@@ -65,17 +74,8 @@ public class HttpMessageManager {
         } catch (Exception e) {
             logger.warn("[HttpMessageManager] SSL Initialization error.", e);
         }
-
-        localListenAddress = new NetAddress(
-                "127.0.0.1", 5000,
-                true, SocketProtocol.TCP
-        );
         socketManager.addSocket(localListenAddress, new HttpMessageServerInitializer(sslContext));
-    }
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    public void start() {
         // OPEN LISTEN CHANNEL
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
         localGroupSocket.getListenSocket().openListenChannel();
@@ -88,7 +88,9 @@ public class HttpMessageManager {
 
         // CLOSE LISTEN CHANNEL
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
-        localGroupSocket.getListenSocket().closeListenChannel();
+        if (localGroupSocket != null) {
+            localGroupSocket.getListenSocket().closeListenChannel();
+        }
         logger.debug("[HttpMessageManager] CLOSE [{}]", localGroupSocket);
     }
     ////////////////////////////////////////////////////////////
