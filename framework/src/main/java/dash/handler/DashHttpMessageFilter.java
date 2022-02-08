@@ -53,12 +53,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
         final HttpMethod method = request.method();
         String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s]
-        String originUri = uri;
         if (uri == null) {
             logger.warn("[DashHttpMessageFilter] URI is not defined.");
             return;
         }
-        logger.debug("request: {}", request);
+        logger.debug("[DashHttpMessageFilter] REQUEST: \n{}", request);
         ///////////////////////////
 
         ///////////////////////////
@@ -115,31 +114,17 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         try {
             ///////////////////////////
             // PROCESS URI
-            String httpMessageTypeString;
-            String content;
             if (!isRegistered) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
                 final Object obj = uriRoute.getHandler().handle(requestWrapper, null, uriFileName);
+                String content = obj == null ? "" : obj.toString();
 
-                if (obj == null) {
-                    httpMessageTypeString = HttpMessageManager.TYPE_PLAIN;
-                    content = "";
-                } else {
-                    httpMessageTypeString = HttpMessageManager.TYPE_DASH_XML;
-                    content = obj.toString();
-                }
+                writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
-                // TODO : SEND SEGMENT DATA
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
                 logger.debug("SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                httpMessageTypeString = HttpMessageManager.TYPE_VIDEO_MP4;
-                content = new String(segmentBytes, StandardCharsets.UTF_8);
+                writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
             }
-            ///////////////////////////
-
-            ///////////////////////////
-            // SEND RESPONSE
-            writeResponse(ctx, request, HttpResponseStatus.OK, httpMessageTypeString, content);
             ///////////////////////////
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
@@ -181,7 +166,9 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
         writeResponse(ctx, request, status, HttpMessageManager.TYPE_PLAIN, status.reasonPhrase().toString());
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     private static void writeResponse(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request,
@@ -189,6 +176,16 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             final CharSequence contentType,
             final String content) {
         final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
+        writeResponse(ctx, request, status, entity, contentType, bytes.length);
+    }
+
+    private static void writeResponse(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request,
+            final HttpResponseStatus status,
+            final CharSequence contentType,
+            final byte[] bytes) {
         final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
         writeResponse(ctx, request, status, entity, contentType, bytes.length);
     }
@@ -227,9 +224,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             ctx.writeAndFlush(response, ctx.voidPromise());
         }
 
-        logger.debug("response: {}", response);
+        logger.debug("[DashHttpMessageFilter] RESPONSE: {}", response);
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     private static void send100Continue(final ChannelHandlerContext ctx) {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
