@@ -51,31 +51,37 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         final HttpMethod method = request.method();
-        String uri = request.uri(); // /Seoul.mp4 or /Seoul_chunk_1_00001.m4s
+        String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s]
+        String originUri = uri;
         if (uri == null) { return; }
         ///////////////////////////
 
         ///////////////////////////
         // GET DASH UNIT
         String uriFileName;
+        boolean isMpdUri = true;
         boolean isRegistered = false;
+
         DashUnit dashUnit = DashManager.getInstance().getDashUnit(uri);
         if (dashUnit != null) {
             isRegistered = true;
-            uriFileName = dashUnit.getUriFileName(); // Seoul
+            uriFileName = dashUnit.getUriFileName(); // [Seoul]
+            if (!uriFileName.equals(getFileNameFromUri(uri))) { // [Seoul] vs [Seoul_chunk_1_00001]
+                isMpdUri = false;
+            }
         } else {
-            uriFileName = getFileNameFromUri(uri); // Seoul
+            uriFileName = getFileNameFromUri(uri); // [Seoul]
         }
 
-        uri = FileManager.concatFilePath(uriFileName, uri); // Seoul/Seoul.mp4 or Seoul/Seoul_chunk_1_00001.m4s
-        uri = FileManager.concatFilePath(basePath, uri); // /Users/.../Seoul/Seoul.mp4 or /Users/.../Seoul/Seoul_chunk_1_00001.m4s
+        uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
+        uri = FileManager.concatFilePath(basePath, uri); // [/Users/.../Seoul/Seoul.mp4] or [/Users/.../Seoul/Seoul_chunk_1_00001.m4s]
         request.setUri(uri);
         ///////////////////////////
 
         ///////////////////////////
         // ROUTING IF NOT REGISTERED
         HttpMessageRoute route = null;
-        if (!isRegistered) {
+        if (!isRegistered || isMpdUri) {
             route = routeTable.findRoute(method, uri);
             if (route == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
@@ -89,25 +95,17 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             ///////////////////////////
             // PROCESS URI
             String content;
-            if (!isRegistered) { // URI GET 최초 수신 시
+            if (!isRegistered || isMpdUri) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
-                final Object obj = route.getHandler().handle(requestWrapper, null);
+                final Object obj = route.getHandler().handle(requestWrapper, null, originUri);
                 content = obj == null ? "" : obj.toString();
 
                 dashUnit = DashManager.getInstance().getDashUnit(uri);
                 if (dashUnit != null) {
                     dashUnit.setUriFileName(uriFileName);
                 }
-            } else { // 클라이언트한테 MPD 데이터 전달 후
+            } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 // TODO : SEND SEGMENT DATA
-                /**
-                 * NOT FOUND URI: /Users/.../Seoul_init_0.m4s
-                 * NOT FOUND URI: /Users/.../Seoul_init_1.m4s
-                 * NOT FOUND URI: /Users/.../Seoul_chunk_0_00001.m4s
-                 * NOT FOUND URI: /Users/.../Seoul_chunk_1_00001.m4s
-                 * NOT FOUND URI: /Users/.../Seoul_chunk_0_00002.m4s
-                 * NOT FOUND URI: /Users/.../Seoul_chunk_1_00002.m4s
-                 */
                 content = new String(dashUnit.getSegmentByteData(uri), StandardCharsets.UTF_8);
                 logger.debug("SEGMENT [{}] [len={}]", uri, content.length());
             }
