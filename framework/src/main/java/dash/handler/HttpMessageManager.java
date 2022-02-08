@@ -37,6 +37,8 @@ public class HttpMessageManager {
 
     public static final String SERVER_NAME = "JDASH";
     public static final String TYPE_PLAIN = "text/plain; charset=UTF-8";
+    public static final String TYPE_DASH_XML = "application/dash+xml; charset=UTF-8";
+    public static final String TYPE_VIDEO_M4S = "video/m4s; charset=UTF-8";
     public static final String TYPE_JSON = "application/json; charset=UTF-8";
     public static final String HTTP_SCHEDULE_KEY = "HTTP_MESSAGE_HANDLE";
 

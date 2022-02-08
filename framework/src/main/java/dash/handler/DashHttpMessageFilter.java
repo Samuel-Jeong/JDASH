@@ -26,12 +26,12 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageFilter.class);
 
     private final String basePath;
-    private final HttpMessageRouteTable routeTable;
+    private final HttpMessageRouteTable uriRouteTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
-        this.routeTable = routeTable;
+        this.uriRouteTable = routeTable;
         this.basePath = AppInstance.getInstance().getConfigManager().getMediaBasePath();
     }
     ////////////////////////////////////////////////////////////
@@ -80,10 +80,10 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
         ///////////////////////////
         // ROUTING IF NOT REGISTERED
-        HttpMessageRoute route = null;
+        HttpMessageRoute uriRoute = null;
         if (!isRegistered || isMpdUri) {
-            route = routeTable.findRoute(method, uri);
-            if (route == null) {
+            uriRoute = uriRouteTable.findUriRoute(method, uri);
+            if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
                 writeNotFound(ctx, request);
                 return;
@@ -94,11 +94,19 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         try {
             ///////////////////////////
             // PROCESS URI
+            String httpMessageTypeString;
             String content;
             if (!isRegistered || isMpdUri) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
-                final Object obj = route.getHandler().handle(requestWrapper, null, originUri);
-                content = obj == null ? "" : obj.toString();
+                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri);
+
+                if (obj == null) {
+                    httpMessageTypeString = HttpMessageManager.TYPE_PLAIN;
+                    content = "";
+                } else {
+                    httpMessageTypeString = HttpMessageManager.TYPE_DASH_XML;
+                    content = obj.toString();
+                }
 
                 dashUnit = DashManager.getInstance().getDashUnit(uri);
                 if (dashUnit != null) {
@@ -106,14 +114,16 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 }
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 // TODO : SEND SEGMENT DATA
-                content = new String(dashUnit.getSegmentByteData(uri), StandardCharsets.UTF_8);
-                logger.debug("SEGMENT [{}] [len={}]", uri, content.length());
+                byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
+                logger.debug("SEGMENT [{}] [len={}]", uri, segmentBytes.length);
+                httpMessageTypeString = HttpMessageManager.TYPE_VIDEO_M4S;
+                content = new String(segmentBytes, StandardCharsets.UTF_8);
             }
             ///////////////////////////
 
             ///////////////////////////
-            // RESPONSE
-            writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, content);
+            // SEND RESPONSE
+            writeResponse(ctx, request, HttpResponseStatus.OK, httpMessageTypeString, content);
             ///////////////////////////
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
@@ -182,7 +192,8 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 HttpVersion.HTTP_1_1,
                 status,
                 buf,
-                false);
+                false
+        );
 
         final ZonedDateTime dateTime = ZonedDateTime.now();
         final DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
@@ -199,6 +210,8 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         } else {
             ctx.writeAndFlush(response, ctx.voidPromise());
         }
+
+        logger.debug("response: {}", response);
     }
 
     private static void send100Continue(final ChannelHandlerContext ctx) {

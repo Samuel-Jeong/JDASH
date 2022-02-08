@@ -28,7 +28,7 @@ public class HttpMessageRouteTable {
         logger.debug("[HttpMessageRouteTable] ROUTE [{}] is added.", route);
     }
 
-    public HttpMessageRoute findRoute(final HttpMethod method, final String path) {
+    public HttpMessageRoute findUriRoute(final HttpMethod method, final String path) {
         for (final HttpMessageRoute route : routes) {
             if (route.matches(method, path)) {
                 return route;
