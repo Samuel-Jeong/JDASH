@@ -1,6 +1,13 @@
 # MPEG DASH Server
 ~~~
 비디오 라이브 스트리밍 서버
+
++ REF : python-ffmpeg-video-streaming
+(https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
+
++ REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
+(https://github.com/carlanton/mpd-tools)
+
 ~~~
 
 ## Flow
