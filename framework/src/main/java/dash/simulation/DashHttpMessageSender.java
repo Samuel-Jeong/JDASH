@@ -15,7 +15,7 @@ import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.ResourceManager;
+import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 
 import java.net.URI;
@@ -48,6 +48,7 @@ public class DashHttpMessageSender {
                 new ResourceManager(5000, 7000),
                 DebugLevel.DEBUG
         );
+        baseEnvironment.start();
 
         socketManager = new SocketManager(
                 baseEnvironment,

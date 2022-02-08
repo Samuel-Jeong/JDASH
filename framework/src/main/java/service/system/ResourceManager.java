@@ -1,4 +1,4 @@
-package service;
+package service.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,6 @@ public class ResourceManager {
     public ResourceManager(int targetPortMin, int targetPortMax) {
         this.targetPortMin = targetPortMin;
         this.targetPortMax = targetPortMax;
-        initResource();
     }
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -3,6 +3,10 @@ package service;
 import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.monitor.FileKeeper;
+import service.monitor.HaHandler;
+import service.monitor.LongSessionRemover;
+import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 
 import java.io.File;
@@ -70,6 +74,16 @@ public class ServiceManager {
                             3, 0, true
                     )
             );
+
+            FileKeeper fileKeeper = new FileKeeper(
+                    scheduleManager,
+                    FileKeeper.class.getSimpleName(),
+                    0, DELAY, TimeUnit.MILLISECONDS,
+                    10, 0, true
+            );
+            if (fileKeeper.init()) {
+                scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
+            }
         }
 
         DashManager dashManager = DashManager.getInstance();

@@ -11,18 +11,14 @@ import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.ResourceManager;
+import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 import tool.parser.MPDParser;
 import tool.parser.data.MPD;
-import util.module.FileManager;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -89,20 +85,11 @@ public class DashManager {
 
     ////////////////////////////////////////////////////////////
     public void start() {
+        baseEnvironment.start();
+
         ///////////////////////////
         // LOAD MEDIA URI
-        if (mediaManager.loadUriList()) {
-            for (String uri : mediaManager.getUriList()) {
-                httpMessageManager.get(
-                        uri,
-                        new DashMessageHandler(uri)
-                );
-            }
-
-            logger.debug("[MediaManager] Success to load the uri list.");
-        } else {
-            logger.warn("[MediaManager] Fail to load the uri list.");
-        }
+        loadMediaUriList();
         ///////////////////////////
 
         httpMessageManager.start();
@@ -110,6 +97,23 @@ public class DashManager {
 
     public void stop() {
         httpMessageManager.stop();
+        baseEnvironment.stop();
+    }
+
+    public void loadMediaUriList() {
+        if (mediaManager.loadUriList()) {
+            httpMessageManager.clear();
+            for (String uri : mediaManager.getUriList()) {
+                httpMessageManager.get(
+                        uri,
+                        new DashMessageHandler(uri)
+                );
+            }
+
+            logger.debug("[MediaManager] Success to load the uri list. \n{}", mediaManager);
+        } else {
+            logger.warn("[MediaManager] Fail to load the uri list.");
+        }
     }
     ////////////////////////////////////////////////////////////
 

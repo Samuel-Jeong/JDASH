@@ -14,7 +14,7 @@ import network.socket.SocketManager;
 import network.socket.SocketProtocol;
 import org.junit.Assert;
 import org.junit.Test;
-import service.ResourceManager;
+import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 
 public class NetworkTest {
@@ -32,6 +32,7 @@ public class NetworkTest {
                 new ResourceManager(5000, 7000),
                 DebugLevel.DEBUG
         );
+        baseEnvironment.start();
 
         // SocketManager 생성
         SocketManager socketManager = new SocketManager(
@@ -103,6 +104,7 @@ public class NetworkTest {
                 new ResourceManager(5000, 7000),
                 DebugLevel.DEBUG
         );
+        baseEnvironment.start();
 
         // SocketManager 생성
         SocketManager socketManager = new SocketManager(

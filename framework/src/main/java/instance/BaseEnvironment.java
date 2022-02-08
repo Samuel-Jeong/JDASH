@@ -2,7 +2,7 @@ package instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.ResourceManager;
+import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
 
 public class BaseEnvironment {
@@ -29,6 +29,10 @@ public class BaseEnvironment {
 
     ////////////////////////////////////////////////////////////
     // FUNCTIONS
+    public void start() {
+        portResourceManager.initResource();
+    }
+
     public void stop() {
         scheduleManager.finish();
         portResourceManager.releaseResource();

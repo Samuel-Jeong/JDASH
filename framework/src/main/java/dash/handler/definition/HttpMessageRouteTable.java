@@ -38,6 +38,10 @@ public class HttpMessageRouteTable {
         return null;
     }
 
+    public void clear() {
+        routes.clear();
+    }
+
     @Override
     public String toString() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();

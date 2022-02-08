@@ -107,6 +107,10 @@ public class HttpMessageManager {
     public void post(final String path, final HttpMessageHandler handler) {
         this.routeTable.addRoute(new HttpMessageRoute(HttpMethod.POST, path, handler));
     }
+
+    public void clear() {
+        this.routeTable.clear();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

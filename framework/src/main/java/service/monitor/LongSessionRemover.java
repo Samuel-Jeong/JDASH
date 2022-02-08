@@ -1,9 +1,10 @@
-package service;
+package service.monitor;
 
 import dash.DashManager;
 import dash.unit.DashUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 
