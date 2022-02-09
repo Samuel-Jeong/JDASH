@@ -102,12 +102,8 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
         String parentPathOfUri = FileManager.getParentPathFromUri(uri); // aws/20210209
         if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
-            logger.debug("prev parentPathOfUri: {}", parentPathOfUri);
             parentPathOfUri = FileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
-            logger.debug("uriFileName: {}, uri={}", uriFileName, uri);
-            logger.debug("after parentPathOfUri: {}", parentPathOfUri);
             uri = FileManager.concatFilePath(parentPathOfUri, FileManager.getFilePathOnlyFromUri(uri)); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
-            logger.debug("uri: {}", uri);
         } else {
             uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
         }
@@ -140,7 +136,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
-                logger.debug("SEGMENT [{}] [len={}]", uri, segmentBytes.length);
+                logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
                 writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
             }
             ///////////////////////////
