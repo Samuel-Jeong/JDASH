@@ -30,7 +30,7 @@ public class ServiceManager {
     private final DashManager dashManager = new DashManager();
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
-    private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "urtsp_server.lock"));
+    private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "dash_server.lock"));
     private FileChannel fileChannel;
     private FileLock lock;
     private static final int DELAY = 1000;
