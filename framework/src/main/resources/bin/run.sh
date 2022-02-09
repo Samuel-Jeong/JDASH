@@ -38,6 +38,16 @@ function exec_stop() {
 	fi
 }
 
+function exec_status() {
+  PID=`ps -ef | grep java | grep DashServerMain | awk '{print $2}'`
+	if [ -z "$PID" ]
+	then
+		echo "DASH is not running"
+	else
+	  ps -aux | grep DashServerMain | grep "$PID"
+	fi
+}
+
 case $1 in
     restart)
 		exec_stop
@@ -48,5 +58,8 @@ case $1 in
     ;;
     stop)
 		exec_stop
+    ;;
+    status)
+    exec_status
     ;;
 esac
