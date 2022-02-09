@@ -1,7 +1,7 @@
 package dash;
 
 import dash.simulation.DashHttpMessageSender;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -3,8 +3,8 @@ package tool.parser.support;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import tool.parser.data.Profile;
-import tool.parser.data.Profiles;
+import tool.parser.mpd.Profile;
+import tool.parser.mpd.Profiles;
 
 import java.io.IOException;
 import java.util.ArrayList;

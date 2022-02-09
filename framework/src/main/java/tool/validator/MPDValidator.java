@@ -1,8 +1,10 @@
 package tool.validator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import tool.parser.MPDParser;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 import tool.validator.rules.Violation;
 
 import javax.xml.XMLConstants;
@@ -15,6 +17,9 @@ import java.io.IOException;
 import java.util.List;
 
 public class MPDValidator {
+
+    private static final Logger logger = LoggerFactory.getLogger(MPDValidator.class);
+
     private final Schema schema;
     private final MPDParser mpdParser;
 
@@ -40,12 +45,10 @@ public class MPDValidator {
     void xsdValidation(MPD mpd) throws IOException, SAXException {
         byte[] buf = mpdParser.writeAsBytes(mpd);
 
-        /*
         int i = 1;
         for (String line : mpdParser.writeAsString(mpd).split("\n")) {
-            System.out.printf("%d: %s\n", i++, line);
+            logger.debug("[@VAL@] {}: {}", i++, line);
         }
-        */
 
         Source source = new StreamSource(new ByteArrayInputStream(buf));
         schema.newValidator().validate(source);

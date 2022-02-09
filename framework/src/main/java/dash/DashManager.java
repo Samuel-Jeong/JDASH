@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
 import tool.parser.MPDParser;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
+import tool.validator.MPDValidator;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -34,6 +35,8 @@ public class DashManager {
     private final MediaManager mediaManager;
 
     private final MPDParser mpdParser = new MPDParser();
+    private MPDValidator mpdValidator = null;
+
     private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
 
@@ -89,6 +92,15 @@ public class DashManager {
         ///////////////////////////
 
         httpMessageManager.start();
+
+        ///////////////////////////
+        // MPDValidator 생성
+        try {
+            mpdValidator = new MPDValidator(mpdParser);
+        } catch (Exception e) {
+            logger.warn("[DashManager] Fail to make a mpd validator.");
+        }
+        ///////////////////////////
     }
 
     public void stop() {
@@ -128,6 +140,17 @@ public class DashManager {
 
     public MediaManager getMediaManager() {
         return mediaManager;
+    }
+
+    public boolean validate(MPD mpd) {
+        if (mpd == null || mpdValidator == null) { return false; }
+
+        try {
+            mpdValidator.validate(mpd);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
     ////////////////////////////////////////////////////////////
 
@@ -310,7 +333,10 @@ public class DashManager {
 
         try {
             mpd = mpdParser.parse(inputStream);
-            logger.debug(mpdParser.writeAsString(mpd));
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(mpdParser.writeAsString(mpd));
+            }
         } catch (Exception e) {
             logger.warn("DashManager.parseMpd.Exception", e);
         }

@@ -1,7 +1,7 @@
 package tool.validator.rules;
 
-import tool.parser.data.*;
-import tool.parser.data.descriptor.Descriptor;
+import tool.parser.mpd.*;
+import tool.parser.mpd.descriptor.Descriptor;
 
 import java.time.Duration;
 import java.util.ArrayList;

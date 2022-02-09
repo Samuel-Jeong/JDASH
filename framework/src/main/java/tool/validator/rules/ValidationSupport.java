@@ -1,6 +1,6 @@
 package tool.validator.rules;
 
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 
 import java.util.HashSet;
 import java.util.List;

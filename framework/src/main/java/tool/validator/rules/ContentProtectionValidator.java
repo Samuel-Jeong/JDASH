@@ -1,8 +1,8 @@
 package tool.validator.rules;
 
-import tool.parser.data.AdaptationSet;
-import tool.parser.data.RepresentationBase;
-import tool.parser.data.descriptor.Descriptor;
+import tool.parser.mpd.AdaptationSet;
+import tool.parser.mpd.RepresentationBase;
+import tool.parser.mpd.descriptor.Descriptor;
 
 import java.util.Arrays;
 import java.util.List;

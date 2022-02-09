@@ -15,7 +15,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.codehaus.stax2.XMLStreamWriter2;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 import tool.parser.support.DurationDeserializer;
 import tool.parser.support.DurationSerializer;
 import tool.parser.support.OffsetDateTimeDeserializer;

@@ -3,7 +3,7 @@ package tool.parser.support;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import tool.parser.data.FrameRate;
+import tool.parser.mpd.FrameRate;
 
 import java.io.IOException;
 

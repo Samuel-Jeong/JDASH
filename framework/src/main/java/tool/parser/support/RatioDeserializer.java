@@ -3,7 +3,7 @@ package tool.parser.support;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import tool.parser.data.Ratio;
+import tool.parser.mpd.Ratio;
 
 import java.io.IOException;
 import java.util.regex.Matcher;

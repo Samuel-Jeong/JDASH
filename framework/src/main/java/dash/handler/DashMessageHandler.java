@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -102,6 +102,15 @@ public class DashMessageHandler implements HttpMessageHandler {
                 logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                 return null;
             }
+
+            // VALIDATE MPD
+            if (dashManager.validate(mpd)) {
+                logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
+            } else {
+                logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
+                return null;
+            }
+
             result = dashManager.getMpdParser().writeAsString(mpd);
             ///////////////////////////
 

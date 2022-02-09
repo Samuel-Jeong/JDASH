@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tool.parser.data.MPD;
+import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.time.Duration;
