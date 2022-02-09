@@ -19,19 +19,20 @@ public class HttpMessageRouteTable {
 
     ////////////////////////////////////////////////////////////
     public HttpMessageRouteTable() {
-        this.routes = new ArrayList<>();
+        routes = new ArrayList<>();
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public void addRoute(final HttpMessageRoute route) {
-        this.routes.add(route);
+        routes.add(route);
         logger.debug("[HttpMessageRouteTable] ROUTE [{}:{}] is added.", route.getMethod().name(), route.getPath());
     }
 
     public HttpMessageRoute findUriRoute(final HttpMethod method, final String path) {
         for (final HttpMessageRoute route : routes) {
             if (route.matches(method, path)) {
+                logger.trace("[HttpMessageRouteTable] ROUTE [{}:{}]", route.getMethod().name(), route.getPath());
                 return route;
             }
         }
@@ -40,7 +41,7 @@ public class HttpMessageRouteTable {
     }
 
     public void clear() {
-        this.routes.clear();
+        routes.clear();
         logger.debug("[HttpMessageRouteTable] ROUTE TABLE is cleared.");
     }
 
