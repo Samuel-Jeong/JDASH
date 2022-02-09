@@ -1,10 +1,10 @@
 package service.monitor;
 
-import dash.DashManager;
 import dash.unit.DashUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 
@@ -26,7 +26,7 @@ public class LongSessionRemover extends Job {
 
     @Override
     public void run() {
-        HashMap<String, DashUnit> rtspUnitMap = DashManager.getInstance().getCloneDashMap();
+        HashMap<String, DashUnit> rtspUnitMap = ServiceManager.getInstance().getDashManager().getCloneDashMap();
         if (!rtspUnitMap.isEmpty()) {
             for (Map.Entry<String, DashUnit> entry : rtspUnitMap.entrySet()) {
                 if (entry == null) {
@@ -40,7 +40,7 @@ public class LongSessionRemover extends Job {
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
-                    DashManager.getInstance().deleteDashUnit(dashUnit.getId());
+                    ServiceManager.getInstance().getDashManager().deleteDashUnit(dashUnit.getId());
                     logger.warn("({}) REMOVED LONG SESSION(DashUnit=\n{})", getName(), dashUnit);
                 }
             }

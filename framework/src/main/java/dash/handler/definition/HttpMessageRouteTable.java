@@ -26,13 +26,18 @@ public class HttpMessageRouteTable {
     ////////////////////////////////////////////////////////////
     public void addRoute(final HttpMessageRoute route) {
         routes.add(route);
-        logger.debug("[HttpMessageRouteTable] ROUTE [{}:{}] is added.", route.getMethod().name(), route.getPath());
+        logger.debug("[HttpMessageRouteTable] ROUTE [{}:{}] is added.", route.getMethod().name(), route.getUri());
     }
 
-    public HttpMessageRoute findUriRoute(final HttpMethod method, final String path) {
+    public HttpMessageRoute findUriRoute(final HttpMethod method, final String uri) {
+        if (routes.isEmpty()) {
+            logger.warn("[HttpMessageRouteTable] ROUTE TABLE IS EMPTY. Fail to find the route. (uri={})", uri);
+            return null;
+        }
+
         for (final HttpMessageRoute route : routes) {
-            if (route.matches(method, path)) {
-                logger.trace("[HttpMessageRouteTable] ROUTE [{}:{}]", route.getMethod().name(), route.getPath());
+            if (route.matches(method, uri)) {
+                logger.debug("[HttpMessageRouteTable] REGISTERED ROUTE: [{}:{}]", route.getMethod().name(), route.getUri());
                 return route;
             }
         }
@@ -54,7 +59,7 @@ public class HttpMessageRouteTable {
         for (final HttpMessageRoute route : routes) {
             if (route == null) { continue; }
 
-            uriList.add(route.getPath());
+            uriList.add(route.getUri());
         }
         return uriList;
     }

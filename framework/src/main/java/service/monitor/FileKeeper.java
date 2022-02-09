@@ -3,10 +3,10 @@ package service.monitor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
-import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 
@@ -95,7 +95,7 @@ public class FileKeeper extends Job {
                         continue;
                     }
 
-                    DashManager.getInstance().loadMediaUriList();
+                    ServiceManager.getInstance().getDashManager().loadMediaUriList();
                 }
             }
             //////////////////////////////

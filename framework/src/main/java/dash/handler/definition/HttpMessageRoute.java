@@ -8,14 +8,14 @@ public class HttpMessageRoute {
 
     ////////////////////////////////////////////////////////////
     private final HttpMethod method;
-    private final String path;
+    private final String uri;
     private HttpMessageHandler handler;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public HttpMessageRoute(final HttpMethod method, final String path, final HttpMessageHandler handler) {
+    public HttpMessageRoute(final HttpMethod method, final String uri, final HttpMessageHandler handler) {
         this.method = method;
-        this.path = path;
+        this.uri = uri;
         this.handler = handler;
     }
     ////////////////////////////////////////////////////////////
@@ -25,8 +25,8 @@ public class HttpMessageRoute {
         return method;
     }
 
-    public String getPath() {
-        return path;
+    public String getUri() {
+        return uri;
     }
 
     public HttpMessageHandler getHandler() {
@@ -38,7 +38,7 @@ public class HttpMessageRoute {
     }
 
     public boolean matches(final HttpMethod method, final String path) {
-        return this.method.equals(method) && this.path.equals(path);
+        return this.method.equals(method) && this.uri.equals(path);
     }
 
     @Override

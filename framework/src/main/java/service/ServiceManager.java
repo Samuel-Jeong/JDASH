@@ -27,6 +27,8 @@ public class ServiceManager {
     private final ScheduleManager scheduleManager = new ScheduleManager();
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
 
+    private final DashManager dashManager = new DashManager();
+
     private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "urtsp_server.lock"));
     private FileChannel fileChannel;
@@ -38,7 +40,6 @@ public class ServiceManager {
     ////////////////////////////////////////////////////////////////////////////////
     public ServiceManager() {
         Runtime.getRuntime().addShutdownHook(new ShutDownHookHandler("ShutDownHookHandler", Thread.currentThread()));
-
     }
     
     public static ServiceManager getInstance ( ) {
@@ -49,7 +50,13 @@ public class ServiceManager {
         return serviceManager;
     }
     ////////////////////////////////////////////////////////////////////////////////
-    
+
+    ////////////////////////////////////////////////////////////////////////////////
+    public DashManager getDashManager() {
+        return dashManager;
+    }
+    ////////////////////////////////////////////////////////////////////////////////
+
     ////////////////////////////////////////////////////////////////////////////////
     private boolean start () {
         ////////////////////////////////////////
@@ -92,7 +99,6 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // INITIATE DASH MANAGER
-        DashManager dashManager = DashManager.getInstance();
         dashManager.start();
         ////////////////////////////////////////
 
@@ -103,7 +109,7 @@ public class ServiceManager {
     public void stop () {
         ////////////////////////////////////////
         // FINISH DASH MANAGER
-        DashManager.getInstance().stop();
+        dashManager.stop();
         ////////////////////////////////////////
 
         ////////////////////////////////////////

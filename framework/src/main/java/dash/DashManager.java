@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
-import service.system.ResourceManager;
 import tool.parser.MPDParser;
 import tool.parser.data.MPD;
 
@@ -28,8 +27,6 @@ public class DashManager {
 
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashManager.class);
-
-    private static DashManager dashManager = null;
 
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
@@ -79,14 +76,6 @@ public class DashManager {
         // MediaManager 생성
         mediaManager = new MediaManager(configManager.getMediaListPath());
         ///////////////////////////
-    }
-
-    public static DashManager getInstance() {
-        if (dashManager == null) {
-            dashManager = new DashManager();
-        }
-
-        return dashManager;
     }
     ////////////////////////////////////////////////////////////
 

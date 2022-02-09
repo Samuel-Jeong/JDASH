@@ -1,6 +1,5 @@
 package dash.handler;
 
-import dash.DashManager;
 import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
 import dash.handler.definition.HttpRequest;
@@ -14,6 +13,7 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import util.module.FileManager;
 
 import java.nio.charset.StandardCharsets;
@@ -72,7 +72,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        for (Map.Entry<String, DashUnit> entry : DashManager.getInstance().getCloneDashMap().entrySet()) {
+        for (Map.Entry<String, DashUnit> entry : ServiceManager.getInstance().getDashManager().getCloneDashMap().entrySet()) {
             if (entry == null) { continue; }
 
             DashUnit curDashUnit = entry.getValue();
@@ -94,7 +94,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            dashUnit = DashManager.getInstance().getDashUnit(uriFileName);
+            dashUnit = ServiceManager.getInstance().getDashManager().getDashUnit(uriFileName);
             if (dashUnit != null) {
                 isRegistered = true;
             }

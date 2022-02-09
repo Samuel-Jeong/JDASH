@@ -1,8 +1,8 @@
 package service.monitor;
 
-import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 import service.system.SystemManager;
@@ -38,7 +38,7 @@ public class HaHandler extends Job {
 
         logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | DashUnitCount=[{}]",
                 cpuUsageStr, memoryUsageStr, Thread.activeCount(),
-                DashManager.getInstance().getDashUnitMapSize()
+                ServiceManager.getInstance().getDashManager().getDashUnitMapSize()
         );
     }
 
