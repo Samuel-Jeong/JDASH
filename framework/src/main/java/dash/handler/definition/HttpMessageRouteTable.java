@@ -26,7 +26,7 @@ public class HttpMessageRouteTable {
     ////////////////////////////////////////////////////////////
     public void addRoute(final HttpMessageRoute route) {
         this.routes.add(route);
-        logger.debug("[HttpMessageRouteTable] ROUTE [{}] is added.", route);
+        logger.debug("[HttpMessageRouteTable] ROUTE [{}:{}] is added.", route.getMethod().name(), route.getPath());
     }
 
     public HttpMessageRoute findUriRoute(final HttpMethod method, final String path) {
@@ -46,6 +46,16 @@ public class HttpMessageRouteTable {
 
     public List<HttpMessageRoute> getRoutes() {
         return routes;
+    }
+
+    public List<String> getUriList() {
+        List<String> uriList = new ArrayList<>();
+        for (final HttpMessageRoute route : routes) {
+            if (route == null) { continue; }
+
+            uriList.add(route.getPath());
+        }
+        return uriList;
     }
 
     @Override

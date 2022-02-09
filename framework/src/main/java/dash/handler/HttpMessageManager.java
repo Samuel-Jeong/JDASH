@@ -115,6 +115,10 @@ public class HttpMessageManager {
     public List<HttpMessageRoute> getAllRoutes() {
         return this.routeTable.getRoutes();
     }
+
+    public List<String> getAllUris() {
+        return this.routeTable.getUriList();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

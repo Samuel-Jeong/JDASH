@@ -1,5 +1,7 @@
 package dash;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
@@ -37,6 +39,8 @@ public class DashManager {
     private final MPDParser mpdParser = new MPDParser();
     private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
+
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -110,7 +114,7 @@ public class DashManager {
                 );
             }
 
-            logger.debug("[MediaManager] Success to load the uri list. \n{}", httpMessageManager.getAllRoutes());
+            logger.debug("[MediaManager] Success to load the uri list. \n{}", gson.toJson(httpMessageManager.getAllUris()));
         } else {
             logger.warn("[MediaManager] Fail to load the uri list.");
         }
