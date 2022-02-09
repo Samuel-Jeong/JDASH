@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
 
+import java.util.List;
+
 public class HttpMessageManager {
 
     ////////////////////////////////////////////////////////////
@@ -39,8 +41,6 @@ public class HttpMessageManager {
     public static final String SERVER_NAME = "JDASH";
     public static final String TYPE_PLAIN = "text/plain; charset=UTF-8";
     public static final String TYPE_DASH_XML = "application/dash+xml; charset=UTF-8";
-    public static final String TYPE_VIDEO_MP4 = "video/mp4";
-    public static final String TYPE_JSON = "application/json; charset=UTF-8";
     public static final String HTTP_SCHEDULE_KEY = "HTTP_MESSAGE_HANDLE";
 
     private final ScheduleManager scheduleManager;
@@ -110,6 +110,10 @@ public class HttpMessageManager {
 
     public void clear() {
         this.routeTable.clear();
+    }
+
+    public List<HttpMessageRoute> getAllRoutes() {
+        return this.routeTable.getRoutes();
     }
     ////////////////////////////////////////////////////////////
 

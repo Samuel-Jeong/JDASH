@@ -57,6 +57,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             logger.warn("[DashHttpMessageFilter] URI is not defined.");
             return;
         }
+        uri = uri.trim();
         logger.debug("[DashHttpMessageFilter] REQUEST: \n{}", request);
         ///////////////////////////
 

@@ -15,8 +15,8 @@ import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
+import service.system.ResourceManager;
 
 import java.net.URI;
 

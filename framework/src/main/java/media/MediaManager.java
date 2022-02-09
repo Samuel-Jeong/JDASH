@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import util.module.FileManager;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +45,7 @@ public class MediaManager {
                     continue;
                 }
 
-                newUriList.add(FileManager.concatFilePath(mediaBasePath, rawUri));
+                newUriList.add(FileManager.concatFilePath(mediaBasePath, rawUri.trim()));
             }
             uriList = newUriList;
         }

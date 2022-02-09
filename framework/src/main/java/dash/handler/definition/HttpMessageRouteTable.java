@@ -7,13 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class HttpMessageRouteTable {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpMessageRouteTable.class);
 
     ////////////////////////////////////////////////////////////
-    private final ArrayList<HttpMessageRoute> routes;
+    private final List<HttpMessageRoute> routes;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -39,7 +40,12 @@ public class HttpMessageRouteTable {
     }
 
     public void clear() {
-        routes.clear();
+        this.routes.clear();
+        logger.debug("[HttpMessageRouteTable] ROUTE TABLE is cleared.");
+    }
+
+    public List<HttpMessageRoute> getRoutes() {
+        return routes;
     }
 
     @Override

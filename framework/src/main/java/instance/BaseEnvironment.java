@@ -2,8 +2,8 @@ package instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
+import service.system.ResourceManager;
 
 public class BaseEnvironment {
 
