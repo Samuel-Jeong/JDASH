@@ -30,12 +30,19 @@ public class BaseEnvironment {
     ////////////////////////////////////////////////////////////
     // FUNCTIONS
     public void start() {
-        portResourceManager.initResource();
+        if (portResourceManager != null) {
+            portResourceManager.initResource();
+        }
     }
 
     public void stop() {
-        scheduleManager.finish();
-        portResourceManager.releaseResource();
+        if (scheduleManager != null) {
+            scheduleManager.finish();
+        }
+
+        if (portResourceManager != null) {
+            portResourceManager.releaseResource();
+        }
     }
 
     public void printMsg(String msg, Object... parameters) {

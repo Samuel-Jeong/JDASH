@@ -23,25 +23,27 @@ public class ConfigManager {
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
     // Field String
-    public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
-    public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
 
+    public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
+    public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
+    public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
 
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
     // COMMON
-    private int sendBufSize = 0;
-    private int recvBufSize = 0;
     private long localSessionLimitTime = 0; // ms
     private String mediaBasePath;
     private String mediaListPath;
 
     // NETWORK
+    private int threadCount = 0;
+    private int sendBufSize = 0;
+    private int recvBufSize = 0;
     private String httpListenIp = null;
     private int httpListenPort = 0;
 
@@ -82,18 +84,6 @@ public class ConfigManager {
      * @brief COMMON Section 을 로드하는 함수
      */
     private void loadCommonConfig() {
-        this.sendBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_SEND_BUF_SIZE));
-        if (this.sendBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_SEND_BUF_SIZE, sendBufSize);
-            System.exit(1);
-        }
-
-        this.recvBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_RECV_BUF_SIZE));
-        if (this.recvBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_RECV_BUF_SIZE, recvBufSize);
-            System.exit(1);
-        }
-
         this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
         if (this.localSessionLimitTime < 0) {
             logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
@@ -116,10 +106,28 @@ public class ConfigManager {
     }
 
     /**
-     * @fn private void loadFfmpegConfig()
+     * @fn private void loadNetworkConfig()
      * @brief NETWORK Section 을 로드하는 함수
      */
     private void loadNetworkConfig() {
+        this.threadCount = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_THREAD_COUNT));
+        if (this.threadCount <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_THREAD_COUNT, threadCount);
+            System.exit(1);
+        }
+
+        this.sendBufSize = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_SEND_BUF_SIZE));
+        if (this.sendBufSize <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_SEND_BUF_SIZE, sendBufSize);
+            System.exit(1);
+        }
+
+        this.recvBufSize = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_RECV_BUF_SIZE));
+        if (this.recvBufSize <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_RECV_BUF_SIZE, recvBufSize);
+            System.exit(1);
+        }
+
         this.httpListenIp = getIniValue(SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
         if (this.httpListenIp == null) {
             logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
@@ -198,6 +206,10 @@ public class ConfigManager {
 
     public long getLocalSessionLimitTime() {
         return localSessionLimitTime;
+    }
+
+    public int getThreadCount() {
+        return threadCount;
     }
 
     public int getSendBufSize() {

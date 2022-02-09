@@ -33,8 +33,8 @@ public class NettyTcpClientChannel extends NettyChannel {
     public NettyTcpClientChannel(BaseEnvironment baseEnvironment, long sessionId, int threadCount, int recvBufSize, ChannelInitializer<NioSocketChannel> childHandler) {
         super(baseEnvironment, sessionId, threadCount, 0, recvBufSize);
 
+        eventLoopGroup = new NioEventLoopGroup(threadCount);
         bootstrap = new Bootstrap();
-        eventLoopGroup = new NioEventLoopGroup();
         bootstrap.group(eventLoopGroup).channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, recvBufSize)
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

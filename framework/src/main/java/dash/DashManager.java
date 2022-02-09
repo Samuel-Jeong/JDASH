@@ -45,11 +45,13 @@ public class DashManager {
 
     ////////////////////////////////////////////////////////////
     public DashManager() {
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
         ///////////////////////////
         // 인스턴스 생성
         baseEnvironment = new BaseEnvironment(
                 new ScheduleManager(),
-                new ResourceManager(5000, 7000),
+                null,
                 DebugLevel.DEBUG
         );
         ///////////////////////////
@@ -59,7 +61,9 @@ public class DashManager {
         socketManager = new SocketManager(
                 baseEnvironment,
                 false, true,
-                10, 500000, 500000
+                configManager.getThreadCount(),
+                configManager.getSendBufSize(),
+                configManager.getRecvBufSize()
         );
         ///////////////////////////
 
@@ -73,7 +77,6 @@ public class DashManager {
 
         ///////////////////////////
         // MediaManager 생성
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         mediaManager = new MediaManager(configManager.getMediaListPath());
         ///////////////////////////
     }

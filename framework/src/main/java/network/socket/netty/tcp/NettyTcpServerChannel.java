@@ -29,7 +29,7 @@ public class NettyTcpServerChannel extends NettyChannel {
     public NettyTcpServerChannel(BaseEnvironment baseEnvironment, long sessionId, int threadCount, int recvBufSize, ChannelInitializer<SocketChannel> childHandler) {
         super(baseEnvironment, sessionId, threadCount, 0, recvBufSize);
 
-        bossGroup = new NioEventLoopGroup();
+        bossGroup = new NioEventLoopGroup(threadCount);
         serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(bossGroup, workerGroup);
         serverBootstrap.channel(NioServerSocketChannel.class)

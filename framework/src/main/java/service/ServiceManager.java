@@ -52,9 +52,13 @@ public class ServiceManager {
     
     ////////////////////////////////////////////////////////////////////////////////
     private boolean start () {
+        ////////////////////////////////////////
         // System Lock
         systemLock();
+        ////////////////////////////////////////
 
+        ////////////////////////////////////////
+        // SCHEDULE MAIN JOBS
         if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, 10, 10 * 2)) {
             scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     new HaHandler(
@@ -84,20 +88,33 @@ public class ServiceManager {
                 scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
             }
         }
+        ////////////////////////////////////////
 
+        ////////////////////////////////////////
+        // INITIATE DASH MANAGER
         DashManager dashManager = DashManager.getInstance();
         dashManager.start();
+        ////////////////////////////////////////
 
         logger.debug("| All services are opened.");
         return true;
     }
 
     public void stop () {
+        ////////////////////////////////////////
+        // FINISH DASH MANAGER
         DashManager.getInstance().stop();
-        scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+        ////////////////////////////////////////
 
+        ////////////////////////////////////////
+        // FINISH ALL MAIN JOBS
+        scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+        ////////////////////////////////////////
+
+        ////////////////////////////////////////
         // System Unlock
         systemUnLock();
+        ////////////////////////////////////////
 
         isQuit = true;
         logger.debug("| All services are closed.");
@@ -122,7 +139,9 @@ public class ServiceManager {
             }
         }
     }
+    ////////////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////////////
     private void systemLock () {
         try {
             fileChannel = FileChannel.open(lockFile.toPath(), CREATE, READ, WRITE);
@@ -154,6 +173,7 @@ public class ServiceManager {
     }
     ////////////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////////////
     /**
      * @class private static class ShutDownHookHandler extends Thread
      * @brief Graceful Shutdown 을 처리하는 클래스
@@ -195,6 +215,6 @@ public class ServiceManager {
             ServiceManager.getInstance().stop();
         }
     }
-
+    ////////////////////////////////////////////////////////////////////////////////
 
 }
