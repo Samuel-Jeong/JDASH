@@ -77,6 +77,12 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             DashUnit curDashUnit = entry.getValue();
             if (curDashUnit == null) { continue; }
 
+            if (uriFileName.equals(curDashUnit.getId())) {
+                dashUnit = curDashUnit;
+                logger.debug("[DashHttpMessageFilter] RE-DEMANDED! [{}] <> [{}]", uriFileName, dashUnit.getId());
+                break;
+            }
+
             if (uriFileName.contains(curDashUnit.getId())) {
                 dashUnit = curDashUnit;
                 isRegistered = true;
