@@ -31,7 +31,7 @@ function exec_stop() {
 		PID=`ps -ef | grep java | grep DashServerMain | awk '{print $2}'`
 		if [ ! -z "$PID" ]
 		then
-			echo "kill -9"
+			echo "kill -9 ${PID}"
 			kill -9 "$PID"
 		fi
 		echo "DASH stopped"

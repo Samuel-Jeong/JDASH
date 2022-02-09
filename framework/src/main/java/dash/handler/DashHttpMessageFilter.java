@@ -52,7 +52,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         final HttpMethod method = request.method();
-        String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s]
+        String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s] or [aws/20210209/Seoul.mp4]
         if (uri == null) {
             logger.warn("[DashHttpMessageFilter] URI is not defined.");
             return;
@@ -100,7 +100,18 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             }
         }
 
-        uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
+        String parentPathOfUri = FileManager.getParentPathFromUri(uri); // aws/20210209
+        if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
+            logger.debug("prev parentPathOfUri: {}", parentPathOfUri);
+            parentPathOfUri = FileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
+            logger.debug("uriFileName: {}, uri={}", uriFileName, uri);
+            logger.debug("after parentPathOfUri: {}", parentPathOfUri);
+            uri = FileManager.concatFilePath(parentPathOfUri, FileManager.getFilePathOnlyFromUri(uri)); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
+            logger.debug("uri: {}", uri);
+        } else {
+            uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
+        }
+
         uri = FileManager.concatFilePath(basePath, uri); // [/Users/.../Seoul/Seoul.mp4] or [/Users/.../Seoul/Seoul_chunk_1_00001.m4s]
         request.setUri(uri);
         ///////////////////////////

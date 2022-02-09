@@ -1,2 +1,7 @@
-Seoul/Seoul.mp4
-CH01_01_GREETINGS/CH01_01_GREETINGS.mp4
+test/CH01_01_GREETINGS/CH01_01_GREETINGS.mp4
+test/CH01_01_GREETINGS/CH01_01_GREETINGS.mp4
+aws/CH01_01_GREETINGS/CH01_01_GREETINGS.mpd
+test/Seoul/Seoul.mp4
+test/01_ApacheKafka/01_ApacheKafka.mp4
+test/01_ApacheKafka/01_ApacheKafka.mpd
+test/tigers/tigers.mpd

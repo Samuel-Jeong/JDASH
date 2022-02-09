@@ -99,13 +99,25 @@ public class FileManager {
         return resultPath;
     }
 
+    public static String getParentPathFromUri(String uri) {
+        if (uri == null) { return null; }
+        if (!uri.contains(".") || !uri.contains("/")) { return uri; }
+        return uri.substring(0, uri.lastIndexOf("/")).trim();
+    }
+
+    public static String getFilePathOnlyFromUri(String uri) {
+        if (uri == null) { return null; }
+        if (!uri.contains(".") || !uri.contains("/")) { return uri; }
+
+        int lastSlashIndex = uri.lastIndexOf("/");
+        if (lastSlashIndex == (uri.length() - 1)) { return null; }
+        return uri.substring(uri.lastIndexOf("/") + 1).trim();
+    }
+
     public static String getFileNameFromUri(String uri) {
-        if (!uri.contains(".")) { return null; }
-        if (uri.contains("/")) {
-            int lastSlashIndex = uri.lastIndexOf("/");
-            if (lastSlashIndex == (uri.length() - 1)) { return null; }
-            uri = uri.substring(lastSlashIndex + 1).trim();
-        }
+        uri = getFilePathOnlyFromUri(uri);
+        if (uri == null || uri.isEmpty()) { return null; }
+
         uri = uri.substring(0, uri.lastIndexOf(".")).trim();
         return uri;
     }
