@@ -5,7 +5,7 @@ SERVICE_NAME=jdash
 PATH_TO_JAR=$SERVICE_HOME/lib/jdash_server.jar
 JAVA_CONF=$SERVICE_HOME/config/user_conf.ini
 JAVA_OPT="-Dlogback.configurationFile=$SERVICE_HOME/config/logback.xml"
-JAVA_OPT="$JAVA_OPT -XX:+UseG1GC -XX:G1RSetUpdatingPauseTimePercent=5 -XX:MaxGCPauseMillis=500 -verbosegc -Xlog:gc*:file=$SERVICE_HOME/logs/gc_%t.log:time:filecount=10,filesize=5M"
+JAVA_OPT="$JAVA_OPT -XX:+UseG1GC -XX:G1RSetUpdatingPauseTimePercent=5 -XX:MaxGCPauseMillis=500 -verbose:gc -Xlog:gc=debug:file=$SERVICE_HOME/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=100m"
 
 function exec_start() {
 	ulimit -n 65535
@@ -21,18 +21,18 @@ function exec_start() {
 
 function exec_stop() {
 	PID=`ps -ef | grep java | grep DashServerMain | awk '{print $2}'`
-	if [ -z $PID ]
+	if [ -z "$PID" ]
 	then
 		echo "DASH is not running"
 	else
 		echo "stopping DASH"
-		kill $PID
+		kill "$PID"
 		sleep 1
 		PID=`ps -ef | grep java | grep DashServerMain | awk '{print $2}'`
-		if [ ! -z $PID ]
+		if [ ! -z "$PID" ]
 		then
 			echo "kill -9"
-			kill -9 $PID
+			kill -9 "$PID"
 		fi
 		echo "DASH stopped"
 	fi
