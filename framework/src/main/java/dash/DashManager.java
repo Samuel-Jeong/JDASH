@@ -17,6 +17,7 @@ import service.scheduler.schedule.ScheduleManager;
 import tool.parser.MPDParser;
 import tool.parser.mpd.MPD;
 import tool.validator.MPDValidator;
+import tool.validator.ManifestValidationException;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -147,9 +148,13 @@ public class DashManager {
 
         try {
             mpdValidator.validate(mpd);
+        } catch (ManifestValidationException e) {
+            logger.warn("DashManager.validate.ManifestValidationException", e);
+            logger.warn("{}", e.getViolations());
         } catch (Exception e) {
-            return false;
+            logger.warn("DashManager.validate.Exception", e);
         }
+
         return true;
     }
 

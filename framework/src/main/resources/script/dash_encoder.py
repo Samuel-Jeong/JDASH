@@ -39,11 +39,13 @@ def get_local_executable(path, executable):
 
 
 def ffmpeg():
-    return get_local_executable("ffmpeg-4*", "ffmpeg")
+    return "ffmpeg"
+    #return get_local_executable("ffmpeg-4*", "ffmpeg")
 
 
 def ffprobe():
-    return get_local_executable("ffmpeg-4*", "ffprobe")
+    return "ffprobe"
+    #return get_local_executable("ffmpeg-4*", "ffprobe")
 
 
 def shell_call(call):
@@ -59,17 +61,19 @@ def shell_call(call):
     return output
 
 
-def get_fps(ffprobe_path, video):
-    cmd = f"""{ffprobe_path} -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate {video}"""
+def get_fps(video):
+    print("video: " + video)
+    cmd = f"""{ffprobe()} -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate {video}"""
     fps = shell_call(cmd).split("\n")[0]
     fps = fps.split("/")
+    print("fps: " + str(fps))
     if len(fps) > 1:
         fps = int(math.ceil(int(fps[0].strip()) / int(fps[1].strip())))
         return fps
     return int(fps[0])
 
 
-def build_video_encode_command(ffmpeg_path, ffprobe_path, video, dashdir, height=240, seg_duration=2):
+def build_video_encode_command(video, dashdir, height=240, seg_duration=2):
     # TODO: currently only CRF encoding possible
     # notes for other codecs
     #    -an -c:v libaom-av1 -row-mt 1
@@ -88,8 +92,15 @@ def build_video_encode_command(ffmpeg_path, ffprobe_path, video, dashdir, height
         720: {"crf": 24, "preset": "fast"},
         1080: {"crf": 24, "preset": "fast"}
     }
-    output = os.path.join(dashdir, os.path.splitext(os.path.basename(video))[0] + f"_{height}p.mp4")
-    fps = get_fps(ffprobe_path, video)
+
+    dashdir = str(dashdir)
+    print("dash: " + dashdir)
+
+    tempVideoDir = os.path.splitext(os.path.basename(video))[0] + f"_{height}p.mp4"
+    print("tempVideoDir: " + tempVideoDir)
+
+    output = os.path.join(dashdir, tempVideoDir)
+    fps = get_fps(video)
     crf = 24
     preset = "slow"
     if height in encoding:
@@ -97,7 +108,7 @@ def build_video_encode_command(ffmpeg_path, ffprobe_path, video, dashdir, height
         preset = encoding[height]["preset"]
 
     cmd = f"""
-        {ffmpeg_path} -y -hide_banner
+        {ffmpeg()} -y -hide_banner
         -i "{video}"
         -preset {preset}
         -an -c:v libx264
@@ -112,10 +123,10 @@ def build_video_encode_command(ffmpeg_path, ffprobe_path, video, dashdir, height
     return cmd, output
 
 
-def build_audio_encode_command(ffmpeg_path, video, dashdir):
+def build_audio_encode_command(video, dashdir):
     output = os.path.join(dashdir, os.path.splitext(os.path.basename(video))[0] + f"_audio.m4a")
     cmd = f"""
-        {ffmpeg_path} -y -hide_banner
+        {ffmpeg()} -y -hide_banner
         -i {video}
         -c:a aac
         -ac 2
@@ -127,7 +138,7 @@ def build_audio_encode_command(ffmpeg_path, video, dashdir):
     return cmd, output
 
 
-def build_manifest_command(ffmpeg_path, video, video_files, audio_files, dashdir, seg_duration=2):
+def build_manifest_command(video, video_files, audio_files, dashdir, seg_duration=2):
     manifest_part = " ".join(
         [f"-i {i}" for i in video_files + audio_files]
     )
@@ -137,10 +148,14 @@ def build_manifest_command(ffmpeg_path, video, video_files, audio_files, dashdir
         [f"-map {i}:a" for i in range(len(video_files) + 1, len(video_files + audio_files))]
     )
 
-    output = os.path.join(dashdir, os.path.splitext(os.path.basename(video))[0] + f"_manifest.mpd")
+    output = os.path.join(dashdir, os.path.splitext(os.path.basename(video))[0] + f".mpd")
+
+    file_name = os.path.basename(video)
+    file_name = file_name.split(".")[0]
+    print("file_name: " + file_name)
 
     cmd = f"""
-        {ffmpeg_path} -y
+        {ffmpeg()} -y
         {manifest_part}
         -c copy
         {map_part}
@@ -148,17 +163,20 @@ def build_manifest_command(ffmpeg_path, video, video_files, audio_files, dashdir
         -use_template 1 -use_timeline 0
         -seg_duration {seg_duration}
         -adaptation_sets "id=0,streams=v id=1,streams=a"
+        -init_seg_name "{file_name}_init\$RepresentationID\$.m4s"
+        -media_seg_name "{file_name}_chunk\$RepresentationID\$-\$Number%05d\$.m4s"
         {output}
         """
+
     cmd = " ".join(cmd.split())
     print(cmd)
     return cmd, output
 
 
-def build_thumbnail(ffmpeg_path, video, dashdir):
+def build_thumbnail(video, dashdir):
     output = os.path.join(dashdir, os.path.splitext(os.path.basename(video))[0] + f"_thumb.png")
     cmd = f"""
-        {ffmpeg_path} -y -hide_banner
+        {ffmpeg()} -y -hide_banner
         -i {video}
         -ss 00:00:02
         -vf "scale=-2:540"
@@ -174,8 +192,6 @@ def main(_):
     parser = argparse.ArgumentParser(description='create dash representations',
                                      epilog="stg7 2019",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--ffmpeg", type=str, help="ffmpeg path")
-    parser.add_argument("--ffprobe", type=str, help="ffprobe path")
     parser.add_argument("--video", type=str, help="video to convert to a dash version")
     parser.add_argument("--dash_folder", type=str, default="dash", help="folder for storing the dash video")
     parser.add_argument("--auto_subfolders", "-as", action="store_true", help="create subfolder based on videoname")
@@ -193,20 +209,20 @@ def main(_):
     print(f"store dashed video in {a['dash_folder']}")
 
     # TODO: filter out higher resolutions based on input video?!
-    resolutions = [240, 360, 576, 720, 1080] #, 540, 720, 1080] #, 1440, 2160]  # TODO: extend, check, update
+    resolutions = [360, 720] #, 240, 576, 540, 720, 1080] #, 1440, 2160]  # TODO: extend, check, update
 
     seg_duration = 2
     # collect all commands and output files
     commands = []
     video_files = []
     for resolution in resolutions:
-        cmd, outfile = build_video_encode_command(a["ffmpeg"], a["ffprobe"], a["video"], a["dash_folder"], resolution, seg_duration=seg_duration)
+        cmd, outfile = build_video_encode_command(a["video"], a["dash_folder"], resolution, seg_duration=seg_duration)
         commands.append(cmd)
         video_files.append(outfile)
 
     # for audio only one quality is considered
     # TODO: maybe use more?
-    cmd, audio_file = build_audio_encode_command(a["ffmpeg"], a["video"], a["dash_folder"])
+    cmd, audio_file = build_audio_encode_command(a["video"], a["dash_folder"])
     commands.append(cmd)
 
     # print("\n".join(commands))
@@ -218,7 +234,7 @@ def main(_):
             os.system(x)
 
     print("create thumbnail")
-    cmd, outfile = build_thumbnail(a["ffmpeg"], a["video"], a["dash_folder"])
+    cmd, outfile = build_thumbnail(a["video"], a["dash_folder"])
     if not os.path.isfile(outfile):
         os.system(cmd)
         print(f"thumbnail created {outfile}")
@@ -227,7 +243,7 @@ def main(_):
         print(cmd)
 
     # print("create manifest file")
-    cmd, outfile = build_manifest_command(a["ffmpeg"], a["video"], video_files, [audio_file], a["dash_folder"], seg_duration=seg_duration)
+    cmd, outfile = build_manifest_command(a["video"], video_files, [audio_file], a["dash_folder"], seg_duration=seg_duration)
     # print(cmd)
     #return
     os.system(cmd)
