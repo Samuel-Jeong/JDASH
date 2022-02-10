@@ -1,5 +1,6 @@
 package dash.handler;
 
+import dash.DashManager;
 import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
 import dash.handler.definition.HttpRequest;
@@ -26,12 +27,16 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageFilter.class);
 
+    private final String serviceName;
+
     private final String basePath;
     private final HttpMessageRouteTable uriRouteTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
+        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        this.serviceName = dashManager.getServiceName();
         this.uriRouteTable = routeTable;
         this.basePath = AppInstance.getInstance().getConfigManager().getMediaBasePath();
     }
@@ -160,20 +165,20 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    private static void writeNotFound(
+    private void writeNotFound(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request) {
 
         writeErrorResponse(ctx, request, HttpResponseStatus.NOT_FOUND);
     }
-    private static void writeInternalServerError(
+    private void writeInternalServerError(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request) {
 
         writeErrorResponse(ctx, request, HttpResponseStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private static void writeErrorResponse(
+    private void writeErrorResponse(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request,
             final HttpResponseStatus status) {
@@ -183,7 +188,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    private static void writeResponse(
+    private void writeResponse(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request,
             final HttpResponseStatus status,
@@ -194,7 +199,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         writeResponse(ctx, request, status, entity, contentType, bytes.length);
     }
 
-    private static void writeResponse(
+    private void writeResponse(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request,
             final HttpResponseStatus status,
@@ -204,7 +209,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         writeResponse(ctx, request, status, entity, contentType, bytes.length);
     }
 
-    private static void writeResponse(
+    private void writeResponse(
             final ChannelHandlerContext ctx,
             final FullHttpRequest request,
             final HttpResponseStatus status,
@@ -226,7 +231,8 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         final DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
 
         final DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
-        headers.set(HttpHeaderNames.SERVER, HttpMessageManager.SERVER_NAME);
+
+        headers.set(HttpHeaderNames.SERVER, serviceName);
         headers.set(HttpHeaderNames.DATE, dateTime.format(formatter));
         headers.set(HttpHeaderNames.CONTENT_TYPE, contentType);
         headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
@@ -243,7 +249,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    private static void send100Continue(final ChannelHandlerContext ctx) {
+    private void send100Continue(final ChannelHandlerContext ctx) {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.CONTINUE));

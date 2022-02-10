@@ -152,6 +152,10 @@ public class DashManager {
         }
         return true;
     }
+
+    public String getServiceName() {
+        return httpMessageManager.getServiceName();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

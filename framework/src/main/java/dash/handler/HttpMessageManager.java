@@ -1,5 +1,6 @@
 package dash.handler;
 
+import config.ConfigManager;
 import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
@@ -38,7 +39,7 @@ public class HttpMessageManager {
     //static final boolean SSL = System.getProperty("javax.net.ssl.trustStore") != null;
     static final boolean SSL = false;
 
-    public static final String SERVER_NAME = "JDASH";
+    public final String serviceName;
     public static final String TYPE_PLAIN = "text/plain; charset=UTF-8";
     public static final String TYPE_DASH_XML = "application/dash+xml; charset=UTF-8";
     public static final String HTTP_SCHEDULE_KEY = "HTTP_MESSAGE_HANDLE";
@@ -52,6 +53,9 @@ public class HttpMessageManager {
 
     ////////////////////////////////////////////////////////////
     public HttpMessageManager(ScheduleManager scheduleManager, SocketManager socketManager) {
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        this.serviceName = configManager.getServiceName();
+
         this.scheduleManager = scheduleManager;
         this.socketManager = socketManager;
         this.routeTable = new HttpMessageRouteTable();
@@ -144,6 +148,12 @@ public class HttpMessageManager {
             p.addLast("encoder", new HttpResponseEncoder());
             p.addLast("handler", new DashHttpMessageFilter(routeTable));
         }
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public String getServiceName() {
+        return serviceName;
     }
     ////////////////////////////////////////////////////////////
 

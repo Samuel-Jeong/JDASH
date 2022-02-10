@@ -5,6 +5,14 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import java.util.Objects;
 
 public class Segment {
+
+    /**
+     * S: An S describes when
+     *      - the segment is available (t value),
+     *      - the duration of the segment (d value),
+     *      - and a count of how many additional consecutive segments have this same duration (r value).
+     */
+
     @JacksonXmlProperty(isAttribute = true)
     private final Long t;
 

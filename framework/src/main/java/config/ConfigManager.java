@@ -23,6 +23,7 @@ public class ConfigManager {
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
     // Field String
+    public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
@@ -36,9 +37,10 @@ public class ConfigManager {
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
     // COMMON
+    private String serviceName = null;
     private long localSessionLimitTime = 0; // ms
-    private String mediaBasePath;
-    private String mediaListPath;
+    private String mediaBasePath = null;
+    private String mediaListPath = null;
 
     // NETWORK
     private int threadCount = 0;
@@ -84,6 +86,12 @@ public class ConfigManager {
      * @brief COMMON Section 을 로드하는 함수
      */
     private void loadCommonConfig() {
+        this.serviceName = getIniValue(SECTION_COMMON, FIELD_SERVICE_NAME);
+        if (serviceName == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_SERVICE_NAME);
+            System.exit(1);
+        }
+
         this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
         if (this.localSessionLimitTime < 0) {
             logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
@@ -203,6 +211,10 @@ public class ConfigManager {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+
+    public String getServiceName() {
+        return serviceName;
+    }
 
     public long getLocalSessionLimitTime() {
         return localSessionLimitTime;
