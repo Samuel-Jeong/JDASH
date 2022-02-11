@@ -23,6 +23,7 @@ public class ConfigManager {
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
     // Field String
+    public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
@@ -37,6 +38,7 @@ public class ConfigManager {
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
     // COMMON
+    private boolean enableClient = false;
     private String serviceName = null;
     private long localSessionLimitTime = 0; // ms
     private String mediaBasePath = null;
@@ -86,6 +88,14 @@ public class ConfigManager {
      * @brief COMMON Section 을 로드하는 함수
      */
     private void loadCommonConfig() {
+        String enableClientString = getIniValue(SECTION_COMMON, FIELD_ENABLE_CLIENT);
+        if (enableClientString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ENABLE_CLIENT);
+            System.exit(1);
+        } else {
+            this.enableClient = Boolean.parseBoolean(enableClientString);
+        }
+
         this.serviceName = getIniValue(SECTION_COMMON, FIELD_SERVICE_NAME);
         if (serviceName == null) {
             logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_SERVICE_NAME);
@@ -211,6 +221,9 @@ public class ConfigManager {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    public boolean isEnableClient() {
+        return enableClient;
+    }
 
     public String getServiceName() {
         return serviceName;

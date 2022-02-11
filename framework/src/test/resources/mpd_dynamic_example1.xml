@@ -1,0 +1,21 @@
+<MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mpeg:mpegB:schema:DASH:MPD:2011"
+     xsi:schemaLocation="urn:mpeg:mpegB:schema:DASH:MPD:2011 dash.xsd"
+     minBufferTime="PT10.00S"
+     baseURL="http://www.example.com/"
+     type="dynamic"
+     availabilityStartTime="2001-12-17T09:40:57Z">
+
+    <Period start="PT0S">
+        <Representation mimeType="video/mp4; codecs=avc1.644028, svc1" group="1"
+                        width="320" height="240"
+                        frameRate="15" id="tag0" bandwidth="128000">
+            <SegmentInfo duration="PT10.00S">
+                <Initialization sourceURL="seg-s-init.mp4" />
+                <Url sourceURL="seg-s1-128k-1.mp4" />
+                <Url sourceURL="seg-s1-128k-2.mp4" />
+                <Url sourceURL="seg-s1-128k-3.mp4" />
+            </SegmentInfo>
+        </Representation>
+    </Period>
+
+</MPD>

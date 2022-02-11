@@ -1,6 +1,7 @@
 package service;
 
 import cam.CameraManager;
+import config.ConfigManager;
 import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class ServiceManager {
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
 
     private final DashManager dashManager = new DashManager();
+    private CameraManager cameraManager = null;
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "dash_server.lock"));
@@ -96,13 +98,16 @@ public class ServiceManager {
                 scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
             }
 
-            CameraManager cameraManager = new CameraManager(
-                    scheduleManager,
-                    CameraManager.class.getSimpleName(),
-                    0, 0, TimeUnit.MILLISECONDS,
-                    1, 1, false
-            );
-            scheduleManager.startJob(MAIN_SCHEDULE_JOB, cameraManager);
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+            if (configManager.isEnableClient()) {
+                cameraManager = new CameraManager(
+                        scheduleManager,
+                        CameraManager.class.getSimpleName(),
+                        0, 0, TimeUnit.MILLISECONDS,
+                        1, 1, false
+                );
+                scheduleManager.startJob(MAIN_SCHEDULE_JOB, cameraManager);
+            }
         }
         ////////////////////////////////////////
 
@@ -185,6 +190,10 @@ public class ServiceManager {
         } catch (IOException e) {
             //ignore
         }
+    }
+
+    public CameraManager getCameraManager() {
+        return cameraManager;
     }
     ////////////////////////////////////////////////////////////////////////////////
 
