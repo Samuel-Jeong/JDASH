@@ -2,11 +2,18 @@
 ~~~
 비디오 라이브 스트리밍 서버
 
+@ REFERENCE
+1) Make MPD & Segments
 + REF : python-ffmpeg-video-streaming
 (https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
 
+2) Get MPD class object & Validate MPD file
 + REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
 (https://github.com/carlanton/mpd-tools)
+
+3) Camera
++ REF : org.bytedeco.javacv
+(https://github.com/bytedeco/javacv)
 
 ~~~
 
