@@ -7,6 +7,7 @@
     <groupId>network.framework</groupId>
     <artifactId>framework</artifactId>
     <version>1.0.0</version>
+
     <build>
         <plugins>
             <plugin>
@@ -15,6 +16,11 @@
                 <configuration>
                     <source>10</source>
                     <target>10</target>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-h</arg>
+                        <arg>${project.build.directory}/native/javah/</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
@@ -30,6 +36,12 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.7</version>
+        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

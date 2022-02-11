@@ -1,5 +1,6 @@
 package service;
 
+import cam.CameraManager;
 import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,14 @@ public class ServiceManager {
             if (fileKeeper.init()) {
                 scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
             }
+
+            CameraManager cameraManager = new CameraManager(
+                    scheduleManager,
+                    CameraManager.class.getSimpleName(),
+                    0, 0, TimeUnit.MILLISECONDS,
+                    1, 1, false
+            );
+            scheduleManager.startJob(MAIN_SCHEDULE_JOB, cameraManager);
         }
         ////////////////////////////////////////
 
