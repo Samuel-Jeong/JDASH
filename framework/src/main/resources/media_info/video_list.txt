@@ -5,3 +5,4 @@ test/Seoul/Seoul.mp4
 test/01_ApacheKafka/01_ApacheKafka.mp4
 test/01_ApacheKafka/01_ApacheKafka.mpd
 test/tigers/tigers.mpd
+live/livestream

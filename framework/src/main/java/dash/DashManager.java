@@ -1,5 +1,6 @@
 package dash;
 
+import cam.CameraManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
@@ -23,12 +24,15 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class DashManager {
 
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashManager.class);
+
+    public static final String DASH_SCHEDULE_JOB = "DASH";
 
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
@@ -42,6 +46,8 @@ public class DashManager {
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    private CameraManager cameraManager = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -93,6 +99,19 @@ public class DashManager {
         ///////////////////////////
 
         httpMessageManager.start();
+
+        if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+            if (configManager.isEnableClient()) {
+                cameraManager = new CameraManager(
+                        baseEnvironment.getScheduleManager(),
+                        CameraManager.class.getSimpleName(),
+                        0, 0, TimeUnit.MILLISECONDS,
+                        1, 1, false
+                );
+                baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, cameraManager);
+            }
+        }
 
         ///////////////////////////
         // MPDValidator 생성

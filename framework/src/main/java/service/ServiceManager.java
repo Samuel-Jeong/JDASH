@@ -1,7 +1,5 @@
 package service;
 
-import cam.CameraManager;
-import config.ConfigManager;
 import dash.DashManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,32 +22,28 @@ public class ServiceManager {
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
-    private static ServiceManager serviceManager = null;
+    private final static ServiceManager serviceManager = new ServiceManager(); // lazy initialization
 
     private final ScheduleManager scheduleManager = new ScheduleManager();
+
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
+    public static final int DELAY = 1000;
 
     private final DashManager dashManager = new DashManager();
-    private CameraManager cameraManager = null;
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "dash_server.lock"));
     private FileChannel fileChannel;
     private FileLock lock;
-    private static final int DELAY = 1000;
     private boolean isQuit = false;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public ServiceManager() {
+    private ServiceManager() {
         Runtime.getRuntime().addShutdownHook(new ShutDownHookHandler("ShutDownHookHandler", Thread.currentThread()));
     }
     
     public static ServiceManager getInstance ( ) {
-        if (serviceManager == null) {
-            serviceManager = new ServiceManager();
-        }
-
         return serviceManager;
     }
     ////////////////////////////////////////////////////////////////////////////////
@@ -96,17 +90,6 @@ public class ServiceManager {
             );
             if (fileKeeper.init()) {
                 scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
-            }
-
-            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-            if (configManager.isEnableClient()) {
-                cameraManager = new CameraManager(
-                        scheduleManager,
-                        CameraManager.class.getSimpleName(),
-                        0, 0, TimeUnit.MILLISECONDS,
-                        1, 1, false
-                );
-                scheduleManager.startJob(MAIN_SCHEDULE_JOB, cameraManager);
             }
         }
         ////////////////////////////////////////
@@ -192,9 +175,6 @@ public class ServiceManager {
         }
     }
 
-    public CameraManager getCameraManager() {
-        return cameraManager;
-    }
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -1,11 +1,16 @@
 package dash;
 
 import dash.simulation.DashHttpMessageSender;
+import org.jcodec.api.awt.AWTSequenceEncoder;
+import org.jcodec.common.io.NIOUtils;
+import org.jcodec.common.io.SeekableByteChannel;
+import org.jcodec.common.model.Rational;
 import tool.parser.mpd.MPD;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.BufferedImage;
 import java.util.concurrent.TimeUnit;
 
 public class DashTest {

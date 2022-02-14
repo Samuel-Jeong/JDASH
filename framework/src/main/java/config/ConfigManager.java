@@ -19,6 +19,7 @@ public class ConfigManager {
 
     // Section String
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
+    public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
@@ -26,8 +27,10 @@ public class ConfigManager {
     public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
+
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
+    public static final String FIELD_CAMERA_MP4_PATH = "CAMERA_MP4_PATH";
 
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
@@ -41,8 +44,11 @@ public class ConfigManager {
     private boolean enableClient = false;
     private String serviceName = null;
     private long localSessionLimitTime = 0; // ms
+
+    // MEDIA
     private String mediaBasePath = null;
     private String mediaListPath = null;
+    private String cameraMp4Path = null;
 
     // NETWORK
     private int threadCount = 0;
@@ -72,6 +78,7 @@ public class ConfigManager {
             this.ini = new Ini(iniFile);
 
             loadCommonConfig();
+            loadMediaConfig();
             loadNetworkConfig();
             loadScriptConfig();
 
@@ -108,19 +115,33 @@ public class ConfigManager {
             System.exit(1);
         }
 
-        this.mediaBasePath = getIniValue(SECTION_COMMON, FIELD_MEDIA_BASE_PATH);
-        if (mediaBasePath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_MEDIA_BASE_PATH);
-            System.exit(1);
-        }
-
-        this.mediaListPath = getIniValue(SECTION_COMMON, FIELD_MEDIA_LIST_PATH);
-        if (mediaListPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_MEDIA_LIST_PATH);
-            System.exit(1);
-        }
-
         logger.debug("Load [{}] config...(OK)", SECTION_COMMON);
+    }
+
+    /**
+     * @fn private void loadMediaConfig()
+     * @brief MEDIA Section 을 로드하는 함수
+     */
+    private void loadMediaConfig() {
+        this.mediaBasePath = getIniValue(SECTION_MEDIA, FIELD_MEDIA_BASE_PATH);
+        if (mediaBasePath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_MEDIA_BASE_PATH);
+            System.exit(1);
+        }
+
+        this.mediaListPath = getIniValue(SECTION_MEDIA, FIELD_MEDIA_LIST_PATH);
+        if (mediaListPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_MEDIA_LIST_PATH);
+            System.exit(1);
+        }
+
+        this.cameraMp4Path = getIniValue(SECTION_MEDIA, FIELD_CAMERA_MP4_PATH);
+        if (cameraMp4Path == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CAMERA_MP4_PATH);
+            System.exit(1);
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
     /**
@@ -263,5 +284,9 @@ public class ConfigManager {
 
     public String getScriptPath() {
         return scriptPath;
+    }
+
+    public String getCameraMp4Path() {
+        return cameraMp4Path;
     }
 }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import tool.parser.mpd.MPD;
+import util.module.FileManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -51,10 +52,12 @@ public class DashMessageHandler implements HttpMessageHandler {
             return null;
         }
 
-        File uriFile = new File(uri);
-        if (!uriFile.exists() || uriFile.isDirectory()) {
-            logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. URI is not exists or directory. (uri={})", this.uri, uri);
-            return null;
+        if (uri.contains(".")) {
+            File uriFile = new File(uri);
+            if (!uriFile.exists() || uriFile.isDirectory()) {
+                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. (uri={})", this.uri, uri);
+                return null;
+            }
         }
         ///////////////////////////
 
@@ -64,17 +67,45 @@ public class DashMessageHandler implements HttpMessageHandler {
         try {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
-            if (uri.endsWith(".mp4")) {
-                mpdPath = uri.replace(".mp4", ".mpd");
+            if (uri.contains(".")) {
+                if (uri.endsWith(".mp4")) {
+                    mpdPath = uri.replace(".mp4", ".mpd");
+                    File mpdFile = new File(mpdPath);
+                    if (!mpdFile.exists()) {
+                        String run = "python3 " + scriptPath;
+
+                        ///////////////////////////
+                        // FOR dash_encoder.py
+                        //String mpdDirectoryPath = mpdPath.substring(0, mpdPath.lastIndexOf("/")); // Absolute path
+                        //run = run + " --dash_folder " + mpdDirectoryPath + " --video " + uri; // python3 dash_encoder.py --dash_folder /home/uangel/udash/media/Seoul --video /home/uangel/udash/media/Seoul/Seoul.mp4
+                        ///////////////////////////
+
+                        ///////////////////////////
+                        // FOR mp4_to_dash.py
+                        run = run + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
+                        ///////////////////////////
+
+                        runProcess(mpdPath, run);
+
+                        mpdFile = new File(mpdPath);
+                        if (!mpdFile.exists()) {
+                            logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+                            return null;
+                        }
+                    } else {
+                        logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
+                    }
+                } else if (uri.endsWith(".mpd")) {
+                    mpdPath = uri;
+                } else {
+                    logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+                    return null;
+                }
+            } else {
+                mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
                 File mpdFile = new File(mpdPath);
                 if (!mpdFile.exists()) {
                     String run = "python3 " + scriptPath;
-
-                    ///////////////////////////
-                    // FOR dash_encoder.py
-                    //String mpdDirectoryPath = mpdPath.substring(0, mpdPath.lastIndexOf("/")); // Absolute path
-                    //run = run + " --dash_folder " + mpdDirectoryPath + " --video " + uri; // python3 dash_encoder.py --dash_folder /home/uangel/udash/media/Seoul --video /home/uangel/udash/media/Seoul/Seoul.mp4
-                    ///////////////////////////
 
                     ///////////////////////////
                     // FOR mp4_to_dash.py
@@ -91,11 +122,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                 } else {
                     logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
                 }
-            } else if (uri.endsWith(".mpd")) {
-                mpdPath = uri;
-            } else {
-                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                return null;
             }
 
             ///////////////////////////
