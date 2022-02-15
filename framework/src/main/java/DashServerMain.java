@@ -20,6 +20,7 @@ public class DashServerMain {
 
         AppInstance appInstance = AppInstance.getInstance();
         appInstance.setConfigManager(configManager);
+        appInstance.setConfigPath(configPath);
 
         ServiceManager serviceManager = ServiceManager.getInstance();
         serviceManager.loop();

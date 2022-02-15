@@ -1,6 +1,7 @@
 package service.monitor;
 
 import dash.unit.DashUnit;
+import network.user.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -41,7 +42,27 @@ public class LongSessionRemover extends Job {
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
                     ServiceManager.getInstance().getDashManager().deleteDashUnit(dashUnit.getId());
-                    logger.warn("({}) REMOVED LONG SESSION(DashUnit=\n{})", getName(), dashUnit);
+                    logger.warn("({}) REMOVED LONG DASH UNIT(DashUnit=\n{})", getName(), dashUnit);
+                }
+            }
+        }
+
+        Map<String, UserInfo> userInfoMap = ServiceManager.getInstance().getDashManager().getUserManager().getCloneUserInfoMap();
+        if (!userInfoMap.isEmpty()) {
+            for (Map.Entry<String, UserInfo> entry : userInfoMap.entrySet()) {
+                if (entry == null) {
+                    continue;
+                }
+
+                UserInfo userInfo = entry.getValue();
+                if (userInfo == null) {
+                    continue;
+                }
+
+                long curTime = System.currentTimeMillis();
+                if ((curTime - userInfo.getCreatedTime()) >= limitTime) {
+                    ServiceManager.getInstance().getDashManager().getUserManager().deleteUserInfo(userInfo.getUserId());
+                    logger.warn("({}) REMOVED LONG USER INFO(UserInfo=\n{})", getName(), userInfo);
                 }
             }
         }

@@ -70,7 +70,7 @@ public class UserManager {
         }
     }
 
-    public Map<String, UserInfo> getCloneCallMap( ) {
+    public Map<String, UserInfo> getCloneUserInfoMap( ) {
         HashMap<String, UserInfo> cloneMap;
 
         try {
@@ -104,10 +104,6 @@ public class UserManager {
 
     public static String getHashKey() {
         return USER_REGISTER_PRIVATE_KEY;
-    }
-
-    public boolean validateRegistration() {
-        return false;
     }
 
     public void clearUserInfoMap() {
