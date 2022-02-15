@@ -7,13 +7,17 @@
 + REF : python-ffmpeg-video-streaming
 (https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
 
-2) Get MPD class object & Validate MPD file
+2) MPD class object & Validatation of MPD file
 + REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
 (https://github.com/carlanton/mpd-tools)
 
 3) Camera
 + REF : org.bytedeco.javacv
 (https://github.com/bytedeco/javacv)
+
+4) Media platform
++ REF : NGINX, RTMP
+(https://github.com/arut/nginx-rtmp-module)
 
 ~~~
 
