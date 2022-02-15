@@ -10,7 +10,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import network.user.register.UserRegisterReq;
 import network.user.register.UserUnRegisterReq;
-import network.user.register.base.URtspMessageType;
+import network.user.register.base.URegisterMessageType;
 import network.user.register.handler.RegisterResChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,14 +82,14 @@ public class RegisterClientNettyChannel {
         try {
             ChannelFuture channelFuture = bootstrap.bind(address, port).sync();
             if (channelFuture == null) {
-                log.warn("Fail to start the rtsp register client listen channel. (ip={}, port={})", ip, port);
+                log.warn("Fail to start the dash register client listen channel. (ip={}, port={})", ip, port);
                 return;
             }
 
             listenChannel = channelFuture.channel();
-            log.debug("Success to start the rtsp register client listen channel. (ip={}, port={})", ip, port);
+            log.debug("Success to start the dash register client listen channel. (ip={}, port={})", ip, port);
         } catch (Exception e) {
-            log.warn("Fail to start the rtsp register client listen channel. (ip={}, port={})", ip, port, e);
+            log.warn("Fail to start the dash register client listen channel. (ip={}, port={})", ip, port, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -110,20 +110,20 @@ public class RegisterClientNettyChannel {
         try {
             ChannelFuture channelFuture = bootstrap.connect(address, targetPort).sync();
             if (channelFuture == null) {
-                log.warn("Fail to start the rtsp register send channelFuture. (ip={}, port={})", targetIp, targetPort);
+                log.warn("Fail to start the dash register send channelFuture. (ip={}, port={})", targetIp, targetPort);
                 return;
             }
 
             sendChannel = channelFuture.channel();
-            log.debug("Success to start the rtsp register client send channel. (ip={}, port={})", targetIp, targetPort);
+            log.debug("Success to start the dash register client send channel. (ip={}, port={})", targetIp, targetPort);
         } catch (Exception e) {
-            log.warn("Fail to start the rtsp register client send channel. (ip={}, port={}) {}", targetIp, targetPort, e);
+            log.warn("Fail to start the dash register client send channel. (ip={}, port={}) {}", targetIp, targetPort, e);
         }
     }
 
     public void stop() {
         if (listenChannel == null) {
-            log.warn("Fail to stop the rtsp register client listen listen channel. (ip={}, port={})", ip, port);
+            log.warn("Fail to stop the dash register client listen listen channel. (ip={}, port={})", ip, port);
             return;
         }
 
@@ -131,7 +131,7 @@ public class RegisterClientNettyChannel {
         listenChannel = null;
 
         if (sendChannel == null) {
-            log.warn("Fail to stop the rtsp register client listen send channel. (ip={}, port={})", ip, port);
+            log.warn("Fail to stop the dash register client listen send channel. (ip={}, port={})", ip, port);
             return;
         }
 
@@ -139,7 +139,7 @@ public class RegisterClientNettyChannel {
         sendChannel = null;
 
         seqNum = 1;
-        log.debug("Success to stop the rtsp register client listen channels. (ip={}, port={})", ip, port);
+        log.debug("Success to stop the dash register client listen channels. (ip={}, port={})", ip, port);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ public class RegisterClientNettyChannel {
 
         UserRegisterReq userRegisterReq = new UserRegisterReq(
                 AppInstance.getInstance().getConfigManager().getMagicCookie(),
-                URtspMessageType.REGISTER, seqNum, System.currentTimeMillis(),
+                URegisterMessageType.REGISTER, seqNum, System.currentTimeMillis(),
                 id, 7200, (short) port
         );
 
@@ -171,15 +171,15 @@ public class RegisterClientNettyChannel {
         log.debug("[<] {} ({})", userRegisterReq, userRegisterReq.getByteData().length);
     }
 
-    public void sendUnRegister(String rtspUnitId, String targetIp, int targetPort) {
+    public void sendUnRegister(String userId, String targetIp, int targetPort) {
         if (sendChannel == null) {
             return;
         }
 
         UserUnRegisterReq userUnRegisterReq = new UserUnRegisterReq(
                 AppInstance.getInstance().getConfigManager().getMagicCookie(),
-                URtspMessageType.UNREGISTER, seqNum, System.currentTimeMillis(),
-                rtspUnitId, (short) port
+                URegisterMessageType.UNREGISTER, seqNum, System.currentTimeMillis(),
+                userId, (short) port
         );
 
         InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, targetPort);

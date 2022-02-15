@@ -162,7 +162,7 @@ public class ServiceManager {
             fileChannel = FileChannel.open(lockFile.toPath(), CREATE, READ, WRITE);
             lock = fileChannel.tryLock();
             if (lock == null) {
-                logger.error("RTSP SERVER process is already running.");
+                logger.error("DASH process is already running.");
                 Thread.sleep(500L);
                 System.exit(1);
             }

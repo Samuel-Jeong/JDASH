@@ -11,8 +11,8 @@ import network.user.UserManager;
 import network.user.register.channel.RegisterClientNettyChannel;
 import network.user.register.UserRegisterRes;
 import network.user.register.UserUnRegisterRes;
-import network.user.register.base.URtspHeader;
-import network.user.register.base.URtspMessageType;
+import network.user.register.base.URegisterHeader;
+import network.user.register.base.URegisterMessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -42,8 +42,8 @@ public class RegisterResChannelHandler extends SimpleChannelInboundHandler<Datag
         try {
             UserInfo userInfo = ServiceManager.getInstance().getDashManager().getMyUserInfo();
 
-            RegisterClientNettyChannel rtspRegisterNettyChannel = userInfo.getRegisterClientChannel();
-            if (rtspRegisterNettyChannel == null) {
+            RegisterClientNettyChannel registerClientChannel = userInfo.getRegisterClientChannel();
+            if (registerClientChannel == null) {
                 return;
             }
 
@@ -62,14 +62,14 @@ public class RegisterResChannelHandler extends SimpleChannelInboundHandler<Datag
             byte[] data = new byte[readBytes];
             buf.getBytes(0, data);
 
-            URtspHeader uRtspHeader = new URtspHeader(data);
-            if (uRtspHeader.getMessageType() == URtspMessageType.REGISTER) {
+            URegisterHeader URegisterHeader = new URegisterHeader(data);
+            if (URegisterHeader.getMessageType() == URegisterMessageType.REGISTER) {
                 UserRegisterRes userRegisterRes = new UserRegisterRes(data);
                 logger.debug("[>] {} ({})", userRegisterRes, readBytes);
 
                 int status = userRegisterRes.getStatusCode();
                 if (status == UserRegisterRes.SUCCESS) { // OK
-                    // RTSP Channel OPEN (New RtspUnit)
+                    // DASH Channel OPEN (New UserInfo)
                     GuiManager.getInstance().getControlPanel().applyRegistrationButtonStatus();
                     userInfo.setRegistered(true);
                 } else if (status == UserRegisterRes.NOT_AUTHORIZED) { // NOT AUTHORIZED
@@ -83,7 +83,7 @@ public class RegisterResChannelHandler extends SimpleChannelInboundHandler<Datag
                     messageDigest.update(a1);
 
                     String nonce = new String(messageDigest.digest());
-                    rtspRegisterNettyChannel.sendRegister(
+                    registerClientChannel.sendRegister(
                             userInfo.getUserId(),
                             configManager.getRegisterTargetIp(),
                             configManager.getRegisterTargetPort(),
@@ -93,7 +93,7 @@ public class RegisterResChannelHandler extends SimpleChannelInboundHandler<Datag
                 } else {
                     logger.warn("({}) Fail to register the dashUnit. (code={})", userInfo.getUserId(), status);
                 }
-            } else if (uRtspHeader.getMessageType() == URtspMessageType.UNREGISTER) {
+            } else if (URegisterHeader.getMessageType() == URegisterMessageType.UNREGISTER) {
                 UserUnRegisterRes userUnRegisterRes = new UserUnRegisterRes(data);
                 logger.debug("[>] {} ({})", userUnRegisterRes, readBytes);
 

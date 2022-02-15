@@ -26,9 +26,9 @@ public class LongSessionRemover extends Job {
 
     @Override
     public void run() {
-        HashMap<String, DashUnit> rtspUnitMap = ServiceManager.getInstance().getDashManager().getCloneDashMap();
-        if (!rtspUnitMap.isEmpty()) {
-            for (Map.Entry<String, DashUnit> entry : rtspUnitMap.entrySet()) {
+        HashMap<String, DashUnit> dashUnitMap = ServiceManager.getInstance().getDashManager().getCloneDashMap();
+        if (!dashUnitMap.isEmpty()) {
+            for (Map.Entry<String, DashUnit> entry : dashUnitMap.entrySet()) {
                 if (entry == null) {
                     continue;
                 }

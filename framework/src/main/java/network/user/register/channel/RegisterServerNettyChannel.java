@@ -8,9 +8,8 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import network.user.register.base.URtspMessage;
+import network.user.register.base.URegisterMessage;
 import network.user.register.handler.RegisterReqChannelHandler;
-import network.user.register.handler.RegisterResChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -76,42 +75,42 @@ public class RegisterServerNettyChannel {
         try {
             ChannelFuture channelFuture = bootstrap.bind(address, port).sync();
             if (channelFuture == null) {
-                logger.warn("Fail to start the rtsp register server listen channel. (ip={}, port={})", ip, port);
+                logger.warn("Fail to start the dash register server listen channel. (ip={}, port={})", ip, port);
                 return;
             }
 
             channel = channelFuture.channel();
-            logger.debug("Success to start the rtsp register server listen channel. (ip={}, port={})", ip, port);
+            logger.debug("Success to start the dash register server listen channel. (ip={}, port={})", ip, port);
         } catch (Exception e) {
-            logger.warn("Fail to start the rtsp register server listen channel. (ip={}, port={})", ip, port);
+            logger.warn("Fail to start the dash register server listen channel. (ip={}, port={})", ip, port);
         }
     }
 
     public void stop() {
         if (channel == null) {
-            logger.warn("Fail to stop the rtsp register server listen channel. (ip={}, port={})", ip, port);
+            logger.warn("Fail to stop the dash register server listen channel. (ip={}, port={})", ip, port);
             return;
         }
 
         channel.close();
         channel = null;
-        logger.debug("Success to stop the rtsp register server listen channel. (ip={}, port={})", ip, port);
+        logger.debug("Success to stop the dash register server listen channel. (ip={}, port={})", ip, port);
     }
 
-    public void sendResponse(String targetIp, short targetPort, URtspMessage uRtspMessage) {
-        if (targetIp == null || targetPort <= 0 || uRtspMessage == null) {
+    public void sendResponse(String targetIp, short targetPort, URegisterMessage uRegisterMessage) {
+        if (targetIp == null || targetPort <= 0 || uRegisterMessage == null) {
             return;
         }
 
         InetSocketAddress remoteAddress = new InetSocketAddress(targetIp, targetPort);
         channel.writeAndFlush(
                 new DatagramPacket(
-                        Unpooled.copiedBuffer(uRtspMessage.getByteData()),
+                        Unpooled.copiedBuffer(uRegisterMessage.getByteData()),
                         remoteAddress
                 )
         );
 
-        logger.debug("[<] {} ({})", uRtspMessage, uRtspMessage.getByteData().length);
+        logger.debug("[<] {} ({})", uRegisterMessage, uRegisterMessage.getByteData().length);
     }
 
     public String getIp() {

@@ -1,20 +1,20 @@
 package network.user.register;
 
-import network.user.register.base.URtspHeader;
-import network.user.register.base.URtspMessage;
-import network.user.register.base.URtspMessageType;
-import network.user.register.exception.URtspException;
+import network.user.register.base.URegisterHeader;
+import network.user.register.base.URegisterMessage;
+import network.user.register.base.URegisterMessageType;
+import network.user.register.exception.URegisterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class UserRegisterReq extends URtspMessage {
+public class UserRegisterReq extends URegisterMessage {
 
     private static final Logger log = LoggerFactory.getLogger(UserRegisterReq.class);
 
-    private final URtspHeader uRtspHeader;
+    private final URegisterHeader uRegisterHeader;
 
     private final int idLength;         // 4 bytes
     private final String id;            // idLength bytes
@@ -23,13 +23,13 @@ public class UserRegisterReq extends URtspMessage {
     private int nonceLength = 0;            // 4 bytes
     private String nonce = "";          // nonceLength bytes
 
-    public UserRegisterReq(byte[] data) throws URtspException {
-        if (data.length >= URtspHeader.U_RTSP_HEADER_SIZE + ByteUtil.NUM_BYTES_IN_LONG + ByteUtil.NUM_BYTES_IN_SHORT) {
+    public UserRegisterReq(byte[] data) throws URegisterException {
+        if (data.length >= URegisterHeader.U_REGISTER_HEADER_SIZE + ByteUtil.NUM_BYTES_IN_LONG + ByteUtil.NUM_BYTES_IN_SHORT) {
             int index = 0;
 
-            byte[] headerByteData = new byte[URtspHeader.U_RTSP_HEADER_SIZE];
+            byte[] headerByteData = new byte[URegisterHeader.U_REGISTER_HEADER_SIZE];
             System.arraycopy(data, index, headerByteData, 0, headerByteData.length);
-            this.uRtspHeader = new URtspHeader(headerByteData);
+            this.uRegisterHeader = new URegisterHeader(headerByteData);
             index += headerByteData.length;
 
             byte[] idLengthByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
@@ -63,7 +63,7 @@ public class UserRegisterReq extends URtspMessage {
                 nonce = new String(nonceByteData);
             }
         } else {
-            this.uRtspHeader = null;
+            this.uRegisterHeader = null;
             this.idLength = 0;
             this.id = null;
             this.expires = 0;
@@ -71,10 +71,10 @@ public class UserRegisterReq extends URtspMessage {
         }
     }
 
-    public UserRegisterReq(String magicCookie, URtspMessageType messageType, int seqNumber, long timeStamp, String id, long expires, short listenPort) {
+    public UserRegisterReq(String magicCookie, URegisterMessageType messageType, int seqNumber, long timeStamp, String id, long expires, short listenPort) {
         int bodyLength = id.length() + ByteUtil.NUM_BYTES_IN_LONG + ByteUtil.NUM_BYTES_IN_INT * 2 + ByteUtil.NUM_BYTES_IN_SHORT;
 
-        this.uRtspHeader = new URtspHeader(magicCookie, messageType, seqNumber, timeStamp, bodyLength);
+        this.uRegisterHeader = new URegisterHeader(magicCookie, messageType, seqNumber, timeStamp, bodyLength);
         this.expires = expires;
         this.idLength = id.getBytes(StandardCharsets.UTF_8).length;
         this.id = id;
@@ -83,10 +83,10 @@ public class UserRegisterReq extends URtspMessage {
 
     @Override
     public byte[] getByteData() {
-        byte[] data = new byte[URtspHeader.U_RTSP_HEADER_SIZE + this.uRtspHeader.getBodyLength()];
+        byte[] data = new byte[URegisterHeader.U_REGISTER_HEADER_SIZE + this.uRegisterHeader.getBodyLength()];
         int index = 0;
 
-        byte[] headerByteData = this.uRtspHeader.getByteData();
+        byte[] headerByteData = this.uRegisterHeader.getByteData();
         System.arraycopy(headerByteData, 0, data, index, headerByteData.length);
         index += headerByteData.length;
 
@@ -121,8 +121,8 @@ public class UserRegisterReq extends URtspMessage {
         return data;
     }
 
-    public URtspHeader getURtspHeader() {
-        return uRtspHeader;
+    public URegisterHeader getURegisterHeader() {
+        return uRegisterHeader;
     }
 
     public long getExpires() {
@@ -145,7 +145,7 @@ public class UserRegisterReq extends URtspMessage {
         this.nonceLength = nonce.getBytes(StandardCharsets.UTF_8).length;
         this.nonce = nonce;
 
-        uRtspHeader.setBodyLength(uRtspHeader.getBodyLength() + nonceLength);
+        uRegisterHeader.setBodyLength(uRegisterHeader.getBodyLength() + nonceLength);
     }
 
 }

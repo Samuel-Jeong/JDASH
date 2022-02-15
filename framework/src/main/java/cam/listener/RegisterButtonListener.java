@@ -20,13 +20,13 @@ public class RegisterButtonListener implements ActionListener {
         UserInfo userInfo = ServiceManager.getInstance().getDashManager().getMyUserInfo();
 
         // Send Register
-        RegisterClientNettyChannel rtspRegisterNettyChannel = userInfo.getRegisterClientChannel();
-        if (rtspRegisterNettyChannel == null) {
+        RegisterClientNettyChannel registerClientChannel = userInfo.getRegisterClientChannel();
+        if (registerClientChannel == null) {
             return;
         }
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        rtspRegisterNettyChannel.sendRegister(
+        registerClientChannel.sendRegister(
                 userInfo.getUserId(),
                 configManager.getRegisterTargetIp(),
                 configManager.getRegisterTargetPort(),

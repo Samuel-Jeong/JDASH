@@ -3,7 +3,7 @@ package network.user.register.base;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public abstract class URtspMessage {
+public abstract class URegisterMessage {
 
     public byte[] getByteData() {
         return new byte[0];

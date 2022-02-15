@@ -1,16 +1,16 @@
 package network.user.register;
 
-import network.user.register.base.URtspHeader;
-import network.user.register.base.URtspMessage;
-import network.user.register.base.URtspMessageType;
-import network.user.register.exception.URtspException;
+import network.user.register.base.URegisterHeader;
+import network.user.register.base.URegisterMessage;
+import network.user.register.base.URegisterMessageType;
+import network.user.register.exception.URegisterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class UserUnRegisterRes extends URtspMessage {
+public class UserUnRegisterRes extends URegisterMessage {
 
     private static final Logger logger = LoggerFactory.getLogger(UserUnRegisterRes.class);
 
@@ -18,19 +18,19 @@ public class UserUnRegisterRes extends URtspMessage {
     public static final int NOT_ACCEPTED = 400;
     public static final int STATE_ERROR = 402;
 
-    private final URtspHeader uRtspHeader;
+    private final URegisterHeader uRegisterHeader;
 
     private final int statusCode;
     private int reasonLength;
     private String reason = "";
 
-    public UserUnRegisterRes(byte[] data) throws URtspException {
-        if (data.length >= URtspHeader.U_RTSP_HEADER_SIZE + ByteUtil.NUM_BYTES_IN_INT * 2) {
+    public UserUnRegisterRes(byte[] data) throws URegisterException {
+        if (data.length >= URegisterHeader.U_REGISTER_HEADER_SIZE + ByteUtil.NUM_BYTES_IN_INT * 2) {
             int index = 0;
 
-            byte[] headerByteData = new byte[URtspHeader.U_RTSP_HEADER_SIZE];
+            byte[] headerByteData = new byte[URegisterHeader.U_REGISTER_HEADER_SIZE];
             System.arraycopy(data, index, headerByteData, 0, headerByteData.length);
-            this.uRtspHeader = new URtspHeader(headerByteData);
+            this.uRegisterHeader = new URegisterHeader(headerByteData);
             index += headerByteData.length;
 
             byte[] statusCodeByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
@@ -49,24 +49,24 @@ public class UserUnRegisterRes extends URtspMessage {
                 reason = new String(reasonByteData, StandardCharsets.UTF_8);
             }
         } else {
-            this.uRtspHeader = null;
+            this.uRegisterHeader = null;
             this.statusCode = 0;
         }
     }
 
-    public UserUnRegisterRes(String magicCookie, URtspMessageType messageType, int seqNumber, long timeStamp, int statusCode) {
+    public UserUnRegisterRes(String magicCookie, URegisterMessageType messageType, int seqNumber, long timeStamp, int statusCode) {
         int bodyLength = ByteUtil.NUM_BYTES_IN_INT * 2;
 
-        this.uRtspHeader = new URtspHeader(magicCookie, messageType, seqNumber, timeStamp, bodyLength);
+        this.uRegisterHeader = new URegisterHeader(magicCookie, messageType, seqNumber, timeStamp, bodyLength);
         this.statusCode = statusCode;
     }
 
     @Override
     public byte[] getByteData(){
-        byte[] data = new byte[URtspHeader.U_RTSP_HEADER_SIZE + this.uRtspHeader.getBodyLength()];
+        byte[] data = new byte[URegisterHeader.U_REGISTER_HEADER_SIZE + this.uRegisterHeader.getBodyLength()];
         int index = 0;
 
-        byte[] headerByteData = this.uRtspHeader.getByteData();
+        byte[] headerByteData = this.uRegisterHeader.getByteData();
         System.arraycopy(headerByteData, 0, data, index, headerByteData.length);
         index += headerByteData.length;
 
@@ -89,8 +89,8 @@ public class UserUnRegisterRes extends URtspMessage {
         return data;
     }
 
-    public URtspHeader getURtspHeader() {
-        return uRtspHeader;
+    public URegisterHeader getuRegisterHeader() {
+        return uRegisterHeader;
     }
 
     public int getStatusCode() {
@@ -105,7 +105,7 @@ public class UserUnRegisterRes extends URtspMessage {
         this.reasonLength = reason.getBytes(StandardCharsets.UTF_8).length;
         this.reason = reason;
 
-        uRtspHeader.setBodyLength(uRtspHeader.getBodyLength() + reasonLength);
+        uRegisterHeader.setBodyLength(uRegisterHeader.getBodyLength() + reasonLength);
     }
 
 }

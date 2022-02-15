@@ -1,22 +1,22 @@
 package network.user.register.base;
 
-import network.user.register.exception.URtspException;
+import network.user.register.exception.URegisterException;
 import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class URtspHeader {
+public class URegisterHeader {
 
-    public static final int U_RTSP_HEADER_SIZE = 22;
+    public static final int U_REGISTER_HEADER_SIZE = 22;
 
     private final String magicCookie;               // 2 bytes
-    private final URtspMessageType messageType;     // 4 bytes
+    private final URegisterMessageType messageType;     // 4 bytes
     private final int seqNumber;                  // 4 bytes
     private final long timeStamp;                   // 8 bytes
     private int bodyLength;                     // 4 bytes
 
-    public URtspHeader(byte[] data) throws URtspException {
-        if (data.length >= U_RTSP_HEADER_SIZE) {
+    public URegisterHeader(byte[] data) throws URegisterException {
+        if (data.length >= U_REGISTER_HEADER_SIZE) {
             int index = 0;
 
             byte[] magicCookieByteData = new byte[2];
@@ -26,7 +26,7 @@ public class URtspHeader {
 
             byte[] messageTypeByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
             System.arraycopy(data, index, messageTypeByteData, 0, messageTypeByteData.length);
-            this.messageType = URtspMessageType.values()[ByteUtil.bytesToInt(messageTypeByteData, true)];
+            this.messageType = URegisterMessageType.values()[ByteUtil.bytesToInt(messageTypeByteData, true)];
             index += messageTypeByteData.length;
 
             byte[] seqNumberByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
@@ -44,16 +44,16 @@ public class URtspHeader {
             this.bodyLength = ByteUtil.bytesToInt(bodyLengthByteData, true);
         } else {
             magicCookie = null;
-            messageType = URtspMessageType.UNKNOWN;
+            messageType = URegisterMessageType.UNKNOWN;
             seqNumber = 0;
             timeStamp = 0;
             bodyLength = 0;
 
-            throw new URtspException("[URtspHeader] Fail to create the header. Data length is wrong. (" + data.length + ")");
+            throw new URegisterException("[URegisterHeader] Fail to create the header. Data length is wrong. (" + data.length + ")");
         }
     }
 
-    public URtspHeader(String magicCookie, URtspMessageType messageType, int seqNumber, long timeStamp, int bodyLength) {
+    public URegisterHeader(String magicCookie, URegisterMessageType messageType, int seqNumber, long timeStamp, int bodyLength) {
         this.magicCookie = magicCookie;
         this.messageType = messageType;
         this.seqNumber = seqNumber;
@@ -62,14 +62,14 @@ public class URtspHeader {
     }
 
     public byte[] getByteData() {
-        byte[] data = new byte[U_RTSP_HEADER_SIZE];
+        byte[] data = new byte[U_REGISTER_HEADER_SIZE];
 
         int index = 0;
         byte[] magicCookieByteData = magicCookie.getBytes(StandardCharsets.UTF_8);
         System.arraycopy(magicCookieByteData, 0, data, index, magicCookieByteData.length);
         index += magicCookieByteData.length;
 
-        byte[] messageTypeByteData = ByteUtil.intToBytes(URtspMessageType.valueOf(messageType.name()).ordinal(), true);
+        byte[] messageTypeByteData = ByteUtil.intToBytes(URegisterMessageType.valueOf(messageType.name()).ordinal(), true);
         System.arraycopy(messageTypeByteData, 0, data, index, messageTypeByteData.length);
         index += messageTypeByteData.length;
 
@@ -91,7 +91,7 @@ public class URtspHeader {
         return magicCookie;
     }
 
-    public URtspMessageType getMessageType() {
+    public URegisterMessageType getMessageType() {
         return messageType;
     }
 

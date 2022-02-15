@@ -18,13 +18,13 @@ public class UnregisterButtonListener implements ActionListener {
         UserInfo userInfo = ServiceManager.getInstance().getDashManager().getMyUserInfo();
 
         // Send UnRegister
-        RegisterClientNettyChannel rtspRegisterNettyChannel = userInfo.getRegisterClientChannel();
-        if (rtspRegisterNettyChannel == null) {
+        RegisterClientNettyChannel registerClientChannel = userInfo.getRegisterClientChannel();
+        if (registerClientChannel == null) {
             return;
         }
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        rtspRegisterNettyChannel.sendUnRegister(
+        registerClientChannel.sendUnRegister(
                 userInfo.getUserId(),
                 configManager.getRegisterTargetIp(),
                 configManager.getRegisterTargetPort()

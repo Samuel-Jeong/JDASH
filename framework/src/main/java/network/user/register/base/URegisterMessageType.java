@@ -1,6 +1,6 @@
 package network.user.register.base;
 
-public enum URtspMessageType {
+public enum URegisterMessageType {
 
     UNKNOWN,
     REGISTER,
