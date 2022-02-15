@@ -47,7 +47,7 @@ public class LongSessionRemover extends Job {
             }
         }
 
-        Map<String, UserInfo> userInfoMap = ServiceManager.getInstance().getDashManager().getUserManager().getCloneUserInfoMap();
+        HashMap<String, UserInfo> userInfoMap = ServiceManager.getInstance().getDashManager().getUserManager().getCloneUserInfoMap();
         if (!userInfoMap.isEmpty()) {
             for (Map.Entry<String, UserInfo> entry : userInfoMap.entrySet()) {
                 if (entry == null) {

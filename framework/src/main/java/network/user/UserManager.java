@@ -70,7 +70,7 @@ public class UserManager {
         }
     }
 
-    public Map<String, UserInfo> getCloneUserInfoMap( ) {
+    public HashMap<String, UserInfo> getCloneUserInfoMap() {
         HashMap<String, UserInfo> cloneMap;
 
         try {
