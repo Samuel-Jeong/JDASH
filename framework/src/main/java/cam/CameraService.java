@@ -102,7 +102,7 @@ public class CameraService {
 
     private void process() {
         try {
-            final CanvasFrame cFrame = new CanvasFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
+            final CameraFrame cameraFrame = new CameraFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
 
             Frame capturedFrame;
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -115,8 +115,8 @@ public class CameraService {
                 opencv_imgproc.putText(mat, simpleDateFormat.format(new Date()), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, new Scalar(0, 200, 255, 0), 1, 0, false);
                 capturedFrame = openCVConverter.convert(mat);
 
-                if (alive && cFrame.isVisible()) {
-                    cFrame.showImage(capturedFrame);
+                if (alive && cameraFrame.isVisible()) {
+                    cameraFrame.streamToMyCameraFrame(capturedFrame);
                 }
 
                 if (startTime == 0) {

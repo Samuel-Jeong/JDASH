@@ -1,6 +1,8 @@
 package service;
 
+import config.ConfigManager;
 import dash.DashManager;
+import network.user.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
@@ -97,6 +99,13 @@ public class ServiceManager {
         ////////////////////////////////////////
         // INITIATE DASH MANAGER
         dashManager.start();
+
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        UserInfo userInfo = dashManager.getMyUserInfo();
+        if (configManager.isEnableClient()) {
+            userInfo.addRegisterClientChannel();
+        }
+        userInfo.addRegisterServerChannel();
         ////////////////////////////////////////
 
         logger.debug("| All services are opened.");
@@ -106,6 +115,9 @@ public class ServiceManager {
     public void stop () {
         ////////////////////////////////////////
         // FINISH DASH MANAGER
+        UserInfo userInfo = dashManager.getMyUserInfo();
+        userInfo.removeRegisterClientChannel();
+        userInfo.removeRegisterServerChannel();
         dashManager.stop();
         ////////////////////////////////////////
 

@@ -21,6 +21,7 @@ public class ConfigManager {
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
     public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
+    public static final String SECTION_REGISTER = "REGISTER"; // REGISTER Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
@@ -28,6 +29,10 @@ public class ConfigManager {
     public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
+    public static final String FIELD_ICON_ROOT_PATH = "ICON_ROOT_PATH";
+    public static final String FIELD_PLAYLIST_ROOT_PATH = "PLAYLIST_ROOT_PATH";
+    public static final String FIELD_PLAYLIST_SIZE = "PLAYLIST_SIZE";
+    public static final String FIELD_URI_LIMIT = "URI_LIMIT";
 
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
@@ -39,6 +44,14 @@ public class ConfigManager {
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
 
+    public static final String FIELD_MAGIC_COOKIE = "MAGIC_COOKIE";
+    public static final String FIELD_REGISTER_LISTEN_IP = "REGISTER_LISTEN_IP";
+    public static final String FIELD_REGISTER_LISTEN_PORT = "REGISTER_LISTEN_PORT";
+    public static final String FIELD_REGISTER_LOCAL_IP = "REGISTER_LOCAL_IP";
+    public static final String FIELD_REGISTER_LOCAL_PORT = "REGISTER_LOCAL_PORT";
+    public static final String FIELD_REGISTER_TARGET_IP = "REGISTER_TARGET_IP";
+    public static final String FIELD_REGISTER_TARGET_PORT = "REGISTER_TARGET_PORT";
+
     public static final String FIELD_RTMP_IP = "RTMP_IP";
     public static final String FIELD_RTMP_PORT = "RTMP_PORT";
 
@@ -48,6 +61,10 @@ public class ConfigManager {
     private boolean enableClient = false;
     private String serviceName = null;
     private long localSessionLimitTime = 0; // ms
+    private String iconRootPath = null;
+    private String playlistRootPath = null;
+    private int playlistSize = 0;
+    private int uriLimit = 0;
 
     // MEDIA
     private String mediaBasePath = null;
@@ -60,6 +77,15 @@ public class ConfigManager {
     private int recvBufSize = 0;
     private String httpListenIp = null;
     private int httpListenPort = 0;
+
+    // REGISTER
+    private String magicCookie = null;
+    private String registerListenIp = null;
+    private int registerListenPort = 0;
+    private String registerLocalIp = null;
+    private int registerLocalPort = 0;
+    private String registerTargetIp = null;
+    private int registerTargetPort = 0;
 
     // RTMP
     private String rtmpIp = null;
@@ -88,6 +114,7 @@ public class ConfigManager {
             loadCommonConfig();
             loadMediaConfig();
             loadNetworkConfig();
+            loadRegisterConfig();
             loadRtmpConfig();
             loadScriptConfig();
 
@@ -122,6 +149,40 @@ public class ConfigManager {
         if (this.localSessionLimitTime < 0) {
             logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
             System.exit(1);
+        }
+
+        this.iconRootPath = getIniValue(SECTION_COMMON, FIELD_ICON_ROOT_PATH);
+        if (iconRootPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ICON_ROOT_PATH);
+            System.exit(1);
+        }
+
+        this.playlistRootPath = getIniValue(SECTION_COMMON, FIELD_PLAYLIST_ROOT_PATH);
+        if (playlistRootPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_PLAYLIST_ROOT_PATH);
+            System.exit(1);
+        }
+
+        String playlistSizeString = getIniValue(SECTION_COMMON, FIELD_PLAYLIST_SIZE);
+        if (playlistSizeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_PLAYLIST_SIZE);
+            System.exit(1);
+        } else {
+            this.playlistSize = Integer.parseInt(playlistSizeString);
+            if (this.playlistSize <= 0) {
+                this.playlistSize = 5; // default
+            }
+        }
+
+        String uriLimitString = getIniValue(SECTION_COMMON, FIELD_URI_LIMIT);
+        if (uriLimitString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_URI_LIMIT);
+            System.exit(1);
+        } else {
+            this.uriLimit = Integer.parseInt(uriLimitString);
+            if (this.uriLimit <= 0) {
+                this.uriLimit = 300; // default
+            }
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_COMMON);
@@ -189,11 +250,80 @@ public class ConfigManager {
         } else {
             this.httpListenPort = Integer.parseInt(httpListenPortString);
             if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
-                this.httpListenPort = 5858; // default
+                logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
+                System.exit(1);
             }
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_NETWORK);
+    }
+
+    /**
+     * @fn private void loadRegisterConfig()
+     * @brief REGISTER Section 을 로드하는 함수
+     */
+    private void loadRegisterConfig() {
+        this.magicCookie = getIniValue(SECTION_REGISTER, FIELD_MAGIC_COOKIE);
+        if (this.magicCookie == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_MAGIC_COOKIE);
+            System.exit(1);
+        }
+
+        this.registerListenIp = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LISTEN_IP);
+        if (this.registerListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String registerListenPortString = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+        if (registerListenPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.registerListenPort = Integer.parseInt(registerListenPortString);
+            if (this.registerListenPort <= 0 || this.registerListenPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.registerLocalIp = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LOCAL_IP);
+        if (this.registerLocalIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LOCAL_IP);
+            System.exit(1);
+        }
+
+        String registerLocalPortString = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LOCAL_PORT);
+        if (registerLocalPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LOCAL_PORT);
+            System.exit(1);
+        } else {
+            this.registerLocalPort = Integer.parseInt(registerLocalPortString);
+            if (this.registerLocalPort <= 0 || this.registerLocalPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LOCAL_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.registerTargetIp = getIniValue(SECTION_REGISTER, FIELD_REGISTER_TARGET_IP);
+        if (this.registerTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_IP);
+            System.exit(1);
+        }
+
+        String registerTargetPortString = getIniValue(SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+        if (registerTargetPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.registerTargetPort = Integer.parseInt(registerTargetPortString);
+            if (this.registerTargetPort <= 0 || this.registerTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_REGISTER);
     }
 
     /**
@@ -214,7 +344,8 @@ public class ConfigManager {
         } else {
             this.rtmpPort = Integer.parseInt(rtmpPortString);
             if (this.rtmpPort <= 0 || this.rtmpPort > 65535) {
-                this.rtmpPort = 1935; // default
+                logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PORT);
+                System.exit(1);
             }
         }
 
@@ -330,5 +461,49 @@ public class ConfigManager {
 
     public int getRtmpPort() {
         return rtmpPort;
+    }
+
+    public String getMagicCookie() {
+        return magicCookie;
+    }
+
+    public String getRegisterLocalIp() {
+        return registerLocalIp;
+    }
+
+    public int getRegisterLocalPort() {
+        return registerLocalPort;
+    }
+
+    public String getRegisterTargetIp() {
+        return registerTargetIp;
+    }
+
+    public int getRegisterTargetPort() {
+        return registerTargetPort;
+    }
+
+    public String getIconRootPath() {
+        return iconRootPath;
+    }
+
+    public String getPlaylistRootPath() {
+        return playlistRootPath;
+    }
+
+    public int getPlaylistSize() {
+        return playlistSize;
+    }
+
+    public int getUriLimit() {
+        return uriLimit;
+    }
+
+    public String getRegisterListenIp() {
+        return registerListenIp;
+    }
+
+    public int getRegisterListenPort() {
+        return registerListenPort;
     }
 }
