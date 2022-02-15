@@ -52,8 +52,8 @@ public class ConfigManager {
     public static final String FIELD_REGISTER_TARGET_IP = "REGISTER_TARGET_IP";
     public static final String FIELD_REGISTER_TARGET_PORT = "REGISTER_TARGET_PORT";
 
-    public static final String FIELD_RTMP_IP = "RTMP_IP";
-    public static final String FIELD_RTMP_PORT = "RTMP_PORT";
+    public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
+    public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
 
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
@@ -88,8 +88,8 @@ public class ConfigManager {
     private int registerTargetPort = 0;
 
     // RTMP
-    private String rtmpIp = null;
-    private int rtmpPort = 0;
+    private String rtmpPublishIp = null;
+    private int rtmpPublishPort = 0;
 
     // SCRIPT
     private String scriptPath = null;
@@ -331,20 +331,20 @@ public class ConfigManager {
      * @brief RTMP Section 을 로드하는 함수
      */
     private void loadRtmpConfig() {
-        this.rtmpIp = getIniValue(SECTION_RTMP, FIELD_RTMP_IP);
-        if (this.rtmpIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_IP);
+        this.rtmpPublishIp = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
+        if (this.rtmpPublishIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
             System.exit(1);
         }
 
-        String rtmpPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PORT);
-        if (rtmpPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PORT);
+        String rtmpPublishPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
+        if (rtmpPublishPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
             System.exit(1);
         } else {
-            this.rtmpPort = Integer.parseInt(rtmpPortString);
-            if (this.rtmpPort <= 0 || this.rtmpPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PORT);
+            this.rtmpPublishPort = Integer.parseInt(rtmpPublishPortString);
+            if (this.rtmpPublishPort <= 0 || this.rtmpPublishPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
                 System.exit(1);
             }
         }
@@ -455,12 +455,12 @@ public class ConfigManager {
         return cameraPath;
     }
 
-    public String getRtmpIp() {
-        return rtmpIp;
+    public String getRtmpPublishIp() {
+        return rtmpPublishIp;
     }
 
-    public int getRtmpPort() {
-        return rtmpPort;
+    public int getRtmpPublishPort() {
+        return rtmpPublishPort;
     }
 
     public String getMagicCookie() {

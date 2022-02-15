@@ -43,7 +43,7 @@ public class CameraService {
     public CameraService() {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         //URI = FileManager.concatFilePath(configManager.getCameraMp4Path(), "cam_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".mp4");
-        String networkPath = "rtmp://" + configManager.getRtmpIp() + ":" + configManager.getRtmpPort();
+        String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
     }
     ////////////////////////////////////////////////////////////////////////////////
