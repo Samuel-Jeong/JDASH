@@ -1,6 +1,5 @@
 package cam;
 
-import com.google.gson.Gson;
 import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
@@ -12,6 +11,7 @@ import org.bytedeco.opencv.opencv_core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import util.module.FileManager;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -43,7 +43,8 @@ public class CameraService {
     public CameraService() {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         //URI = FileManager.concatFilePath(configManager.getCameraMp4Path(), "cam_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".mp4");
-        URI = "rtmp://" + configManager.getHttpListenIp() + ":" + 1935 + "/stream";
+        String networkPath = "rtmp://" + configManager.getRtmpIp() + ":" + configManager.getRtmpPort();
+        URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
     }
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,7 +73,7 @@ public class CameraService {
         audioService.setRecorderParams(fFmpegFrameRecorder);
         audioService.initSampleService();
         fFmpegFrameRecorder.start();
-        audioService.startSample(FRAME_RATE);
+        audioService.startSampling(FRAME_RATE);
     }
 
     public void output(Frame frame) throws Exception {
@@ -101,7 +102,7 @@ public class CameraService {
 
     private void process() {
         try {
-            final CanvasFrame cFrame = new CanvasFrame("Capture Preview", CanvasFrame.getDefaultGamma() / grabber.getGamma());
+            final CanvasFrame cFrame = new CanvasFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
 
             Frame capturedFrame;
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -114,7 +115,7 @@ public class CameraService {
                 opencv_imgproc.putText(mat, simpleDateFormat.format(new Date()), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, new Scalar(0, 200, 255, 0), 1, 0, false);
                 capturedFrame = openCVConverter.convert(mat);
 
-                if (cFrame.isVisible()) {
+                if (alive && cFrame.isVisible()) {
                     cFrame.showImage(capturedFrame);
                 }
 
@@ -132,7 +133,9 @@ public class CameraService {
                     fFmpegFrameRecorder.setTimestamp(videoTS);
                 }
 
-                fFmpegFrameRecorder.record(capturedFrame);
+                if (alive) {
+                    fFmpegFrameRecorder.record(capturedFrame);
+                }
             }
         } catch (Exception e) {
             logger.warn("CameraService.process.Exception", e);

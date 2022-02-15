@@ -21,6 +21,7 @@ public class ConfigManager {
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
     public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
+    public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
 
     // Field String
@@ -30,13 +31,16 @@ public class ConfigManager {
 
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
-    public static final String FIELD_CAMERA_MP4_PATH = "CAMERA_MP4_PATH";
+    public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
 
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
     public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
+
+    public static final String FIELD_RTMP_IP = "RTMP_IP";
+    public static final String FIELD_RTMP_PORT = "RTMP_PORT";
 
     public static final String FIELD_SCRIPT_PATH = "PATH";
 
@@ -48,7 +52,7 @@ public class ConfigManager {
     // MEDIA
     private String mediaBasePath = null;
     private String mediaListPath = null;
-    private String cameraMp4Path = null;
+    private String cameraPath = null;
 
     // NETWORK
     private int threadCount = 0;
@@ -56,6 +60,10 @@ public class ConfigManager {
     private int recvBufSize = 0;
     private String httpListenIp = null;
     private int httpListenPort = 0;
+
+    // RTMP
+    private String rtmpIp = null;
+    private int rtmpPort = 0;
 
     // SCRIPT
     private String scriptPath = null;
@@ -80,6 +88,7 @@ public class ConfigManager {
             loadCommonConfig();
             loadMediaConfig();
             loadNetworkConfig();
+            loadRtmpConfig();
             loadScriptConfig();
 
             logger.info("Load config [{}]", configPath);
@@ -135,9 +144,9 @@ public class ConfigManager {
             System.exit(1);
         }
 
-        this.cameraMp4Path = getIniValue(SECTION_MEDIA, FIELD_CAMERA_MP4_PATH);
-        if (cameraMp4Path == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CAMERA_MP4_PATH);
+        this.cameraPath = getIniValue(SECTION_MEDIA, FIELD_CAMERA_PATH);
+        if (cameraPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CAMERA_PATH);
             System.exit(1);
         }
 
@@ -185,6 +194,31 @@ public class ConfigManager {
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_NETWORK);
+    }
+
+    /**
+     * @fn private void loadRtmpConfig()
+     * @brief RTMP Section 을 로드하는 함수
+     */
+    private void loadRtmpConfig() {
+        this.rtmpIp = getIniValue(SECTION_RTMP, FIELD_RTMP_IP);
+        if (this.rtmpIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_IP);
+            System.exit(1);
+        }
+
+        String rtmpPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PORT);
+        if (rtmpPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PORT);
+            System.exit(1);
+        } else {
+            this.rtmpPort = Integer.parseInt(rtmpPortString);
+            if (this.rtmpPort <= 0 || this.rtmpPort > 65535) {
+                this.rtmpPort = 1935; // default
+            }
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_RTMP);
     }
 
     /**
@@ -286,7 +320,15 @@ public class ConfigManager {
         return scriptPath;
     }
 
-    public String getCameraMp4Path() {
-        return cameraMp4Path;
+    public String getCameraPath() {
+        return cameraPath;
+    }
+
+    public String getRtmpIp() {
+        return rtmpIp;
+    }
+
+    public int getRtmpPort() {
+        return rtmpPort;
     }
 }

@@ -3,6 +3,8 @@ package cam;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.FrameRecorder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -16,6 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 public class AudioService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AudioService.class);
+
+    ////////////////////////////////////////////////////////////////////////////////
     public final static int SAMPLE_RATE = 44100;
     public final static int CHANNEL_NUM = 1;
     private FFmpegFrameRecorder recorder;
@@ -23,7 +28,9 @@ public class AudioService {
     private TargetDataLine line;
     byte[] audioBytes;
     private volatile boolean isFinish = false;
+    ////////////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////////////
     public void setRecorderParams(FrameRecorder recorder) {
         this.recorder = (FFmpegFrameRecorder) recorder;
         recorder.setAudioOption("crf", "0");
@@ -40,7 +47,7 @@ public class AudioService {
                 16,
                 CHANNEL_NUM,
                 true,
-                true
+                false
         );
 
         DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
@@ -60,7 +67,7 @@ public class AudioService {
         line.close();
     }
 
-    public void startSample(double frameRate) {
+    public void startSampling(double frameRate) {
         sampleTask.scheduleAtFixedRate(() -> {
             try {
                 if (isFinish) { return; }
@@ -69,6 +76,7 @@ public class AudioService {
                 while (nBytesRead == 0) {
                     nBytesRead = line.read(audioBytes, 0, line.available());
                 }
+                if (nBytesRead < 1) { return; }
 
                 int nSamplesRead = nBytesRead / 2;
                 short[] samples = new short[nSamplesRead];
@@ -78,9 +86,20 @@ public class AudioService {
 
                 recorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warn("AudioService.startSampling.Exception", e);
             }
         }, 0, 1000 / (long) frameRate, TimeUnit.MILLISECONDS);
     }
+    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////
+    public boolean isFinish() {
+        return isFinish;
+    }
+
+    public void setFinish(boolean finish) {
+        isFinish = finish;
+    }
+    ////////////////////////////////////////////////////////////////////////////////
 
 }
