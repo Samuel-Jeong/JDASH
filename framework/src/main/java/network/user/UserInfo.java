@@ -34,14 +34,6 @@ public class UserInfo {
         }
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-        registerServerNettyChannel = new RegisterServerNettyChannel(
-                configManager.getRegisterListenIp(),
-                configManager.getRegisterListenPort()
-        );
-        registerServerNettyChannel.run();
-        registerServerNettyChannel.start();
-
         registerClientNettyChannel = new RegisterClientNettyChannel(
                 configManager.getRegisterLocalIp(),
                 configManager.getRegisterLocalPort()
@@ -65,9 +57,9 @@ public class UserInfo {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public boolean addRegisterServerChannel() {
+    public void addRegisterServerChannel() {
         if (registerServerNettyChannel != null) {
-            return false;
+            return;
         }
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -77,8 +69,6 @@ public class UserInfo {
         );
         registerServerNettyChannel.run();
         registerServerNettyChannel.start();
-
-        return true;
     }
 
     public void removeRegisterServerChannel() {

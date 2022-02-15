@@ -87,8 +87,7 @@ public class RegisterReqChannelHandler extends SimpleChannelInboundHandler<Datag
                     userRegisterRes.setReason("NOT_AUTHORIZED");
 
                     // RTSP ID 등록
-                    userManager.addUserInfo(userId);
-                    UserInfo userInfo = userManager.getUserInfo(userId);
+                    UserInfo userInfo = userManager.addUserInfo(userId);
                     if (userInfo != null) {
                         registerServerNettyChannel.sendResponse(datagramPacket.sender().getAddress().getHostAddress(), userRegisterReq.getListenPort(), userRegisterRes);
                     }
@@ -130,8 +129,9 @@ public class RegisterReqChannelHandler extends SimpleChannelInboundHandler<Datag
                             registerRtspUnitRes.setReason("WRONG_NONCE");
 
                             // RTSP ID 등록 해제
-                            userManager.deleteUserInfo(userId);
-                            curUserInfo.setRegistered(false);
+                            if (userManager.deleteUserInfo(userId) != null) {
+                                curUserInfo.setRegistered(false);
+                            }
                         }
                     } else {
                         registerRtspUnitRes = new UserRegisterRes(
@@ -176,8 +176,9 @@ public class RegisterReqChannelHandler extends SimpleChannelInboundHandler<Datag
                     );
 
                     // RTSP ID 등록 해제
-                    userManager.deleteUserInfo(userId);
-                    curUserInfo.setRegistered(false);
+                    if (userManager.deleteUserInfo(userId) != null) {
+                        curUserInfo.setRegistered(false);
+                    }
                 }
 
                 registerServerNettyChannel.sendResponse(
