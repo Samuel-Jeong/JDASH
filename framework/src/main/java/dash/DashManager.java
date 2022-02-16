@@ -219,7 +219,7 @@ public class DashManager {
 
             DashUnit dashUnit = new DashUnit(dashUnitId, mpd);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
-            logger.debug("[DashHttpMessageFilter] [(+)CREATED] DashUnit[{}]", dashUnit.getId());
+            logger.debug("[DashHttpMessageFilter] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;
         } catch (Exception e) {
             logger.warn("Fail to open the dash unit. (id={})", dashUnitId, e);
@@ -236,7 +236,7 @@ public class DashManager {
             DashUnit dashUnit = getDashUnit(dashUnitId);
             dashUnit.finishLiveMpdProcess();
 
-            logger.debug("[DashHttpMessageFilter] [(-)DELETED] DashUnit[{}]", dashUnit.getId());
+            logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
             dashUnitMap.remove(dashUnitId);
         } catch (Exception e) {
             logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);

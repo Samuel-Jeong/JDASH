@@ -9,19 +9,14 @@ import dash.unit.DashUnit;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import process.ProcessManager;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetSocketAddress;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static dash.DashManager.DASH_SCHEDULE_JOB;
@@ -30,6 +25,8 @@ public class DashMessageHandler implements HttpMessageHandler {
 
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashMessageHandler.class);
+
+    public static final String LIVE_MESSAGE = "LIVE";
 
     private final String uri;
     private final String scriptPath;
@@ -102,7 +99,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                         command = command + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
                         ///////////////////////////
 
-                        dashUnit.runProcessWait(command, mpdPath, false);
+                        ProcessManager.runProcessWait(command, mpdPath);
 
                         mpdFile = new File(mpdPath);
                         if (!mpdFile.exists()) {
@@ -120,6 +117,40 @@ public class DashMessageHandler implements HttpMessageHandler {
                     dashManager.deleteDashUnit(dashUnit.getId());
                     return null;
                 }
+
+                ///////////////////////////
+                // GET MPD
+                MPD mpd = dashManager.parseMpd(mpdPath);
+                if (mpd == null) {
+                    logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+                    dashManager.deleteDashUnit(dashUnit.getId());
+                    return null;
+                }
+
+                // VALIDATE MPD
+                if (dashManager.validate(mpd)) {
+                    logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
+                } else {
+                    logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
+                    dashManager.deleteDashUnit(dashUnit.getId());
+                    return null;
+                }
+
+                result = dashManager.getMpdParser().writeAsString(mpd);
+                ///////////////////////////
+
+                ///////////////////////////
+                // SAVE META DATA OF MEDIA
+                if (dashUnit != null) {
+                    dashUnit.setMpd(mpd);
+                    dashUnit.setInputFilePath(uri);
+                    dashUnit.setOutputFilePath(mpdPath);
+                    dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+                    dashUnit.setDuration(mpd.getMediaPresentationDuration());
+                    dashUnit.setLiveStreaming(false);
+                    logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
+                }
+                ///////////////////////////
             } else {
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
                 String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
@@ -143,7 +174,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                 ///////////////////////////
 
                 ///////////////////////////
-                dashUnit.runLiveMpdProcess(command, mpdPath);
+                dashUnit.runLiveMpdProcess(command, mpdPath); // one time for dash unit
 
                 DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
                         scheduleManager,
@@ -151,46 +182,12 @@ public class DashMessageHandler implements HttpMessageHandler {
                         0, 0, TimeUnit.MILLISECONDS,
                         1, 1, false,
                         uri, mpdPath, ctx, request.getRequest(), dashUnit
-                );
+                ); // every time for mpd request by dash unit
                 scheduleManager.startJob(DASH_SCHEDULE_JOB, dashDynamicStreamHandler);
                 ///////////////////////////
 
-                return "live";
+                result = LIVE_MESSAGE;
             }
-
-            ///////////////////////////
-            // GET MPD
-            MPD mpd = dashManager.parseMpd(mpdPath);
-            if (mpd == null) {
-                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                dashManager.deleteDashUnit(dashUnit.getId());
-                return null;
-            }
-
-            // VALIDATE MPD
-            if (dashManager.validate(mpd)) {
-                logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
-            } else {
-                logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
-                dashManager.deleteDashUnit(dashUnit.getId());
-                return null;
-            }
-
-            result = dashManager.getMpdParser().writeAsString(mpd);
-            ///////////////////////////
-
-            ///////////////////////////
-            // SAVE META DATA OF MEDIA
-            if (dashUnit != null) {
-                dashUnit.setMpd(mpd);
-                dashUnit.setInputFilePath(uri);
-                dashUnit.setOutputFilePath(mpdPath);
-                dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-                dashUnit.setDuration(mpd.getMediaPresentationDuration());
-                dashUnit.setLiveStreaming(false);
-                logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
-            }
-            ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
             dashManager.deleteDashUnit(dashUnit.getId());

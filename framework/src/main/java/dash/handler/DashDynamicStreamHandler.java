@@ -59,13 +59,13 @@ public class DashDynamicStreamHandler extends Job {
                 return;
             }
 
-            // VALIDATE MPD > ServiceDescription 파싱 오류 발생해서 잠시 기능 정지
-            /*if (dashManager.validate(mpd)) {
+            // VALIDATE MPD
+            if (dashManager.validate(mpd)) {
                 logger.debug("[DashDynamicStreamHandler(mpdPath={})] Success to validate the mpd.", this.mpdPath);
             } else {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to validate the mpd.", this.mpdPath);
                 return;
-            }*/
+            }
 
             String result = dashManager.getMpdParser().writeAsString(mpd);
             if (result == null) {

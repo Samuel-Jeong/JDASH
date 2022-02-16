@@ -4,13 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import process.ProcessManager;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.time.Duration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,9 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DashUnit {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
-    ////////////////////////////////////////////////////////////
     private final long initiationTime;
     private final String id;
 
@@ -39,12 +37,6 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit(String id) {
-        this.id = id;
-        this.initiationTime = System.currentTimeMillis();
-        liveTask = new ScheduledThreadPoolExecutor(1);
-    }
-
     public DashUnit(String id, MPD mpd) {
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
@@ -57,9 +49,10 @@ public class DashUnit {
     public void runLiveMpdProcess(String command, String mpdPath) {
         if (!getIsOngoingLiveTask()) {
             liveTask.execute(() ->
-                    runProcessWait(command, mpdPath, true)
+                    ProcessManager.runProcessWait(command, mpdPath)
             );
             isOngoingLiveTask.set(true);
+            logger.debug("[DashUnit(id={})] RUN Live MPD Process", id);
         }
     }
 
@@ -67,7 +60,7 @@ public class DashUnit {
         liveTask.shutdown();
         isOngoingLiveTask.set(false);
 
-        if (outputFilePath != null) { // MPD path
+        if (outputFilePath != null) { // Delete MPD path
             String mpdParentPath = FileManager.getParentPathFromUri(outputFilePath);
             if (mpdParentPath != null) {
                 File mpdParentPathFile = new File(mpdParentPath);
@@ -76,6 +69,8 @@ public class DashUnit {
                 }
             }
         }
+
+        logger.debug("[DashUnit(id={})] FINISH Live MPD Process", id);
     }
 
     public boolean getIsOngoingLiveTask() {
@@ -84,52 +79,6 @@ public class DashUnit {
 
     public byte[] getSegmentByteData(String uri) {
         return FileManager.readAllBytes(uri);
-    }
-
-    public void runProcessWait(String command, String mpdPath, boolean isClear) {
-        BufferedReader stdOut = null;
-        Process process = null;
-        try {
-            process = Runtime.getRuntime().exec(command);
-
-            String str;
-            stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            while ((str = stdOut.readLine()) != null) {
-                logger.debug(str);
-            }
-
-            process.waitFor();
-            int exitValue = process.exitValue();
-            if (exitValue != 0) {
-                throw new RuntimeException("[DashUnit(id=" + this.id + ")] exit code is not 0 [" + exitValue + "]");
-            }
-
-            logger.debug("[DashUnit(id={})] Success to convert. (fileName={})", this.id, mpdPath);
-        } catch (Exception e) {
-            logger.warn("DashUnit.runProcess.Exception", e);
-        } finally {
-            if (process != null) {
-                process.destroy();
-            }
-
-            if (stdOut != null) {
-                try {
-                    stdOut.close();
-                } catch (IOException e) {
-                    logger.warn("[DashUnit(id={})] Fail to close the BufferReader.", this.id, e);
-                }
-            }
-
-            if (isClear) {
-                String mpdParentPath = FileManager.getParentPathFromUri(mpdPath);
-                if (mpdParentPath != null) {
-                    File mpdParentPathFile = new File(mpdParentPath);
-                    if (mpdParentPathFile.exists() && mpdParentPathFile.isDirectory()) {
-                        FileManager.deleteFile(mpdParentPath);
-                    }
-                }
-            }
-        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -200,8 +149,17 @@ public class DashUnit {
 
     @Override
     public String toString() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(this);
+        return "DashUnit{" +
+                "initiationTime=" + initiationTime +
+                ", id='" + id + '\'' +
+                ", inputFilePath='" + inputFilePath + '\'' +
+                ", outputFilePath='" + outputFilePath + '\'' +
+                ", curSegmentName='" + curSegmentName + '\'' +
+                ", duration=" + duration +
+                ", minBufferTime=" + minBufferTime +
+                ", isOngoingLiveTask=" + isOngoingLiveTask.get() +
+                ", isLiveStreaming=" + isLiveStreaming +
+                '}';
     }
     ////////////////////////////////////////////////////////////
 
