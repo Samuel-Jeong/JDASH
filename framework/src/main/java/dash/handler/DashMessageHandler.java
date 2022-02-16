@@ -52,7 +52,8 @@ public class DashMessageHandler implements HttpMessageHandler {
             return null;
         }
 
-        if (uri.contains(".")) {
+        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionOnlyFromUri(uri);
+        if (uriFileNameWithExtension.contains(".")) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. (uri={})", this.uri, uri);
@@ -67,7 +68,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         try {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
-            if (uri.contains(".")) {
+            if (uriFileNameWithExtension.contains(".")) {
                 if (uri.endsWith(".mp4")) {
                     mpdPath = uri.replace(".mp4", ".mpd");
                     File mpdFile = new File(mpdPath);
@@ -85,7 +86,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                         run = run + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
                         ///////////////////////////
 
-                        runProcess(mpdPath, run);
+                        runProcess(run, mpdPath);
 
                         mpdFile = new File(mpdPath);
                         if (!mpdFile.exists()) {
@@ -102,25 +103,32 @@ public class DashMessageHandler implements HttpMessageHandler {
                     return null;
                 }
             } else {
-                mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
+                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+                String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+                String curRtmpUri = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
+                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath());
+                File mpdPathFile = new File(mpdPath);
+                if (!mpdPathFile.exists()) {
+                    if (mpdPathFile.mkdirs()) {
+                        logger.debug("[DashMessageHandler(uri={})] [LIVE] Parent mpd path is created. (parentMpdPath={}, rtmpUri={})", this.uri, mpdPath, curRtmpUri);
+                    }
+                }
+
+                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
+                logger.debug("[DashMessageHandler(uri={})] [LIVE] Final mpd path: {} (rtmpUri={})", this.uri, mpdPath, curRtmpUri);
+                String run = "python3 " + scriptPath;
+
+                ///////////////////////////
+                // FOR mp4_to_dash.py
+                run = run + " " + curRtmpUri + " " + mpdPath;  // python3 mp4_to_dash.py rtmp://airtc.uangel.com:1940/live/livestream /home/uangel/udash/media/live/livestream/livestream.mpd
+                ///////////////////////////
+
+                runProcess(run, mpdPath);
+
                 File mpdFile = new File(mpdPath);
                 if (!mpdFile.exists()) {
-                    String run = "python3 " + scriptPath;
-
-                    ///////////////////////////
-                    // FOR mp4_to_dash.py
-                    run = run + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
-                    ///////////////////////////
-
-                    runProcess(mpdPath, run);
-
-                    mpdFile = new File(mpdPath);
-                    if (!mpdFile.exists()) {
-                        logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                        return null;
-                    }
-                } else {
-                    logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
+                    logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (rtmpUri={}, mpdPath={})", this.uri, curRtmpUri, mpdPath);
+                    return null;
                 }
             }
 
@@ -168,7 +176,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         return uri;
     }
 
-    public void runProcess(String mpdPath, String command) {
+    public void runProcess(String command, String mpdPath) {
         BufferedReader stdOut = null;
         Process process = null;
         try {

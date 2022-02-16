@@ -105,7 +105,7 @@ public class FileManager {
         return uri.substring(0, uri.lastIndexOf("/")).trim();
     }
 
-    public static String getFilePathOnlyFromUri(String uri) {
+    public static String getFileNameWithExtensionOnlyFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
 
@@ -115,7 +115,8 @@ public class FileManager {
     }
 
     public static String getFileNameFromUri(String uri) {
-        uri = getFilePathOnlyFromUri(uri);
+        uri = getFileNameWithExtensionOnlyFromUri(uri);
+        if (uri == null) { return null; }
         if (!uri.contains(".")) { return uri; }
 
         uri = uri.substring(0, uri.lastIndexOf(".")).trim();

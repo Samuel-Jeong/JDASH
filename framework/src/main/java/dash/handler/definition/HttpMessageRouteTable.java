@@ -29,14 +29,14 @@ public class HttpMessageRouteTable {
         logger.debug("[HttpMessageRouteTable] ROUTE [{}:{}] is added.", route.getMethod().name(), route.getUri());
     }
 
-    public HttpMessageRoute findUriRoute(final HttpMethod method, final String uri) {
+    public HttpMessageRoute findUriRoute(final HttpMethod method, final String curUri) {
         if (routes.isEmpty()) {
-            logger.warn("[HttpMessageRouteTable] ROUTE TABLE IS EMPTY. Fail to find the route. (uri={})", uri);
+            logger.warn("[HttpMessageRouteTable] ROUTE TABLE IS EMPTY. Fail to find the route. (uri={})", curUri);
             return null;
         }
 
         for (final HttpMessageRoute route : routes) {
-            if (route.matches(method, uri)) {
+            if (route.matches(method, curUri)) {
                 logger.debug("[HttpMessageRouteTable] REGISTERED ROUTE: [{}:{}]", route.getMethod().name(), route.getUri());
                 return route;
             }

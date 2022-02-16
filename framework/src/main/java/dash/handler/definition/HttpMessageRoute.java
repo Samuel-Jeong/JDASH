@@ -38,7 +38,8 @@ public class HttpMessageRoute {
     }
 
     public boolean matches(final HttpMethod method, final String path) {
-        return this.method.equals(method) && this.uri.equals(path);
+        //return this.method.equals(method) && this.uri.equals(path);
+        return this.uri.equals(path);
     }
 
     @Override

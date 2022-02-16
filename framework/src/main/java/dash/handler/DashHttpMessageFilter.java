@@ -71,7 +71,12 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         boolean isRegistered = false;
 
         DashUnit dashUnit = null;
+        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionOnlyFromUri(uri);
         String uriFileName = FileManager.getFileNameFromUri(uri); // [Seoul] or [Seoul_chunk_1_00001]
+        if (uriFileName == null) {
+            logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", uri);
+            return;
+        }
         logger.debug("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
 
         for (Map.Entry<String, DashUnit> entry : ServiceManager.getInstance().getDashManager().getCloneDashMap().entrySet()) {
@@ -102,11 +107,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             }
         }
 
-        if (uri.contains(".")) {
+        if (uriFileNameWithExtension.contains(".")) {
             String parentPathOfUri = FileManager.getParentPathFromUri(uri); // aws/20210209
             if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
                 parentPathOfUri = FileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
-                uri = FileManager.concatFilePath(parentPathOfUri, FileManager.getFilePathOnlyFromUri(uri)); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
+                uri = FileManager.concatFilePath(parentPathOfUri, uriFileNameWithExtension); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
             } else {
                 uri = FileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
             }
