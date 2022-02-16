@@ -81,6 +81,7 @@ public class FileManager {
         }
     }
 
+    // [/home/uangel/udash/media] + [animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers/tigers.mp4]
     public static String concatFilePath(String from, String to) {
         if (from == null) { return null; }
         if (to == null) { return from; }
@@ -100,12 +101,14 @@ public class FileManager {
         return resultPath;
     }
 
+    // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers]
     public static String getParentPathFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
         return uri.substring(0, uri.lastIndexOf("/")).trim();
     }
 
+    // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [tigers.mp4]
     public static String getFileNameWithExtensionFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
@@ -115,6 +118,14 @@ public class FileManager {
         return uri.substring(uri.lastIndexOf("/") + 1).trim();
     }
 
+    // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers/tigers]
+    public static String getFilePathWithoutExtensionFromUri(String uri) {
+        if (uri == null) { return null; }
+        if (!uri.contains(".")) { return uri; }
+        return uri.substring(0, uri.lastIndexOf(".")).trim();
+    }
+
+    // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [tigers]
     public static String getFileNameFromUri(String uri) {
         uri = getFileNameWithExtensionFromUri(uri);
         if (uri == null) { return null; }

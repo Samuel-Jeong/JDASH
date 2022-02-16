@@ -75,10 +75,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", uri);
             return;
         }
+        logger.debug("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
 
         InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-        String dashUnitKey = remoteAddress.getAddress().getHostAddress(); // + ":" + remoteAddress.getPort();
-        logger.debug("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
+        String dashUnitKey = remoteAddress.getAddress().getHostAddress() + ":" + FileManager.getFilePathWithoutExtensionFromUri(originUri);
+        logger.debug("[DashHttpMessageFilter] dashUnitKey: {}", dashUnitKey);
 
         for (Map.Entry<String, DashUnit> entry : dashManager.getCloneDashMap().entrySet()) {
             if (entry == null) { continue; }
@@ -86,7 +87,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             DashUnit curDashUnit = entry.getValue();
             if (curDashUnit == null) { continue; }
 
-            if (!dashUnitKey.equals(curDashUnit.getId())) { continue; }
+            if (!dashUnitKey.contains(curDashUnit.getId())) { continue; }
 
             String curDashUnitUriFileName = FileManager.getFileNameFromUri(curDashUnit.getInputFilePath());
             if (curDashUnitUriFileName == null) { continue; }
@@ -108,10 +109,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
         if (dashUnit == null) {
             dashUnit = dashManager.addDashUnit(dashUnitKey, null);
-
-            if (dashUnit != null) {
-                logger.debug("[DashHttpMessageFilter] CREATED DashUnit[{}]: \n{}", dashUnit.getId(), dashUnit);
-            }
         }
 
         String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
@@ -137,6 +134,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
                 dashManager.writeNotFound(ctx, request);
+                dashManager.deleteDashUnit(dashUnitKey);
                 return;
             }
         }
@@ -162,6 +160,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
             dashManager.writeInternalServerError(ctx, request);
+            dashManager.deleteDashUnit(dashUnitKey);
         }
     }
     ////////////////////////////////////////////////////////////

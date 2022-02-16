@@ -1,5 +1,6 @@
 package service.monitor;
 
+import dash.DashManager;
 import dash.unit.DashUnit;
 import network.user.UserInfo;
 import org.slf4j.Logger;
@@ -27,7 +28,9 @@ public class LongSessionRemover extends Job {
 
     @Override
     public void run() {
-        HashMap<String, DashUnit> dashUnitMap = ServiceManager.getInstance().getDashManager().getCloneDashMap();
+        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+
+        HashMap<String, DashUnit> dashUnitMap = dashManager.getCloneDashMap();
         if (!dashUnitMap.isEmpty()) {
             for (Map.Entry<String, DashUnit> entry : dashUnitMap.entrySet()) {
                 if (entry == null) {
@@ -41,14 +44,13 @@ public class LongSessionRemover extends Job {
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
-                    dashUnit.finishLiveMpdProcess();
-                    ServiceManager.getInstance().getDashManager().deleteDashUnit(dashUnit.getId());
+                    dashManager.deleteDashUnit(dashUnit.getId());
                     logger.warn("({}) REMOVED LONG DASH UNIT(DashUnit=\n{})", getName(), dashUnit);
                 }
             }
         }
 
-        HashMap<String, UserInfo> userInfoMap = ServiceManager.getInstance().getDashManager().getUserManager().getCloneUserInfoMap();
+        HashMap<String, UserInfo> userInfoMap = dashManager.getUserManager().getCloneUserInfoMap();
         if (!userInfoMap.isEmpty()) {
             for (Map.Entry<String, UserInfo> entry : userInfoMap.entrySet()) {
                 if (entry == null) {
@@ -62,7 +64,7 @@ public class LongSessionRemover extends Job {
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - userInfo.getCreatedTime()) >= limitTime) {
-                    ServiceManager.getInstance().getDashManager().getUserManager().deleteUserInfo(userInfo.getUserId());
+                    dashManager.getUserManager().deleteUserInfo(userInfo.getUserId());
                     logger.warn("({}) REMOVED LONG USER INFO(UserInfo=\n{})", getName(), userInfo);
                 }
             }
