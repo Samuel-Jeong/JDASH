@@ -6,10 +6,12 @@ import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpResponse;
 import dash.unit.DashUnit;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
+import service.scheduler.schedule.ScheduleManager;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
@@ -17,6 +19,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static dash.DashManager.DASH_SCHEDULE_JOB;
 
 public class DashMessageHandler implements HttpMessageHandler {
 
@@ -25,21 +33,23 @@ public class DashMessageHandler implements HttpMessageHandler {
 
     private final String uri;
     private final String scriptPath;
+    private final ScheduleManager scheduleManager;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public DashMessageHandler(String uri) {
+    public DashMessageHandler(String uri, ScheduleManager scheduleManager) {
         this.uri = uri;
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         scriptPath = configManager.getScriptPath();
+        this.scheduleManager = scheduleManager;
     }
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
     @Override
-    public Object handle(HttpRequest request, HttpResponse response, String uriFileName) {
-        if (request == null || uriFileName == null) { return null; }
+    public Object handle(HttpRequest request, HttpResponse response, String originUri, String uriFileName, ChannelHandlerContext ctx, DashUnit dashUnit) {
+        if (request == null || uriFileName == null || ctx == null) { return null; }
 
         ///////////////////////////
         // CHECK URI
@@ -52,7 +62,7 @@ public class DashMessageHandler implements HttpMessageHandler {
             return null;
         }
 
-        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionOnlyFromUri(uri);
+        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
         if (uriFileNameWithExtension.contains(".")) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
@@ -73,7 +83,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                     mpdPath = uri.replace(".mp4", ".mpd");
                     File mpdFile = new File(mpdPath);
                     if (!mpdFile.exists()) {
-                        String run = "python3 " + scriptPath;
+                        String command = "python3 " + scriptPath;
 
                         ///////////////////////////
                         // FOR dash_encoder.py
@@ -83,10 +93,10 @@ public class DashMessageHandler implements HttpMessageHandler {
 
                         ///////////////////////////
                         // FOR mp4_to_dash.py
-                        run = run + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
+                        command = command + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
                         ///////////////////////////
 
-                        runProcess(run, mpdPath);
+                        dashUnit.runProcessWait(command, mpdPath, false);
 
                         mpdFile = new File(mpdPath);
                         if (!mpdFile.exists()) {
@@ -105,8 +115,8 @@ public class DashMessageHandler implements HttpMessageHandler {
             } else {
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
                 String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                String curRtmpUri = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
-                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath());
+                String curRtmpUri = FileManager.concatFilePath(networkPath, originUri);
+                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), originUri);
                 File mpdPathFile = new File(mpdPath);
                 if (!mpdPathFile.exists()) {
                     if (mpdPathFile.mkdirs()) {
@@ -116,20 +126,28 @@ public class DashMessageHandler implements HttpMessageHandler {
 
                 mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
                 logger.debug("[DashMessageHandler(uri={})] [LIVE] Final mpd path: {} (rtmpUri={})", this.uri, mpdPath, curRtmpUri);
-                String run = "python3 " + scriptPath;
+                String command = "python3 " + scriptPath;
 
                 ///////////////////////////
                 // FOR mp4_to_dash.py
-                run = run + " " + curRtmpUri + " " + mpdPath;  // python3 mp4_to_dash.py rtmp://airtc.uangel.com:1940/live/livestream /home/uangel/udash/media/live/livestream/livestream.mpd
+                command = command + " " + curRtmpUri + " " + mpdPath;  // python3 mp4_to_dash.py rtmp://192.168.5.222:1940/live/livestream /home/uangel/udash/media/live/livestream/livestream.mpd
+                logger.debug("[DashMessageHandler(uri={})] [LIVE] COMMAND: {}", this.uri, command);
                 ///////////////////////////
 
-                runProcess(run, mpdPath);
+                ///////////////////////////
+                dashUnit.runLiveMpdProcess(command, mpdPath);
 
-                File mpdFile = new File(mpdPath);
-                if (!mpdFile.exists()) {
-                    logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (rtmpUri={}, mpdPath={})", this.uri, curRtmpUri, mpdPath);
-                    return null;
-                }
+                DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
+                        scheduleManager,
+                        DashDynamicStreamHandler.class.getSimpleName(),
+                        0, 0, TimeUnit.MILLISECONDS,
+                        1, 1, false,
+                        uri, mpdPath, ctx, request.getRequest(), dashUnit
+                );
+                scheduleManager.startJob(DASH_SCHEDULE_JOB, dashDynamicStreamHandler);
+                ///////////////////////////
+
+                return "live";
             }
 
             ///////////////////////////
@@ -154,13 +172,15 @@ public class DashMessageHandler implements HttpMessageHandler {
 
             ///////////////////////////
             // SAVE META DATA OF MEDIA
-            dashManager.addDashUnit(uriFileName, mpd);
-            DashUnit dashUnit = dashManager.getDashUnit(uriFileName);
-            dashUnit.setInputFilePath(uri);
-            dashUnit.setOutputFilePath(mpdPath);
-            dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-            dashUnit.setDuration(mpd.getMediaPresentationDuration());
-            logger.debug("[DashMessageHandler(uri={})] CREATED DashUnit: \n{}", this.uri, dashUnit);
+            if (dashUnit != null) {
+                dashUnit.setMpd(mpd);
+                dashUnit.setInputFilePath(uri);
+                dashUnit.setOutputFilePath(mpdPath);
+                dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+                dashUnit.setDuration(mpd.getMediaPresentationDuration());
+                dashUnit.setLiveStreaming(false);
+                logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
+            }
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
@@ -174,42 +194,6 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     public String getUri() {
         return uri;
-    }
-
-    public void runProcess(String command, String mpdPath) {
-        BufferedReader stdOut = null;
-        Process process = null;
-        try {
-            process = Runtime.getRuntime().exec(command);
-
-            String str;
-            stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            while ((str = stdOut.readLine()) != null) {
-                logger.debug(str);
-            }
-
-            process.waitFor();
-            int exitValue = process.exitValue();
-            if (exitValue != 0) {
-                throw new RuntimeException("[DashMessageHandler(uri=" + this.uri + ")] exit code is not 0 [" + exitValue + "]");
-            }
-
-            logger.debug("[DashMessageHandler(uri={})] Success to convert. (fileName={})", this.uri, mpdPath);
-        } catch (Exception e) {
-            logger.warn("DashMessageHandler.runProcess.Exception", e);
-        } finally {
-            if (process != null) {
-                process.destroy();
-            }
-
-            if (stdOut != null) {
-                try {
-                    stdOut.close();
-                } catch (IOException e) {
-                    logger.warn("[DashMessageHandler(uri={})] Fail to close the BufferReader.", this.uri, e);
-                }
-            }
-        }
     }
     ////////////////////////////////////////////////////////////////////////////////
 

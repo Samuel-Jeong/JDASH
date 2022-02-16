@@ -9,6 +9,11 @@ import dash.handler.HttpMessageManager;
 import dash.unit.DashUnit;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
 import media.MediaManager;
 import network.socket.SocketManager;
 import network.user.UserInfo;
@@ -25,6 +30,9 @@ import util.module.NonceGenerator;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -144,7 +152,7 @@ public class DashManager {
             for (String uri : mediaManager.getUriList()) {
                 httpMessageManager.get(
                         uri,
-                        new DashMessageHandler(uri)
+                        new DashMessageHandler(uri, getBaseEnvironment().getScheduleManager())
                 );
             }
 
@@ -188,8 +196,10 @@ public class DashManager {
         } catch (ManifestValidationException e) {
             logger.warn("DashManager.validate.ManifestValidationException", e);
             logger.warn("{}", e.getViolations());
+            return false;
         } catch (Exception e) {
             logger.warn("DashManager.validate.Exception", e);
+            return false;
         }
 
         return true;
@@ -201,14 +211,18 @@ public class DashManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void addDashUnit(String dashUnitId, MPD mpd) {
+    public DashUnit addDashUnit(String dashUnitId, MPD mpd) {
+        if (getDashUnit(dashUnitId) != null) { return null; }
+
         try {
             dashUnitMapLock.lock();
 
             DashUnit dashUnit = new DashUnit(dashUnitId, mpd);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
+            return dashUnit;
         } catch (Exception e) {
             logger.warn("Fail to open the dash unit. (id={})", dashUnitId, e);
+            return null;
         } finally {
             dashUnitMapLock.unlock();
         }
@@ -399,6 +413,98 @@ public class DashManager {
 
     public void makeMpdFileFromMp4() {
         // ffmpeg -i file.mp4 -vcodec copy -acodec copy output.mpd
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void writeNotFound(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request) {
+
+        writeErrorResponse(ctx, request, HttpResponseStatus.NOT_FOUND);
+    }
+    public void writeInternalServerError(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request) {
+
+        writeErrorResponse(ctx, request, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private void writeErrorResponse(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request,
+            final HttpResponseStatus status) {
+
+        writeResponse(ctx, request, status, HttpMessageManager.TYPE_PLAIN, status.reasonPhrase().toString());
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void writeResponse(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request,
+            final HttpResponseStatus status,
+            final CharSequence contentType,
+            final String content) {
+        final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
+        writeResponse(ctx, request, status, entity, contentType, bytes.length);
+    }
+
+    public void writeResponse(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request,
+            final HttpResponseStatus status,
+            final CharSequence contentType,
+            final byte[] bytes) {
+        final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
+        writeResponse(ctx, request, status, entity, contentType, bytes.length);
+    }
+
+    private void writeResponse(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request,
+            final HttpResponseStatus status,
+            final ByteBuf buf,
+            final CharSequence contentType,
+            final int contentLength) {
+        // Decide whether to close the connection or not.
+        final boolean keepAlive = HttpHeaderUtil.isKeepAlive(request);
+
+        // Build the response object.
+        final FullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                status,
+                buf,
+                false
+        );
+
+        final ZonedDateTime dateTime = ZonedDateTime.now();
+        final DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
+
+        final DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
+
+        headers.set(HttpHeaderNames.SERVER, getServiceName());
+        headers.set(HttpHeaderNames.DATE, dateTime.format(formatter));
+        headers.set(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
+
+        // Close the non-keep-alive connection after the write operation is done.
+        if (!keepAlive) {
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            ctx.writeAndFlush(response, ctx.voidPromise());
+        }
+
+        logger.debug("[DashHttpMessageFilter] RESPONSE: {}", response);
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public void send100Continue(final ChannelHandlerContext ctx) {
+        ctx.write(new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.CONTINUE));
     }
     ////////////////////////////////////////////////////////////
 

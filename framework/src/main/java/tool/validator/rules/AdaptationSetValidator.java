@@ -319,29 +319,28 @@ public class AdaptationSetValidator {
     }
 
     public static List<Violation> validate(MPD mpd, Period period, AdaptationSet adaptationSet) {
-        List<Violation> violations = new ArrayList<>();
-        violations.addAll(Arrays.asList(
-            ruleR30(period),
-            ruleRx38(period),
-            ruleR31(adaptationSet),
-            ruleR32(adaptationSet),
-            ruleR33(adaptationSet),
-            ruleR34(adaptationSet),
-            ruleR35(adaptationSet),
-            ruleR36(adaptationSet),
-            ruleR37(adaptationSet),
-            ruleR38(adaptationSet),
-            ruleR39(adaptationSet),
-            ruleRD30(adaptationSet, mpd),
-            ruleRD31(adaptationSet, mpd),
-            ruleRD32(adaptationSet, mpd),
-            ruleRD33(adaptationSet, mpd),
-            ruleRD34(adaptationSet, mpd),
-            ruleRD35(adaptationSet, mpd),
-            ruleRD36(adaptationSet, mpd),
-            ruleRD37(adaptationSet, mpd),
-            ruleRD38(adaptationSet),
-            ruleR40(adaptationSet)));
+        List<Violation> violations = new ArrayList<>(Arrays.asList(
+                ruleR30(period),
+                ruleRx38(period),
+                ruleR31(adaptationSet),
+                ruleR32(adaptationSet),
+                ruleR33(adaptationSet),
+                ruleR34(adaptationSet),
+                ruleR35(adaptationSet),
+                ruleR36(adaptationSet),
+                ruleR37(adaptationSet),
+                ruleR38(adaptationSet),
+                ruleR39(adaptationSet),
+                ruleRD30(adaptationSet, mpd),
+                ruleRD31(adaptationSet, mpd),
+                ruleRD32(adaptationSet, mpd),
+                ruleRD33(adaptationSet, mpd),
+                ruleRD34(adaptationSet, mpd),
+                ruleRD35(adaptationSet, mpd),
+                ruleRD36(adaptationSet, mpd),
+                ruleRD37(adaptationSet, mpd),
+                ruleRD38(adaptationSet),
+                ruleR40(adaptationSet)));
 
         if (adaptationSet.getSegmentTemplate() != null) {
             violations.addAll(SegmentTemplateValidator.validate(mpd, adaptationSet.getSegmentTemplate()));

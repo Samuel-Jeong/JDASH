@@ -2,6 +2,7 @@ package cam.module;
 
 import cam.CameraFrame;
 import cam.panel.*;
+
 import java.awt.*;
 
 public class GuiManager {

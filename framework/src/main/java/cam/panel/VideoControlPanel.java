@@ -1,10 +1,10 @@
 package cam.panel;
 
-import cam.module.GuiManager;
 import cam.listener.PauseButtonListener;
 import cam.listener.PlayButtonListener;
 import cam.listener.StopButtonListener;
 import cam.listener.VolumeButtonListener;
+import cam.module.GuiManager;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;

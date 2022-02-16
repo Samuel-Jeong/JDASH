@@ -1,5 +1,6 @@
 package util.module;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,11 +102,11 @@ public class FileManager {
 
     public static String getParentPathFromUri(String uri) {
         if (uri == null) { return null; }
-        if (!uri.contains(".") || !uri.contains("/")) { return uri; }
+        if (!uri.contains("/")) { return uri; }
         return uri.substring(0, uri.lastIndexOf("/")).trim();
     }
 
-    public static String getFileNameWithExtensionOnlyFromUri(String uri) {
+    public static String getFileNameWithExtensionFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
 
@@ -115,12 +116,31 @@ public class FileManager {
     }
 
     public static String getFileNameFromUri(String uri) {
-        uri = getFileNameWithExtensionOnlyFromUri(uri);
+        uri = getFileNameWithExtensionFromUri(uri);
         if (uri == null) { return null; }
         if (!uri.contains(".")) { return uri; }
 
         uri = uri.substring(0, uri.lastIndexOf(".")).trim();
         return uri;
+    }
+
+    public static void deleteFile(String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            logger.warn("[FileManager] Fail to delete the file. File is not exist. (path={})", path);
+            return;
+        }
+
+        try {
+            if (file.isDirectory()) {
+                FileUtils.deleteDirectory(file);
+            } else {
+                FileUtils.delete(file);
+            }
+            logger.debug("[FileManager] Success to delete the file. (path={})", path);
+        } catch (Exception e) {
+            logger.warn("[FileManager] Fail to delete the file. (path={})", path, e);
+        }
     }
 
 }

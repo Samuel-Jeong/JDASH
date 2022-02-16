@@ -41,6 +41,7 @@ public class LongSessionRemover extends Job {
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
+                    dashUnit.finishLiveMpdProcess();
                     ServiceManager.getInstance().getDashManager().deleteDashUnit(dashUnit.getId());
                     logger.warn("({}) REMOVED LONG DASH UNIT(DashUnit=\n{})", getName(), dashUnit);
                 }

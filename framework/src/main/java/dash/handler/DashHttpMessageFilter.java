@@ -5,21 +5,19 @@ import dash.handler.definition.HttpMessageRoute;
 import dash.handler.definition.HttpMessageRouteTable;
 import dash.handler.definition.HttpRequest;
 import dash.unit.DashUnit;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderUtil;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import util.module.FileManager;
 
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.net.InetSocketAddress;
 import java.util.Map;
 
 public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
@@ -29,13 +27,14 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
     private final String serviceName;
 
+    private final DashManager dashManager;
     private final String basePath;
     private final HttpMessageRouteTable uriRouteTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
-        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        dashManager = ServiceManager.getInstance().getDashManager();
         this.serviceName = dashManager.getServiceName();
         this.uriRouteTable = routeTable;
         this.basePath = AppInstance.getInstance().getConfigManager().getMediaBasePath();
@@ -53,7 +52,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         // GET URI
         final FullHttpRequest request = (FullHttpRequest) msg;
         if (HttpHeaderUtil.is100ContinueExpected(request)) {
-            send100Continue(ctx);
+            dashManager.send100Continue(ctx);
         }
 
         final HttpMethod method = request.method();
@@ -63,51 +62,60 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             return;
         }
         uri = uri.trim();
-        logger.debug("[DashHttpMessageFilter] REQUEST: \n{}", request);
+        String originUri = uri;
+        logger.debug("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, request);
         ///////////////////////////
 
         ///////////////////////////
         // GET DASH UNIT
         boolean isRegistered = false;
-
         DashUnit dashUnit = null;
-        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionOnlyFromUri(uri);
         String uriFileName = FileManager.getFileNameFromUri(uri); // [Seoul] or [Seoul_chunk_1_00001]
         if (uriFileName == null) {
             logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", uri);
             return;
         }
+
+        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        String dashUnitKey = remoteAddress.getAddress().getHostAddress(); // + ":" + remoteAddress.getPort();
         logger.debug("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
 
-        for (Map.Entry<String, DashUnit> entry : ServiceManager.getInstance().getDashManager().getCloneDashMap().entrySet()) {
+        for (Map.Entry<String, DashUnit> entry : dashManager.getCloneDashMap().entrySet()) {
             if (entry == null) { continue; }
 
             DashUnit curDashUnit = entry.getValue();
             if (curDashUnit == null) { continue; }
 
-            if (uriFileName.equals(curDashUnit.getId())) {
+            if (!dashUnitKey.equals(curDashUnit.getId())) { continue; }
+
+            String curDashUnitUriFileName = FileManager.getFileNameFromUri(curDashUnit.getInputFilePath());
+            if (curDashUnitUriFileName == null) { continue; }
+
+            if (uriFileName.equals(curDashUnitUriFileName)) {
                 dashUnit = curDashUnit;
-                logger.debug("[DashHttpMessageFilter] RE-DEMANDED! [{}] <> [{}]", uriFileName, dashUnit.getId());
+                logger.debug("[DashHttpMessageFilter] RE-DEMANDED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
                 break;
             }
 
-            if (uriFileName.contains(curDashUnit.getId())) {
+            if (uriFileName.contains(curDashUnitUriFileName)) {
                 dashUnit = curDashUnit;
                 isRegistered = true;
-                logger.debug("[DashHttpMessageFilter] MATCHED! [{}] <> [{}]", uriFileName, dashUnit.getId());
-                uriFileName = dashUnit.getId();
+                logger.debug("[DashHttpMessageFilter] MATCHED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
+                uriFileName = curDashUnitUriFileName;
                 break;
             }
         }
 
         if (dashUnit == null) {
-            dashUnit = ServiceManager.getInstance().getDashManager().getDashUnit(uriFileName);
+            dashUnit = dashManager.addDashUnit(dashUnitKey, null);
+
             if (dashUnit != null) {
-                isRegistered = true;
+                logger.debug("[DashHttpMessageFilter] CREATED DashUnit[{}]: \n{}", dashUnit.getId(), dashUnit);
             }
         }
 
-        if (uriFileNameWithExtension.contains(".")) {
+        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
+        if (uriFileNameWithExtension != null && uriFileNameWithExtension.contains(".")) {
             String parentPathOfUri = FileManager.getParentPathFromUri(uri); // aws/20210209
             if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
                 parentPathOfUri = FileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
@@ -128,30 +136,32 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             uriRoute = uriRouteTable.findUriRoute(method, uri);
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
-                writeNotFound(ctx, request);
+                dashManager.writeNotFound(ctx, request);
                 return;
             }
         }
         ///////////////////////////
-
+        
         try {
             ///////////////////////////
             // PROCESS URI
             if (!isRegistered) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
-                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, uriFileName);
+                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri, uriFileName, ctx, dashUnit);
+                if (obj != null && obj.toString().equals("live")) { return; }
                 String content = obj == null ? "" : obj.toString();
 
-                writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+                dashManager.writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
                 logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
+                dashManager.writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
+                //FileManager.deleteFile(uri);
             }
             ///////////////////////////
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
-            writeInternalServerError(ctx, request);
+            dashManager.writeInternalServerError(ctx, request);
         }
     }
     ////////////////////////////////////////////////////////////
@@ -165,98 +175,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     @Override
     public void channelReadComplete(final ChannelHandlerContext ctx) {
         ctx.flush();
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private void writeNotFound(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request) {
-
-        writeErrorResponse(ctx, request, HttpResponseStatus.NOT_FOUND);
-    }
-    private void writeInternalServerError(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request) {
-
-        writeErrorResponse(ctx, request, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    private void writeErrorResponse(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request,
-            final HttpResponseStatus status) {
-
-        writeResponse(ctx, request, status, HttpMessageManager.TYPE_PLAIN, status.reasonPhrase().toString());
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private void writeResponse(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request,
-            final HttpResponseStatus status,
-            final CharSequence contentType,
-            final String content) {
-        final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
-        writeResponse(ctx, request, status, entity, contentType, bytes.length);
-    }
-
-    private void writeResponse(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request,
-            final HttpResponseStatus status,
-            final CharSequence contentType,
-            final byte[] bytes) {
-        final ByteBuf entity = Unpooled.wrappedBuffer(bytes);
-        writeResponse(ctx, request, status, entity, contentType, bytes.length);
-    }
-
-    private void writeResponse(
-            final ChannelHandlerContext ctx,
-            final FullHttpRequest request,
-            final HttpResponseStatus status,
-            final ByteBuf buf,
-            final CharSequence contentType,
-            final int contentLength) {
-        // Decide whether to close the connection or not.
-        final boolean keepAlive = HttpHeaderUtil.isKeepAlive(request);
-
-        // Build the response object.
-        final FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                status,
-                buf,
-                false
-        );
-
-        final ZonedDateTime dateTime = ZonedDateTime.now();
-        final DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
-
-        final DefaultHttpHeaders headers = (DefaultHttpHeaders) response.headers();
-
-        headers.set(HttpHeaderNames.SERVER, serviceName);
-        headers.set(HttpHeaderNames.DATE, dateTime.format(formatter));
-        headers.set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
-
-        // Close the non-keep-alive connection after the write operation is done.
-        if (!keepAlive) {
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            ctx.writeAndFlush(response, ctx.voidPromise());
-        }
-
-        logger.debug("[DashHttpMessageFilter] RESPONSE: {}", response);
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private void send100Continue(final ChannelHandlerContext ctx) {
-        ctx.write(new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                HttpResponseStatus.CONTINUE));
     }
     ////////////////////////////////////////////////////////////
 

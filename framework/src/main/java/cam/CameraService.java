@@ -66,9 +66,6 @@ public class CameraService {
         fFmpegFrameRecorder.setFormat("flv");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
-        //fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_MPEG4);
-        //fFmpegFrameRecorder.setVideoQuality(0);
 
         audioService.setRecorderParams(fFmpegFrameRecorder);
         audioService.initSampleService();

@@ -165,19 +165,18 @@ public class MPDValidator {
     }
 
     public static List<Violation> validate(MPD mpd) {
-        List<Violation> violations = new ArrayList<>();
-        violations.addAll(Arrays.asList(
-            ruleR10(mpd),
-            ruleR11(mpd),
-            ruleR12(mpd),
-            ruleR14(mpd),
-            ruleR15(mpd),
-            ruleR16(mpd),
-            ruleR17(mpd),
-            ruleR18(mpd),
-            ruleR19(mpd),
-            ruleRD10(mpd),
-            ruleR110(mpd)));
+        List<Violation> violations = new ArrayList<>(Arrays.asList(
+                ruleR10(mpd),
+                ruleR11(mpd),
+                ruleR12(mpd),
+                ruleR14(mpd),
+                ruleR15(mpd),
+                ruleR16(mpd),
+                ruleR17(mpd),
+                ruleR18(mpd),
+                ruleR19(mpd),
+                ruleRD10(mpd),
+                ruleR110(mpd)));
 
         for (Period period : mpd.getPeriods()) {
             violations.addAll(PeriodValidator.validate(mpd, period));

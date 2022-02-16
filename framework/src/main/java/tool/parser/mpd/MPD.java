@@ -160,6 +160,10 @@ public class MPD {
         return Utils.unmodifiableList(programInformations);
     }
 
+    public List<ServiceDescription> getServiceDescriptions() {
+        return serviceDescriptions;
+    }
+
     public List<BaseURL> getBaseURLs() {
         return Utils.unmodifiableList(baseURLs);
     }

@@ -1,8 +1,8 @@
 package cam.panel;
 
-import cam.module.GuiManager;
 import cam.base.ButtonType;
 import cam.listener.*;
+import cam.module.GuiManager;
 
 import javax.swing.*;
 import java.awt.*;
