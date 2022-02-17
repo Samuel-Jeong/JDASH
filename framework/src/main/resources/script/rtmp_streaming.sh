@@ -23,6 +23,9 @@ AUDIO_CHANNEL=1
 AUDIO_BIT_RATE=128k
 PRESET_P=veryfast
 
+# MPD
+SEG_DURATION=1
+
 # FFMPEG
 ffmpeg -i ${VIDEO_IN} \
     -preset ${PRESET_P} -keyint_min ${GOP_SIZE} -g ${GOP_SIZE} -sc_threshold 0 \
@@ -30,8 +33,9 @@ ffmpeg -i ${VIDEO_IN} \
     -map v:0 -s:2 $V_SIZE_3 -b:v:2 365k -maxrate:2 390k -bufsize:2 640k \
     -map 0:a \
     -init_seg_name ${SEGMENT_NAME}_init\$RepresentationID\$.\$ext\$ -media_seg_name ${SEGMENT_NAME}_chunk\$RepresentationID\$-\$Number%05d\$.\$ext\$ \
-    -use_template 1 -use_timeline 1  \
-    -seg_duration 4 -adaptation_sets "id=0,streams=v id=1,streams=a" \
+    -use_template 1 -use_timeline 0  \
+    -remove_at_exit 1 \
+    -seg_duration ${SEG_DURATION} -adaptation_sets "id=0,streams=v id=1,streams=a" \
     -f dash ${VIDEO_OUT}
 
 
