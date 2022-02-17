@@ -118,8 +118,8 @@ public class DashManager {
 
         httpMessageManager.start();
 
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
-            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
             if (configManager.isEnableClient()) {
                 cameraManager = new CameraManager(
                         baseEnvironment.getScheduleManager(),
@@ -134,7 +134,7 @@ public class DashManager {
         ///////////////////////////
         // MPDValidator 생성
         try {
-            mpdValidator = new MPDValidator(mpdParser);
+            mpdValidator = new MPDValidator(mpdParser, configManager.getValidationXsdPath());
         } catch (Exception e) {
             logger.warn("[DashManager] Fail to make a mpd validator.");
         }
@@ -230,13 +230,15 @@ public class DashManager {
     }
 
     public void deleteDashUnit(String dashUnitId) {
+        DashUnit dashUnit = getDashUnit(dashUnitId);
+        if (dashUnit == null) { return; }
+
         try {
             dashUnitMapLock.lock();
 
-            DashUnit dashUnit = getDashUnit(dashUnitId);
             dashUnit.finishLiveMpdProcess();
-
             logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
+
             dashUnitMap.remove(dashUnitId);
         } catch (Exception e) {
             logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);

@@ -17,6 +17,7 @@
   <xs:complexType name="MPDtype">
     <xs:sequence>
       <xs:element name="ProgramInformation" type="ProgramInformationType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="ServiceDescription" type="ServiceDescriptionType" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="BaseURL" type="BaseURLType" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="Location" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="Period" type="PeriodType" maxOccurs="unbounded"/>

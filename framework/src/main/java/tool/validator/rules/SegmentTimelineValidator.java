@@ -28,7 +28,8 @@ public class SegmentTimelineValidator {
 
             if (d > maxSegmentDuration) {
                 return new Violation("R10.0",
-                        "The d attribute of a SegmentTimeline shall not exceed the value give bei the MPD maxSegmentDuration attribute.");
+                        "[" +  s + "] > The d (" + d + ") attribute of a SegmentTimeline shall not exceed " +
+                                "the value give bei the MPD maxSegmentDuration (" + maxSegmentDuration + ") attribute.");
             }
         }
         return Violation.empty();

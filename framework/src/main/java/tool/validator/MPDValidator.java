@@ -13,7 +13,9 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
 
 public class MPDValidator {
@@ -23,14 +25,11 @@ public class MPDValidator {
     private final Schema schema;
     private final MPDParser mpdParser;
 
-    public MPDValidator() throws SAXException {
-        this(new MPDParser());
-    }
-
-    public MPDValidator(MPDParser mpdParser) throws SAXException {
+    public MPDValidator(MPDParser mpdParser, String validationXsdPath) throws SAXException, MalformedURLException {
         this.schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-                .newSchema(MPDValidator.class.getResource("/validation_xsd/DASH-MPD.xsd"));
+                .newSchema(new File(validationXsdPath).toURI().toURL());
         this.mpdParser = mpdParser;
+        logger.debug("[MPDValidator] ValidationXsdPath=[{}]", validationXsdPath);
     }
 
     public void validate(MPD mpd) throws IOException, SAXException, ManifestValidationException {
@@ -38,7 +37,7 @@ public class MPDValidator {
 
         List<Violation> violations = tool.validator.rules.MPDValidator.validate(mpd);
         if (!violations.isEmpty()) {
-            throw new ManifestValidationException(String.format("Found %d validation errors", violations.size()), violations);
+            throw new ManifestValidationException(String.format("[MPDValidator] Found %d validation errors", violations.size()), violations);
         }
     }
 
@@ -47,7 +46,7 @@ public class MPDValidator {
 
         int i = 1;
         for (String line : mpdParser.writeAsString(mpd).split("\n")) {
-            logger.debug("[@VAL@] {}: {}", i++, line);
+            logger.debug("[MPDValidator] [@VAL@] {}: {}", i++, line);
         }
 
         Source source = new StreamSource(new ByteArrayInputStream(buf));

@@ -118,6 +118,10 @@ public class DashMessageHandler implements HttpMessageHandler {
                     return null;
                 }
 
+                dashUnit.setInputFilePath(uri);
+                dashUnit.setOutputFilePath(mpdPath);
+                dashUnit.setLiveStreaming(false);
+
                 ///////////////////////////
                 // GET MPD
                 MPD mpd = dashManager.parseMpd(mpdPath);
@@ -141,15 +145,10 @@ public class DashMessageHandler implements HttpMessageHandler {
 
                 ///////////////////////////
                 // SAVE META DATA OF MEDIA
-                if (dashUnit != null) {
-                    dashUnit.setMpd(mpd);
-                    dashUnit.setInputFilePath(uri);
-                    dashUnit.setOutputFilePath(mpdPath);
-                    dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-                    dashUnit.setDuration(mpd.getMediaPresentationDuration());
-                    dashUnit.setLiveStreaming(false);
-                    logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
-                }
+                dashUnit.setMpd(mpd);
+                dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+                dashUnit.setDuration(mpd.getMediaPresentationDuration());
+                logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
                 ///////////////////////////
             } else {
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();

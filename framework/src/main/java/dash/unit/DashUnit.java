@@ -1,7 +1,5 @@
 package dash.unit;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import process.ProcessManager;
@@ -66,6 +64,7 @@ public class DashUnit {
                 File mpdParentPathFile = new File(mpdParentPath);
                 if (mpdParentPathFile.exists() && mpdParentPathFile.isDirectory()) {
                     FileManager.deleteFile(mpdParentPath);
+                    logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);
                 }
             }
         }

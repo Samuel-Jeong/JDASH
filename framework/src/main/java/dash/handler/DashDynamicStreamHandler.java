@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DashDynamicStreamHandler extends Job {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashDynamicStreamHandler.class);
 
     private final String uri;
@@ -24,7 +25,9 @@ public class DashDynamicStreamHandler extends Job {
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest fullHttpRequest;
     private final DashUnit dashUnit;
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     public DashDynamicStreamHandler(ScheduleManager scheduleManager, String name,
                                     int initialDelay, int interval, TimeUnit timeUnit,
                                     int priority, int totalRunCount, boolean isLasted,
@@ -38,9 +41,17 @@ public class DashDynamicStreamHandler extends Job {
         this.fullHttpRequest = request;
         this.dashUnit = dashUnit;
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public void run() {
+        if (dashUnit == null) {
+            logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to handle dynamic stream. DashUnit is null.", this.mpdPath);
+            return;
+        }
+
+        DashManager dashManager = ServiceManager.getInstance().getDashManager();
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 
         try {
@@ -52,39 +63,40 @@ public class DashDynamicStreamHandler extends Job {
                 timeUnit.sleep(1000);
             }
 
-            DashManager dashManager = ServiceManager.getInstance().getDashManager();
+            dashUnit.setInputFilePath(uri);
+            dashUnit.setOutputFilePath(mpdPath);
+            dashUnit.setLiveStreaming(true);
+
             MPD mpd = dashManager.parseMpd(mpdPath);
             if (mpd == null) {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to generate the mpd file. Fail to parse the mpd.", this.mpdPath);
+                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
             }
 
-            // VALIDATE MPD
-            if (dashManager.validate(mpd)) {
+            // VALIDATE MPD > python 모듈에서 만들어준 dynamic MPD 의 maxSegmentDuration 이 이상함
+            /*if (dashManager.validate(mpd)) {
                 logger.debug("[DashDynamicStreamHandler(mpdPath={})] Success to validate the mpd.", this.mpdPath);
             } else {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to validate the mpd.", this.mpdPath);
+                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
-            }
+            }*/
 
             String result = dashManager.getMpdParser().writeAsString(mpd);
             if (result == null) {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to generate the mpd file. Fail to get the mpd data.", this.mpdPath);
+                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
             }
             ///////////////////////////
 
             ///////////////////////////
             // SAVE META DATA OF MEDIA
-            if (dashUnit != null) {
-                dashUnit.setMpd(mpd);
-                dashUnit.setInputFilePath(uri);
-                dashUnit.setOutputFilePath(mpdPath);
-                dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-                dashUnit.setDuration(mpd.getMediaPresentationDuration());
-                dashUnit.setLiveStreaming(true);
-                logger.debug("[DashDynamicStreamHandler(mpdPath={})] MODIFIED DashUnit[{}]: \n{}", this.mpdPath, dashUnit.getId(), dashUnit);
-            }
+            dashUnit.setMpd(mpd);
+            dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+            dashUnit.setDuration(mpd.getMediaPresentationDuration());
+            logger.debug("[DashDynamicStreamHandler(mpdPath={})] MODIFIED DashUnit[{}]: \n{}", this.mpdPath, dashUnit.getId(), dashUnit);
             ///////////////////////////
 
             ///////////////////////////
@@ -93,6 +105,9 @@ public class DashDynamicStreamHandler extends Job {
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("[DashDynamicStreamHandler(mpdPath={})] run.Exception", mpdPath, e);
+            dashManager.deleteDashUnit(dashUnit.getId());
         }
     }
+    ////////////////////////////////////////////////////////////
+
 }

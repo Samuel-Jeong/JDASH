@@ -266,6 +266,7 @@ public class MPD {
         if (o == null || getClass() != o.getClass()) return false;
         MPD mpd = (MPD) o;
         return Objects.equals(programInformations, mpd.programInformations) &&
+                Objects.equals(serviceDescriptions, mpd.serviceDescriptions) &&
                 Objects.equals(baseURLs, mpd.baseURLs) &&
                 Objects.equals(locations, mpd.locations) &&
                 Objects.equals(periods, mpd.periods) &&
@@ -291,13 +292,14 @@ public class MPD {
 
     @Override
     public int hashCode() {
-        return Objects.hash(programInformations, baseURLs, locations, periods, metrics, essentialProperties, supplementalProperties, utcTimings, id, profiles, type, availabilityStartTime, availabilityEndTime, publishTime, mediaPresentationDuration, minimumUpdatePeriod, minBufferTime, timeShiftBufferDepth, suggestedPresentationDelay, maxSegmentDuration, maxSubsegmentDuration, schemaLocation);
+        return Objects.hash(programInformations, serviceDescriptions, baseURLs, locations, periods, metrics, essentialProperties, supplementalProperties, utcTimings, id, profiles, type, availabilityStartTime, availabilityEndTime, publishTime, mediaPresentationDuration, minimumUpdatePeriod, minBufferTime, timeShiftBufferDepth, suggestedPresentationDelay, maxSegmentDuration, maxSubsegmentDuration, schemaLocation);
     }
 
     @Override
     public String toString() {
         return "MPD{" +
                 "programInformations=" + programInformations +
+                ", serviceDescriptions=" + serviceDescriptions +
                 ", baseURLs=" + baseURLs +
                 ", locations=" + locations +
                 ", periods=" + periods +

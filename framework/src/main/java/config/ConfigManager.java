@@ -37,6 +37,7 @@ public class ConfigManager {
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
+    public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
 
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
@@ -70,6 +71,7 @@ public class ConfigManager {
     private String mediaBasePath = null;
     private String mediaListPath = null;
     private String cameraPath = null;
+    private String validationXsdPath = null;
 
     // NETWORK
     private int threadCount = 0;
@@ -208,6 +210,12 @@ public class ConfigManager {
         this.cameraPath = getIniValue(SECTION_MEDIA, FIELD_CAMERA_PATH);
         if (cameraPath == null) {
             logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CAMERA_PATH);
+            System.exit(1);
+        }
+
+        this.validationXsdPath = getIniValue(SECTION_MEDIA, FIELD_VALIDATION_XSD_PATH);
+        if (validationXsdPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_VALIDATION_XSD_PATH);
             System.exit(1);
         }
 
@@ -505,5 +513,9 @@ public class ConfigManager {
 
     public int getRegisterListenPort() {
         return registerListenPort;
+    }
+
+    public String getValidationXsdPath() {
+        return validationXsdPath;
     }
 }
