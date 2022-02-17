@@ -99,7 +99,7 @@ public class CameraService {
 
     private void process() {
         try {
-            final CameraFrame cameraFrame = new CameraFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
+            final CanvasFrame cameraFrame = new CanvasFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
 
             Frame capturedFrame;
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -113,7 +113,7 @@ public class CameraService {
                 capturedFrame = openCVConverter.convert(mat);
 
                 if (alive && cameraFrame.isVisible()) {
-                    cameraFrame.streamToMyCameraFrame(capturedFrame);
+                    cameraFrame.showImage(capturedFrame);
                 }
 
                 if (startTime == 0) {

@@ -16,8 +16,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import media.MediaManager;
 import network.socket.SocketManager;
-import network.user.UserInfo;
-import network.user.UserManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -45,13 +43,10 @@ public class DashManager {
 
     public static final String DASH_SCHEDULE_JOB = "DASH";
 
-    private final UserInfo myUserInfo = new UserInfo(NonceGenerator.createRandomNonce());
-
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
-    private final UserManager userManager;
     private CameraManager cameraManager = null;
 
     private final MPDParser mpdParser = new MPDParser();
@@ -66,7 +61,6 @@ public class DashManager {
     ////////////////////////////////////////////////////////////
     public DashManager() {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        userManager = new UserManager();
 
         ///////////////////////////
         // 인스턴스 생성
@@ -102,10 +96,6 @@ public class DashManager {
         ///////////////////////////
     }
     ////////////////////////////////////////////////////////////
-
-    public UserInfo getMyUserInfo() {
-        return myUserInfo;
-    }
 
     ////////////////////////////////////////////////////////////
     public void start() {
@@ -178,10 +168,6 @@ public class DashManager {
 
     public MediaManager getMediaManager() {
         return mediaManager;
-    }
-
-    public UserManager getUserManager() {
-        return userManager;
     }
 
     public CameraManager getCameraManager() {
