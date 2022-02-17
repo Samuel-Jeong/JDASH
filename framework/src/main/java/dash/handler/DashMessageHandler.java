@@ -91,12 +91,16 @@ public class DashMessageHandler implements HttpMessageHandler {
                         ///////////////////////////
                         // FOR dash_encoder.py
                         //String mpdDirectoryPath = mpdPath.substring(0, mpdPath.lastIndexOf("/")); // Absolute path
-                        //run = run + " --dash_folder " + mpdDirectoryPath + " --video " + uri; // python3 dash_encoder.py --dash_folder /home/uangel/udash/media/Seoul --video /home/uangel/udash/media/Seoul/Seoul.mp4
+                        //run = run + " --dash_folder " + mpdDirectoryPath + " --video " + uri;
+                        // python3 dash_encoder.py --dash_folder /home/uangel/udash/media/Seoul --video /home/uangel/udash/media/Seoul/Seoul.mp4
+                        // python3 dash_encoder.py --dash_folder /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/live --video rtmp://192.168.5.222:1940/live/jamesj
                         ///////////////////////////
 
                         ///////////////////////////
                         // FOR mp4_to_dash.py
-                        command = command + " " + uri + " " + mpdPath;  // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
+                        command = command + " " + uri + " " + mpdPath;
+                        // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
+                        // python3 mp4_to_dash.py rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj
                         ///////////////////////////
 
                         ProcessManager.runProcessWait(command, mpdPath);

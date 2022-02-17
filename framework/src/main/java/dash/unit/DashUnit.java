@@ -55,7 +55,7 @@ public class DashUnit {
     }
 
     public void finishLiveMpdProcess() {
-        liveTask.shutdown();
+        liveTask.shutdownNow();
         isOngoingLiveTask.set(false);
 
         if (outputFilePath != null) { // Delete MPD path
