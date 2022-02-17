@@ -24,7 +24,6 @@ import tool.parser.MPDParser;
 import tool.parser.mpd.MPD;
 import tool.validator.MPDValidator;
 import tool.validator.ManifestValidationException;
-import util.module.NonceGenerator;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -222,9 +221,7 @@ public class DashManager {
         try {
             dashUnitMapLock.lock();
 
-            dashUnit.finishLiveMpdProcess();
             logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
-
             dashUnitMap.remove(dashUnitId);
         } catch (Exception e) {
             logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);

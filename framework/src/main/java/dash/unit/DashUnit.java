@@ -1,8 +1,10 @@
 package dash.unit;
 
+import config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import process.ProcessManager;
+import service.AppInstance;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
@@ -26,8 +28,9 @@ public class DashUnit {
     private Duration duration = null;
     private Duration minBufferTime= null;
 
-    private Thread liveStreamingThread = null;
     private boolean isLiveStreaming = false;
+
+    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -39,33 +42,21 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void runLiveMpdProcess(String command, String mpdPath) {
-        if (liveStreamingThread != null && (liveStreamingThread.isAlive() || !liveStreamingThread.isInterrupted())) {
-            liveStreamingThread.interrupt();
-            clearMpdPath();
-        }
-
-        liveStreamingThread = new Thread(() -> ProcessManager.runProcessWait(command, mpdPath));
-        liveStreamingThread.start();
-        logger.debug("[DashUnit(id={})] RUN Live MPD Process", id);
-    }
-
-    public void finishLiveMpdProcess() {
-        if (liveStreamingThread != null && (liveStreamingThread.isAlive() || !liveStreamingThread.isInterrupted())) {
-            liveStreamingThread.interrupt();
-            liveStreamingThread = null;
-            logger.debug("[DashUnit(id={})] FINISH Live MPD Process", id);
-        }
-
-        clearMpdPath();
+    public void runRtmpStreaming(String uriFileName, String curRtmpUri, String mpdPath) {
+        // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
+        String scriptPath = configManager.getScriptPath();
+        String command = "sh " + scriptPath;
+        command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
+        ProcessManager.runProcessNoWait(command);
     }
 
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
             String mpdParentPath = FileManager.getParentPathFromUri(outputFilePath);
+            logger.debug("[DashUnit(id={})] outputFilePath: {}, mpdParentPath: {}", id, outputFilePath, mpdParentPath);
             if (mpdParentPath != null) {
                 File mpdParentPathFile = new File(mpdParentPath);
-                if (mpdParentPathFile.exists() && mpdParentPathFile.isDirectory()) {
+                if (mpdParentPathFile.exists()) {
                     FileManager.deleteFile(mpdParentPath);
                     logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);
                 }

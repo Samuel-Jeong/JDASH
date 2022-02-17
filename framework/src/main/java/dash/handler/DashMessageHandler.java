@@ -86,24 +86,12 @@ public class DashMessageHandler implements HttpMessageHandler {
                     mpdPath = uri.replace(".mp4", ".mpd");
                     File mpdFile = new File(mpdPath);
                     if (!mpdFile.exists()) {
-                        String command = "python3 " + scriptPath;
-
                         ///////////////////////////
-                        // FOR dash_encoder.py
-                        //String mpdDirectoryPath = mpdPath.substring(0, mpdPath.lastIndexOf("/")); // Absolute path
-                        //run = run + " --dash_folder " + mpdDirectoryPath + " --video " + uri;
-                        // python3 dash_encoder.py --dash_folder /home/uangel/udash/media/Seoul --video /home/uangel/udash/media/Seoul/Seoul.mp4
-                        // python3 dash_encoder.py --dash_folder /Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources/live --video rtmp://192.168.5.222:1940/live/jamesj
+                        // sh rtmp_streaming.sh tigers /home/uangel/udash/media/animal/tigers.mp4 /home/uangel/udash/media/animal/tigers.mpd
+                        String command = "sh " + scriptPath;
+                        command = command + " " + uriFileName + " " + uri + " " + mpdPath;
+                        ProcessManager.runProcessWait(command);
                         ///////////////////////////
-
-                        ///////////////////////////
-                        // FOR mp4_to_dash.py
-                        command = command + " " + uri + " " + mpdPath;
-                        // python3 mp4_to_dash.py /home/uangel/udash/media/Seoul/Seoul.mp4 /home/uangel/udash/media/Seoul/Seoul.mpd
-                        // python3 mp4_to_dash.py rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj
-                        ///////////////////////////
-
-                        ProcessManager.runProcessWait(command, mpdPath);
 
                         mpdFile = new File(mpdPath);
                         if (!mpdFile.exists()) {
@@ -168,16 +156,19 @@ public class DashMessageHandler implements HttpMessageHandler {
 
                 mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
                 logger.debug("[DashMessageHandler(uri={})] [LIVE] Final mpd path: {} (rtmpUri={})", this.uri, mpdPath, curRtmpUri);
-                String command = "python3 " + scriptPath;
 
                 ///////////////////////////
                 // FOR mp4_to_dash.py
+                /*String command = "python3 " + scriptPath;
                 command = command + " " + curRtmpUri + " " + mpdPath;  // python3 mp4_to_dash.py rtmp://192.168.5.222:1940/live/livestream /home/uangel/udash/media/live/livestream/livestream.mpd
                 logger.debug("[DashMessageHandler(uri={})] [LIVE] COMMAND: {}", this.uri, command);
+                dashUnit.runLiveMpdProcess(command, mpdPath); // one time for dash unit*/
                 ///////////////////////////
 
                 ///////////////////////////
-                dashUnit.runLiveMpdProcess(command, mpdPath); // one time for dash unit
+                // FOR rtmp_streaming.sh
+                dashUnit.runRtmpStreaming(uriFileName, curRtmpUri, mpdPath);
+                ///////////////////////////
 
                 DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
                         scheduleManager,
