@@ -1,17 +1,14 @@
 #!/bin/sh
 
+# ARGUMENTS
 SEGMENT_NAME=$1
 VIDEO_IN=$2
 VIDEO_OUT=$3
 
+# VIDEO OPTIONS
+VIDEO_CODEC=libx264
 FPS=30
 GOP_SIZE=60
-AUDIO_SAMPLING_RATE=44100
-AUDIO_CHANNEL=1
-VIDEO_CODEC=libx264
-AUDIO_CODEC=aac
-AUDIO_BIT_RATE=128k
-PRESET_P=veryfast
 V_SIZE_1=960x540
 V_SIZE_2=416x234
 V_SIZE_3=640x360
@@ -19,9 +16,17 @@ V_SIZE_4=768x432
 V_SIZE_5=1280x720
 V_SIZE_6=1920x1080
 
+# AUDIO OPTIONS
+AUDIO_CODEC=aac
+AUDIO_SAMPLING_RATE=44100
+AUDIO_CHANNEL=1
+AUDIO_BIT_RATE=128k
+PRESET_P=veryfast
+
+# FFMPEG
 ffmpeg -i ${VIDEO_IN} \
     -preset ${PRESET_P} -keyint_min ${GOP_SIZE} -g ${GOP_SIZE} -sc_threshold 0 \
-    -r ${FPS} -c:v ${VIDEO_CODEC} -pix_fmt yuv420p -c:a ${AUDIO_CODEC} -b:a ${AUDIO_BIT_RATE} -ac ${AUDIO_CHANNEL -ar AUDIO_SAMPLING_RATE} \
+    -r ${FPS} -c:v ${VIDEO_CODEC} -pix_fmt yuv420p -c:a ${AUDIO_CODEC} -b:a ${AUDIO_BIT_RATE} -ac ${AUDIO_CHANNEL} -ar ${AUDIO_SAMPLING_RATE} \
     -map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M \
     -map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k \
     -map v:0 -s:2 $V_SIZE_3 -b:v:2 365k -maxrate:2 390k -bufsize:2 640k \

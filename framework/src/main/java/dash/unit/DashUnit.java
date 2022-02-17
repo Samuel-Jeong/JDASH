@@ -47,7 +47,9 @@ public class DashUnit {
         String scriptPath = configManager.getScriptPath();
         String command = "sh " + scriptPath;
         command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
-        ProcessManager.runProcessNoWait(command);
+
+        String finalCommand = command;
+        new Thread(() -> ProcessManager.runProcessNoWait(finalCommand)).start();
     }
 
     public void clearMpdPath() {

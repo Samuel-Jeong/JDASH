@@ -12,14 +12,11 @@ public class ProcessManager {
     private static final Logger logger = LoggerFactory.getLogger(ProcessManager.class);
 
     public static void runProcessNoWait(String command) {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(command);
-
         BufferedReader stdOut = null;
         Process process = null;
         try {
-            logger.debug("[ProcessManager] PROCESS (command={})", command);
-            process = processBuilder.start();
+            logger.debug("[ProcessManager] PROCESS (command=[{}])", command);
+            process = Runtime.getRuntime().exec(command);
 
             String line;
             StringBuilder output = new StringBuilder();
@@ -28,9 +25,9 @@ public class ProcessManager {
                 output.append(line);
             }
 
-            logger.debug("[ProcessManager] Success to process. [command={}, output={}]", command, output);
+            logger.debug("[ProcessManager] Success to process. [command=[{}], output={}]", command, output);
         } catch (Exception e) {
-            logger.warn("ProcessManager.runProcess.Exception (command={})", command, e);
+            logger.warn("ProcessManager.runProcess.Exception (command=[{}])", command, e);
         } finally {
             if (process != null) {
                 process.destroy();
@@ -50,7 +47,7 @@ public class ProcessManager {
         BufferedReader stdOut = null;
         Process process = null;
         try {
-            logger.debug("[ProcessManager] PROCESS (command={})", command);
+            logger.debug("[ProcessManager] PROCESS (command=[{}])", command);
             process = Runtime.getRuntime().exec(command);
 
             String str;
@@ -65,9 +62,9 @@ public class ProcessManager {
                 throw new RuntimeException("[ProcessManager] exit code is not 0 [" + exitValue + "]");
             }
 
-            logger.debug("[ProcessManager] Success to process. (command={})", command);
+            logger.debug("[ProcessManager] Success to process. (command=[{}])", command);
         } catch (Exception e) {
-            logger.warn("ProcessManager.runProcess.Exception (command={})", command, e);
+            logger.warn("ProcessManager.runProcess.Exception (command=[{}])", command, e);
         } finally {
             if (process != null) {
                 process.destroy();
