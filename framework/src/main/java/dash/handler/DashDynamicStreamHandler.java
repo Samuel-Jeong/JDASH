@@ -63,10 +63,6 @@ public class DashDynamicStreamHandler extends Job {
                 timeUnit.sleep(1000);
             }
 
-            dashUnit.setInputFilePath(uri);
-            dashUnit.setOutputFilePath(mpdPath);
-            dashUnit.setLiveStreaming(true);
-
             MPD mpd = dashManager.parseMpd(mpdPath);
             if (mpd == null) {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to generate the mpd file. Fail to parse the mpd.", this.mpdPath);

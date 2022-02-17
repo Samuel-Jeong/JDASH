@@ -10,6 +10,7 @@ import util.module.FileManager;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DashUnit {
 
@@ -30,6 +31,9 @@ public class DashUnit {
 
     private boolean isLiveStreaming = false;
 
+    private LiveStreamingHandler liveStreamingHandler = null;
+    private AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
+
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ////////////////////////////////////////////////////////////
 
@@ -43,25 +47,47 @@ public class DashUnit {
 
     ////////////////////////////////////////////////////////////
     public void runRtmpStreaming(String uriFileName, String curRtmpUri, String mpdPath) {
+        if (isRtmpStreaming.get()) {
+            logger.warn("[DashUnit(id={})] runRtmpStreaming is already running...", id);
+            return;
+        }
+
         // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
         String scriptPath = configManager.getScriptPath();
         String command = "sh " + scriptPath;
         command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
 
-        String finalCommand = command;
-        new Thread(() -> ProcessManager.runProcessNoWait(finalCommand)).start();
+        liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
+        liveStreamingHandler.start();
+        logger.debug("[DashUnit(id={})] runRtmpStreaming (command={})", id, command);
+    }
+
+    private static class LiveStreamingHandler extends Thread {
+
+        private final AtomicBoolean isRtmpStreaming;
+        private final String command;
+
+        public LiveStreamingHandler(AtomicBoolean isRtmpStreaming, String command) {
+            this.isRtmpStreaming = isRtmpStreaming;
+            this.command = command;
+        }
+
+        @Override
+        public void run() {
+            isRtmpStreaming.set(true);
+            ProcessManager.runProcessNoWait(command);
+            isRtmpStreaming.set(false);
+        }
+
     }
 
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
             String mpdParentPath = FileManager.getParentPathFromUri(outputFilePath);
-            logger.debug("[DashUnit(id={})] outputFilePath: {}, mpdParentPath: {}", id, outputFilePath, mpdParentPath);
+            //logger.debug("[DashUnit(id={})] outputFilePath: {}, mpdParentPath: {}", id, outputFilePath, mpdParentPath);
             if (mpdParentPath != null) {
-                File mpdParentPathFile = new File(mpdParentPath);
-                if (mpdParentPathFile.exists()) {
-                    FileManager.deleteFile(mpdParentPath);
-                    logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);
-                }
+                FileManager.deleteFile(mpdParentPath);
+                logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);
             }
         }
     }

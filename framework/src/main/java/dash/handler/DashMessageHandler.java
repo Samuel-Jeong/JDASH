@@ -157,13 +157,9 @@ public class DashMessageHandler implements HttpMessageHandler {
                 mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
                 logger.debug("[DashMessageHandler(uri={})] [LIVE] Final mpd path: {} (rtmpUri={})", this.uri, mpdPath, curRtmpUri);
 
-                ///////////////////////////
-                // FOR mp4_to_dash.py
-                /*String command = "python3 " + scriptPath;
-                command = command + " " + curRtmpUri + " " + mpdPath;  // python3 mp4_to_dash.py rtmp://192.168.5.222:1940/live/livestream /home/uangel/udash/media/live/livestream/livestream.mpd
-                logger.debug("[DashMessageHandler(uri={})] [LIVE] COMMAND: {}", this.uri, command);
-                dashUnit.runLiveMpdProcess(command, mpdPath); // one time for dash unit*/
-                ///////////////////////////
+                dashUnit.setInputFilePath(curRtmpUri);
+                dashUnit.setOutputFilePath(mpdPath);
+                dashUnit.setLiveStreaming(true);
 
                 ///////////////////////////
                 // FOR rtmp_streaming.sh
