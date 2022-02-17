@@ -30,7 +30,7 @@ public class ProcessManager {
                 throw new RuntimeException("[ProcessManager] exit code is not 0 [" + exitValue + "]");
             }
 
-            logger.debug("[ProcessManager] Success to convert. (fileName={})", filePath);
+            logger.debug("[ProcessManager] Success to process. (command={}, filePath={})", command, filePath);
         } catch (Exception e) {
             logger.warn("ProcessManager.runProcess.Exception", e);
         } finally {

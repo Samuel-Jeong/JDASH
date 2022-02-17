@@ -8,9 +8,6 @@ import util.module.FileManager;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DashUnit {
 
@@ -29,8 +26,7 @@ public class DashUnit {
     private Duration duration = null;
     private Duration minBufferTime= null;
 
-    private final ThreadPoolExecutor liveTask;
-    private final AtomicBoolean isOngoingLiveTask = new AtomicBoolean(false);
+    private Thread liveStreamingThread = null;
     private boolean isLiveStreaming = false;
     ////////////////////////////////////////////////////////////
 
@@ -39,25 +35,32 @@ public class DashUnit {
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
-        liveTask = new ScheduledThreadPoolExecutor(1);
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public void runLiveMpdProcess(String command, String mpdPath) {
-        if (!getIsOngoingLiveTask()) {
-            liveTask.execute(() ->
-                    ProcessManager.runProcessWait(command, mpdPath)
-            );
-            isOngoingLiveTask.set(true);
-            logger.debug("[DashUnit(id={})] RUN Live MPD Process", id);
+        if (liveStreamingThread != null && (liveStreamingThread.isAlive() || !liveStreamingThread.isInterrupted())) {
+            liveStreamingThread.interrupt();
+            clearMpdPath();
         }
+
+        liveStreamingThread = new Thread(() -> ProcessManager.runProcessWait(command, mpdPath));
+        liveStreamingThread.start();
+        logger.debug("[DashUnit(id={})] RUN Live MPD Process", id);
     }
 
     public void finishLiveMpdProcess() {
-        liveTask.shutdownNow();
-        isOngoingLiveTask.set(false);
+        if (liveStreamingThread != null && (liveStreamingThread.isAlive() || !liveStreamingThread.isInterrupted())) {
+            liveStreamingThread.interrupt();
+            liveStreamingThread = null;
+            logger.debug("[DashUnit(id={})] FINISH Live MPD Process", id);
+        }
 
+        clearMpdPath();
+    }
+
+    public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
             String mpdParentPath = FileManager.getParentPathFromUri(outputFilePath);
             if (mpdParentPath != null) {
@@ -68,12 +71,6 @@ public class DashUnit {
                 }
             }
         }
-
-        logger.debug("[DashUnit(id={})] FINISH Live MPD Process", id);
-    }
-
-    public boolean getIsOngoingLiveTask() {
-        return isOngoingLiveTask.get();
     }
 
     public byte[] getSegmentByteData(String uri) {
@@ -156,7 +153,6 @@ public class DashUnit {
                 ", curSegmentName='" + curSegmentName + '\'' +
                 ", duration=" + duration +
                 ", minBufferTime=" + minBufferTime +
-                ", isOngoingLiveTask=" + isOngoingLiveTask.get() +
                 ", isLiveStreaming=" + isLiveStreaming +
                 '}';
     }
