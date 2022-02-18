@@ -1,4 +1,4 @@
-package dash.preprocess.message.exception;
+package dash.dynamic.message.exception;
 
 public class MessageException extends Exception {
 

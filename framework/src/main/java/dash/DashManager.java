@@ -4,9 +4,13 @@ import cam.CameraManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
+import dash.dynamic.message.EndLiveMediaProcessRequest;
+import dash.dynamic.message.PreLiveMediaProcessRequest;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.MessageType;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
-import dash.preprocess.PreProcessMediaManager;
+import dash.dynamic.PreProcessMediaManager;
 import dash.unit.DashUnit;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
@@ -16,10 +20,13 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import media.MediaManager;
+import network.definition.DestinationRecord;
+import network.socket.GroupSocket;
 import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import tool.parser.MPDParser;
 import tool.parser.mpd.MPD;
@@ -139,6 +146,35 @@ public class DashManager {
     }
 
     public void stop() {
+        //////////////////////////////////////
+        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+        GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+        if (listenSocket != null) {
+            DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+            if (target != null) {
+                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
+                EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(
+                        new MessageHeader(
+                                PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
+                                MessageType.ENDPROCESS_REQ,
+                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                System.currentTimeMillis(),
+                                PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                        ),
+                        configManager.getPreprocessListenIp().length(),
+                        configManager.getPreprocessListenIp(),
+                        configManager.getCameraPath().length(),
+                        configManager.getCameraPath()
+                );
+                byte[] requestByteData = endLiveMediaProcessRequest.getByteData();
+                target.getNettyChannel().sendData(requestByteData, requestByteData.length);
+                logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
+            }
+        }
+        //////////////////////////////////////
+
         preProcessMediaManager.stop();
         httpMessageManager.stop();
         baseEnvironment.stop();

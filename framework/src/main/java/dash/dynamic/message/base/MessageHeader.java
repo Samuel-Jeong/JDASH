@@ -1,8 +1,8 @@
-package dash.preprocess.message.base;
+package dash.dynamic.message.base;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dash.preprocess.message.exception.MessageException;
+import dash.dynamic.message.exception.MessageException;
 import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;

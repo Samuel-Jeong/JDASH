@@ -1,15 +1,15 @@
-package dash.preprocess.handler;
+package dash.dynamic.handler;
 
 import config.ConfigManager;
 import dash.DashManager;
-import dash.preprocess.PreProcessMediaManager;
-import dash.preprocess.message.EndLiveMediaProcessRequest;
-import dash.preprocess.message.EndLiveMediaProcessResponse;
-import dash.preprocess.message.PreLiveMediaProcessRequest;
-import dash.preprocess.message.PreLiveMediaProcessResponse;
-import dash.preprocess.message.base.MessageHeader;
-import dash.preprocess.message.base.MessageType;
-import dash.preprocess.message.base.ResponseType;
+import dash.dynamic.PreProcessMediaManager;
+import dash.dynamic.message.EndLiveMediaProcessRequest;
+import dash.dynamic.message.EndLiveMediaProcessResponse;
+import dash.dynamic.message.PreLiveMediaProcessRequest;
+import dash.dynamic.message.PreLiveMediaProcessResponse;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.MessageType;
+import dash.dynamic.message.base.ResponseType;
 import dash.unit.DashUnit;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

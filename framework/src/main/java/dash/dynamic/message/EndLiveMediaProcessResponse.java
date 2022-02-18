@@ -1,21 +1,21 @@
-package dash.preprocess.message;
+package dash.dynamic.message;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dash.preprocess.message.base.MessageFactory;
-import dash.preprocess.message.base.MessageHeader;
-import dash.preprocess.message.base.ResponseType;
-import dash.preprocess.message.exception.MessageException;
+import dash.dynamic.message.base.MessageFactory;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.ResponseType;
+import dash.dynamic.message.exception.MessageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class PreLiveMediaProcessResponse extends MessageFactory {
+public class EndLiveMediaProcessResponse extends MessageFactory {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(PreLiveMediaProcessResponse.class);
+    private static final Logger logger = LoggerFactory.getLogger(EndLiveMediaProcessResponse.class);
 
     public static final int MIN_SIZE = MessageHeader.SIZE + ByteUtil.NUM_BYTES_IN_INT * 2;
 
@@ -27,7 +27,7 @@ public class PreLiveMediaProcessResponse extends MessageFactory {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public PreLiveMediaProcessResponse(byte[] data) throws MessageException {
+    public EndLiveMediaProcessResponse(byte[] data) throws MessageException {
         if (data.length >= MIN_SIZE) {
             int index = 0;
 
@@ -61,7 +61,7 @@ public class PreLiveMediaProcessResponse extends MessageFactory {
         }
     }
 
-    public PreLiveMediaProcessResponse(MessageHeader messageHeader, int statusCode, int reasonLength, String reason) {
+    public EndLiveMediaProcessResponse(MessageHeader messageHeader, int statusCode, int reasonLength, String reason) {
         this.messageHeader = messageHeader;
         this.statusCode = statusCode;
         this.reasonLength = reasonLength;

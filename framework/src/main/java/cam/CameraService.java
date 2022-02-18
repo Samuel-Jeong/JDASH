@@ -2,12 +2,11 @@ package cam;
 
 import config.ConfigManager;
 import dash.DashManager;
-import dash.preprocess.PreProcessMediaManager;
-import dash.preprocess.message.PreLiveMediaProcessRequest;
-import dash.preprocess.message.PreLiveMediaProcessResponse;
-import dash.preprocess.message.base.MessageHeader;
-import dash.preprocess.message.base.MessageType;
-import dash.preprocess.message.base.ResponseType;
+import dash.dynamic.PreProcessMediaManager;
+import dash.dynamic.message.EndLiveMediaProcessRequest;
+import dash.dynamic.message.PreLiveMediaProcessRequest;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.MessageType;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -191,6 +190,7 @@ public class CameraService {
                                     System.currentTimeMillis(),
                                     PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
                             ),
+                            configManager.getPreprocessListenIp().length(),
                             configManager.getPreprocessListenIp(),
                             configManager.getCameraPath().length(),
                             configManager.getCameraPath(),

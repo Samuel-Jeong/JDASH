@@ -1,4 +1,4 @@
-package dash.preprocess.message.base;
+package dash.dynamic.message.base;
 
 public class ResponseType {
 

@@ -1,4 +1,4 @@
-package dash.preprocess.message.base;
+package dash.dynamic.message.base;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

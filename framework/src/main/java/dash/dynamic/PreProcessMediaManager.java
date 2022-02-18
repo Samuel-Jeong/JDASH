@@ -1,7 +1,7 @@
-package dash.preprocess;
+package dash.dynamic;
 
-import dash.preprocess.handler.ProcessClientChannelHandler;
-import dash.preprocess.handler.ProcessServerChannelHandler;
+import dash.dynamic.handler.ProcessClientChannelHandler;
+import dash.dynamic.handler.ProcessServerChannelHandler;
 import dash.unit.DashUnit;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
