@@ -48,7 +48,6 @@ public class DashMessageHandler implements HttpMessageHandler {
     public Object handle(HttpRequest request, HttpResponse response, String originUri, String uriFileName, ChannelHandlerContext ctx, DashUnit dashUnit) {
         DashManager dashManager = ServiceManager.getInstance().getDashManager();
         if (request == null || uriFileName == null || ctx == null) {
-            dashManager.deleteDashUnit(dashUnit.getId());
             return null;
         }
 
@@ -60,7 +59,6 @@ public class DashMessageHandler implements HttpMessageHandler {
 
         if (!this.uri.equals(uri)) {
             logger.warn("[DashMessageHandler(uri={})] URI is not equal with handler's uri. (uri={})", this.uri, uri);
-            dashManager.deleteDashUnit(dashUnit.getId());
             return null;
         }
 
@@ -69,7 +67,6 @@ public class DashMessageHandler implements HttpMessageHandler {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. (uri={})", this.uri, uri);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return null;
             }
         }
@@ -96,7 +93,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                         mpdFile = new File(mpdPath);
                         if (!mpdFile.exists()) {
                             logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                            dashManager.deleteDashUnit(dashUnit.getId());
                             return null;
                         }
                     } else {
@@ -106,7 +102,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                     mpdPath = uri;
                 } else {
                     logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                    dashManager.deleteDashUnit(dashUnit.getId());
                     return null;
                 }
             } else {
@@ -134,7 +129,6 @@ public class DashMessageHandler implements HttpMessageHandler {
             MPD mpd = dashManager.parseMpd(mpdPath);
             if (mpd == null) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return null;
             }
 
@@ -143,7 +137,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                 logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
             } else {
                 logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return null;
             }*/
 
@@ -159,7 +152,6 @@ public class DashMessageHandler implements HttpMessageHandler {
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
-            dashManager.deleteDashUnit(dashUnit.getId());
         }
         ///////////////////////////
 

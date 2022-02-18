@@ -66,7 +66,6 @@ public class DashDynamicStreamHandler extends Job {
             MPD mpd = dashManager.parseMpd(mpdPath);
             if (mpd == null) {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to generate the mpd file. Fail to parse the mpd.", this.mpdPath);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
             }
 
@@ -75,14 +74,12 @@ public class DashDynamicStreamHandler extends Job {
                 logger.debug("[DashDynamicStreamHandler(mpdPath={})] Success to validate the mpd.", this.mpdPath);
             } else {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to validate the mpd.", this.mpdPath);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
             }*/
 
             String result = dashManager.getMpdParser().writeAsString(mpd);
             if (result == null) {
                 logger.warn("[DashDynamicStreamHandler(mpdPath={})] Fail to generate the mpd file. Fail to get the mpd data.", this.mpdPath);
-                dashManager.deleteDashUnit(dashUnit.getId());
                 return;
             }
             ///////////////////////////
@@ -101,7 +98,6 @@ public class DashDynamicStreamHandler extends Job {
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("[DashDynamicStreamHandler(mpdPath={})] run.Exception", mpdPath, e);
-            dashManager.deleteDashUnit(dashUnit.getId());
         }
     }
     ////////////////////////////////////////////////////////////

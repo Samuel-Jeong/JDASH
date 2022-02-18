@@ -152,7 +152,6 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             ResponseType.REASON_NOT_FOUND.length(),
                             ResponseType.REASON_NOT_FOUND
                     );
-                    responseByteData = endLiveMediaProcessResponse.getByteData();
                 } else {
                     ///////////////////////////
                     dashManager.deleteDashUnit(dashUnitId);
@@ -172,8 +171,8 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             ResponseType.REASON_SUCCESS.length(),
                             ResponseType.REASON_SUCCESS
                     );
-                    responseByteData = endLiveMediaProcessResponse.getByteData();
                 }
+                responseByteData = endLiveMediaProcessResponse.getByteData();
             } else {
                 responseByteData = null;
             }

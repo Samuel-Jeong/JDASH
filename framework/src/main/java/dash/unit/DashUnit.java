@@ -59,6 +59,7 @@ public class DashUnit {
 
         liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
         liveStreamingHandler.start();
+        isRtmpStreaming.set(true);
         logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
     }
 
@@ -67,6 +68,7 @@ public class DashUnit {
             liveStreamingHandler.interrupt();
             if (liveStreamingHandler.isInterrupted()) {
                 logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
+                isRtmpStreaming.set(false);
                 liveStreamingHandler = null;
             }
         }
@@ -84,9 +86,9 @@ public class DashUnit {
 
         @Override
         public void run() {
-            isRtmpStreaming.set(true);
-            ProcessManager.runProcessNoWait(command);
-            isRtmpStreaming.set(false);
+            while (isRtmpStreaming.get()) {
+                ProcessManager.runProcessWait(command);
+            }
         }
 
     }

@@ -135,7 +135,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
                 dashManager.writeNotFound(ctx, request);
-                dashManager.deleteDashUnit(dashUnitKey);
                 return;
             }
         }
@@ -161,7 +160,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
             dashManager.writeInternalServerError(ctx, request);
-            dashManager.deleteDashUnit(dashUnitKey);
         }
     }
     ////////////////////////////////////////////////////////////
