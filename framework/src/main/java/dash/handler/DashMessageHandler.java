@@ -109,56 +109,54 @@ public class DashMessageHandler implements HttpMessageHandler {
                     dashManager.deleteDashUnit(dashUnit.getId());
                     return null;
                 }
-
-                dashUnit.setInputFilePath(uri);
-                dashUnit.setOutputFilePath(mpdPath);
-                dashUnit.setLiveStreaming(false);
-
-                ///////////////////////////
-                // GET MPD
-                MPD mpd = dashManager.parseMpd(mpdPath);
-                if (mpd == null) {
-                    logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                    dashManager.deleteDashUnit(dashUnit.getId());
-                    return null;
-                }
-
-                // VALIDATE MPD
-                if (dashManager.validate(mpd)) {
-                    logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
-                } else {
-                    logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
-                    dashManager.deleteDashUnit(dashUnit.getId());
-                    return null;
-                }
-
-                result = dashManager.getMpdParser().writeAsString(mpd);
-                ///////////////////////////
-
-                ///////////////////////////
-                // SAVE META DATA OF MEDIA
-                dashUnit.setMpd(mpd);
-                dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-                dashUnit.setDuration(mpd.getMediaPresentationDuration());
-                logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
-                ///////////////////////////
             } else {
-                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
-                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
+                mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
 
-                DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
+                ///////////////////////////
+                /*DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
                         scheduleManager,
                         DashDynamicStreamHandler.class.getSimpleName(),
                         0, 0, TimeUnit.MILLISECONDS,
                         1, 1, false,
                         uri, mpdPath, ctx, request.getRequest(), dashUnit
                 ); // every time for mpd request by dash unit
-                scheduleManager.startJob(DASH_SCHEDULE_JOB, dashDynamicStreamHandler);
+                scheduleManager.startJob(DASH_SCHEDULE_JOB, dashDynamicStreamHandler);*/
+                //result = LIVE_MESSAGE;
                 ///////////////////////////
-
-                result = LIVE_MESSAGE;
             }
+
+            dashUnit.setInputFilePath(uri);
+            dashUnit.setOutputFilePath(mpdPath);
+            dashUnit.setLiveStreaming(false);
+
+            ///////////////////////////
+            // GET MPD
+            MPD mpd = dashManager.parseMpd(mpdPath);
+            if (mpd == null) {
+                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+                dashManager.deleteDashUnit(dashUnit.getId());
+                return null;
+            }
+
+            // VALIDATE MPD
+            /*if (dashManager.validate(mpd)) {
+                logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
+            } else {
+                logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
+                dashManager.deleteDashUnit(dashUnit.getId());
+                return null;
+            }*/
+
+            result = dashManager.getMpdParser().writeAsString(mpd);
+            ///////////////////////////
+
+            ///////////////////////////
+            // SAVE META DATA OF MEDIA
+            dashUnit.setMpd(mpd);
+            dashUnit.setMinBufferTime(mpd.getMinBufferTime());
+            dashUnit.setDuration(mpd.getMediaPresentationDuration());
+            logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
+            ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
             dashManager.deleteDashUnit(dashUnit.getId());
