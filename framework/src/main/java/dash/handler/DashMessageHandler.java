@@ -6,22 +6,16 @@ import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpResponse;
 import dash.unit.DashUnit;
-import ffmpeg.FfmpegManager;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import process.ProcessManager;
 import service.AppInstance;
 import service.ServiceManager;
-import service.scheduler.schedule.ScheduleManager;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import static dash.DashManager.DASH_SCHEDULE_JOB;
 
 public class DashMessageHandler implements HttpMessageHandler {
 
@@ -30,13 +24,11 @@ public class DashMessageHandler implements HttpMessageHandler {
 
     private final String uri;
     private final String scriptPath;
-    private final FfmpegManager ffmpegManager;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public DashMessageHandler(String uri) throws IOException {
+    public DashMessageHandler(String uri) throws Exception {
         this.uri = uri;
-        this.ffmpegManager = new FfmpegManager();
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         scriptPath = configManager.getScriptPath();
@@ -85,13 +77,9 @@ public class DashMessageHandler implements HttpMessageHandler {
                     if (!mpdFile.exists()) {
                         ///////////////////////////
                         // sh rtmp_streaming.sh tigers /home/uangel/udash/media/animal/tigers.mp4 /home/uangel/udash/media/animal/tigers.mpd
-                        /*String command = "sh " + scriptPath;
+                        String command = "sh " + scriptPath;
                         command = command + " " + uriFileName + " " + uri + " " + mpdPath;
-                        ProcessManager.runProcessWait(command);*/
-                        ///////////////////////////
-
-                        ///////////////////////////
-                        ffmpegManager.startRtmpStreaming(uriFileName, uri, mpdPath);
+                        ProcessManager.runProcessWait(command);
                         ///////////////////////////
 
                         mpdFile = new File(mpdPath);
