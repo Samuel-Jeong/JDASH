@@ -108,7 +108,8 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            dashUnit = dashManager.addDashUnit(dashUnitKey, null);
+            logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
+            return;
         }
 
         String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);

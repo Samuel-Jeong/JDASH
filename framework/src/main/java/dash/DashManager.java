@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
+import dash.preprocess.PreProcessMediaManager;
 import dash.unit.DashUnit;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
@@ -46,6 +47,7 @@ public class DashManager {
     private final SocketManager socketManager;
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
+    private final PreProcessMediaManager preProcessMediaManager;
     private CameraManager cameraManager = null;
 
     private final MPDParser mpdParser = new MPDParser();
@@ -93,6 +95,11 @@ public class DashManager {
         // MediaManager 생성
         mediaManager = new MediaManager(configManager.getMediaListPath());
         ///////////////////////////
+
+        ///////////////////////////
+        // PreProcessMediaManager 생성
+        preProcessMediaManager = new PreProcessMediaManager(socketManager);
+        ///////////////////////////
     }
     ////////////////////////////////////////////////////////////
 
@@ -106,6 +113,7 @@ public class DashManager {
         ///////////////////////////
 
         httpMessageManager.start();
+        preProcessMediaManager.start();
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
@@ -131,6 +139,7 @@ public class DashManager {
     }
 
     public void stop() {
+        preProcessMediaManager.stop();
         httpMessageManager.stop();
         baseEnvironment.stop();
     }
@@ -167,6 +176,10 @@ public class DashManager {
 
     public MediaManager getMediaManager() {
         return mediaManager;
+    }
+
+    public PreProcessMediaManager getPreProcessMediaManager() {
+        return preProcessMediaManager;
     }
 
     public CameraManager getCameraManager() {
@@ -221,7 +234,9 @@ public class DashManager {
         try {
             dashUnitMapLock.lock();
 
+            dashUnit.finishRtmpStreaming();
             logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
+
             dashUnitMap.remove(dashUnitId);
         } catch (Exception e) {
             logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);

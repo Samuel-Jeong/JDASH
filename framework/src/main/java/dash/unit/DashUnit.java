@@ -32,7 +32,7 @@ public class DashUnit {
     private boolean isLiveStreaming = false;
 
     private LiveStreamingHandler liveStreamingHandler = null;
-    private AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
+    private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ////////////////////////////////////////////////////////////
@@ -59,7 +59,17 @@ public class DashUnit {
 
         liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
         liveStreamingHandler.start();
-        logger.debug("[DashUnit(id={})] runRtmpStreaming (command={})", id, command);
+        logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
+    }
+
+    public void finishRtmpStreaming() {
+        if (liveStreamingHandler != null && isRtmpStreaming.get()) {
+            liveStreamingHandler.interrupt();
+            if (liveStreamingHandler.isInterrupted()) {
+                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
+                liveStreamingHandler = null;
+            }
+        }
     }
 
     private static class LiveStreamingHandler extends Thread {

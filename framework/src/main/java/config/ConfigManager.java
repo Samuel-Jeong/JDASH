@@ -13,38 +13,58 @@ import java.io.IOException;
  */
 public class ConfigManager {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
 
     private Ini ini = null;
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     // Section String
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
     public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
+    public static final String SECTION_LIVE = "LIVE"; // LIVE Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     // Field String
+    // COMMON
     public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
 
+    // MEDIA
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
 
+    // LIVE
+    public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
+    public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
+    public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
+    public static final String FIELD_PREPROCESS_TARGET_PORT = "PREPROCESS_TARGET_PORT";
+
+    // NETWORK
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
     public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
 
+    // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
     public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
 
+    // SCRIPT
     public static final String FIELD_SCRIPT_PATH = "PATH";
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
+    // VARIABLES
     // COMMON
     private boolean enableClient = false;
     private String serviceName = null;
@@ -55,6 +75,12 @@ public class ConfigManager {
     private String mediaListPath = null;
     private String cameraPath = null;
     private String validationXsdPath = null;
+
+    // LIVE
+    private String preprocessListenIp = null;
+    private int preprocessListenPort = 0;
+    private String preprocessTargetIp = null;
+    private int preprocessTargetPort = 0;
 
     // NETWORK
     private int threadCount = 0;
@@ -69,6 +95,7 @@ public class ConfigManager {
 
     // SCRIPT
     private String scriptPath = null;
+    ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -89,6 +116,7 @@ public class ConfigManager {
 
             loadCommonConfig();
             loadMediaConfig();
+            loadLiveConfig();
             loadNetworkConfig();
             loadRtmpConfig();
             loadScriptConfig();
@@ -159,6 +187,50 @@ public class ConfigManager {
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
+    }
+
+    /**
+     * @fn private void loadLiveConfig()
+     * @brief LIVE Section 을 로드하는 함수
+     */
+    private void loadLiveConfig() {
+        this.preprocessListenIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
+        if (this.preprocessListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String preprocessListenPort = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_PORT);
+        if (preprocessListenPort == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.preprocessListenPort = Integer.parseInt(preprocessListenPort);
+            if (this.preprocessListenPort <= 0 || this.preprocessListenPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.preprocessTargetIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_TARGET_IP);
+        if (this.preprocessTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_IP);
+            System.exit(1);
+        }
+
+        String preprocessTargetPort = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
+        if (preprocessTargetPort == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.preprocessTargetPort = Integer.parseInt(preprocessTargetPort);
+            if (this.preprocessTargetPort <= 0 || this.preprocessTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_LIVE);
     }
 
     /**
@@ -344,5 +416,21 @@ public class ConfigManager {
 
     public String getValidationXsdPath() {
         return validationXsdPath;
+    }
+
+    public String getPreprocessListenIp() {
+        return preprocessListenIp;
+    }
+
+    public int getPreprocessListenPort() {
+        return preprocessListenPort;
+    }
+
+    public String getPreprocessTargetIp() {
+        return preprocessTargetIp;
+    }
+
+    public int getPreprocessTargetPort() {
+        return preprocessTargetPort;
     }
 }

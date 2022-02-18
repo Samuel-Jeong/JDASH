@@ -1,6 +1,15 @@
 package cam;
 
 import config.ConfigManager;
+import dash.DashManager;
+import dash.preprocess.PreProcessMediaManager;
+import dash.preprocess.message.PreLiveMediaProcessRequest;
+import dash.preprocess.message.PreLiveMediaProcessResponse;
+import dash.preprocess.message.base.MessageHeader;
+import dash.preprocess.message.base.MessageType;
+import dash.preprocess.message.base.ResponseType;
+import network.definition.DestinationRecord;
+import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
@@ -11,6 +20,7 @@ import org.bytedeco.opencv.opencv_core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import util.module.FileManager;
 
 import java.text.SimpleDateFormat;
@@ -164,6 +174,35 @@ public class CameraService {
 
     public void action() {
         try {
+            //////////////////////////////////////
+            DashManager dashManager = ServiceManager.getInstance().getDashManager();
+            PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+            GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+            if (listenSocket != null) {
+                DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+                if (target != null) {
+                    ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
+                    PreLiveMediaProcessRequest preLiveMediaProcessRequest = new PreLiveMediaProcessRequest(
+                            new MessageHeader(
+                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.PREPROCESS_REQ,
+                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    System.currentTimeMillis(),
+                                    PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                            ),
+                            configManager.getPreprocessListenIp(),
+                            configManager.getCameraPath().length(),
+                            configManager.getCameraPath(),
+                            1800
+                    );
+                    byte[] requestByteData = preLiveMediaProcessRequest.getByteData();
+                    target.getNettyChannel().sendData(requestByteData, requestByteData.length);
+                    logger.debug("[CameraService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
+                }
+            }
+            //////////////////////////////////////
+
             init();
             process();
         } catch (Exception e) {

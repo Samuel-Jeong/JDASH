@@ -143,29 +143,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                 logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
                 ///////////////////////////
             } else {
-                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-                String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                String curRtmpUri = FileManager.concatFilePath(networkPath, originUri);
-                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), originUri);
-                File mpdPathFile = new File(mpdPath);
-                if (!mpdPathFile.exists()) {
-                    if (mpdPathFile.mkdirs()) {
-                        logger.debug("[DashMessageHandler(uri={})] [LIVE] Parent mpd path is created. (parentMpdPath={}, rtmpUri={})", this.uri, mpdPath, curRtmpUri);
-                    }
-                }
-
-                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
-                logger.debug("[DashMessageHandler(uri={})] [LIVE] Final mpd path: {} (rtmpUri={})", this.uri, mpdPath, curRtmpUri);
-
-                dashUnit.setInputFilePath(curRtmpUri);
-                dashUnit.setOutputFilePath(mpdPath);
-                dashUnit.setLiveStreaming(true);
-
-                ///////////////////////////
-                // FOR rtmp_streaming.sh
-                dashUnit.runRtmpStreaming(uriFileName, curRtmpUri, mpdPath);
-                ///////////////////////////
-
                 DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
                         scheduleManager,
                         DashDynamicStreamHandler.class.getSimpleName(),
