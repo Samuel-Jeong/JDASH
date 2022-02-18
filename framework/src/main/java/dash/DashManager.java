@@ -147,30 +147,31 @@ public class DashManager {
 
     public void stop() {
         //////////////////////////////////////
-        DashManager dashManager = ServiceManager.getInstance().getDashManager();
-        PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
-        GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
-        if (listenSocket != null) {
-            DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
-            if (target != null) {
-                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-                EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(
-                        new MessageHeader(
-                                PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                MessageType.ENDPROCESS_REQ,
-                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
-                                System.currentTimeMillis(),
-                                PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
-                        ),
-                        configManager.getPreprocessListenIp().length(),
-                        configManager.getPreprocessListenIp(),
-                        configManager.getCameraPath().length(),
-                        configManager.getCameraPath()
-                );
-                byte[] requestByteData = endLiveMediaProcessRequest.getByteData();
-                target.getNettyChannel().sendData(requestByteData, requestByteData.length);
-                logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        if (configManager.isEnableClient()) {
+            DashManager dashManager = ServiceManager.getInstance().getDashManager();
+            PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+            GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+            if (listenSocket != null) {
+                DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+                if (target != null) {
+                    EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(
+                            new MessageHeader(
+                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.ENDPROCESS_REQ,
+                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    System.currentTimeMillis(),
+                                    PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                            ),
+                            configManager.getPreprocessListenIp().length(),
+                            configManager.getPreprocessListenIp(),
+                            configManager.getCameraPath().length(),
+                            configManager.getCameraPath()
+                    );
+                    byte[] requestByteData = endLiveMediaProcessRequest.getByteData();
+                    target.getNettyChannel().sendData(requestByteData, requestByteData.length);
+                    logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
+                }
             }
         }
         //////////////////////////////////////

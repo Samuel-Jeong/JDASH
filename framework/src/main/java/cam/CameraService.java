@@ -36,7 +36,7 @@ public class CameraService {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 1280;
     public static final int CAPTURE_HEIGHT = 720;
-    public static final int GOP_LENGTH_IN_FRAMES = 60;
+    public static final int GOP_LENGTH_IN_FRAMES = 30;
     private final String URI;
 
     private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
@@ -70,7 +70,10 @@ public class CameraService {
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setVideoBitrate(2000000);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        //fFmpegFrameRecorder.setFormat("matroska");
         fFmpegFrameRecorder.setFormat("flv");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
