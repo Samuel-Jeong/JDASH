@@ -6,9 +6,9 @@ VIDEO_IN=$2
 VIDEO_OUT=$3
 
 # VIDEO OPTIONS
-VIDEO_CODEC=libx264
+VIDEO_CODEC=libx265
 FPS=30
-GOP_SIZE=60
+GOP_SIZE=30
 V_SIZE_1=960x540
 V_SIZE_2=416x234
 V_SIZE_3=640x360
@@ -24,20 +24,25 @@ AUDIO_BIT_RATE=128k
 PRESET_P=veryfast
 
 # MPD
-SEG_DURATION=5
+SEG_DURATION=2
 
 # FFMPEG
 ffmpeg -i ${VIDEO_IN} \
-    -preset ${PRESET_P} -keyint_min ${GOP_SIZE} -g ${GOP_SIZE} -sc_threshold 0 \
-    -r ${FPS} -c:v ${VIDEO_CODEC} -pix_fmt yuv420p -c:a ${AUDIO_CODEC} -b:a ${AUDIO_BIT_RATE} -ac ${AUDIO_CHANNEL} -ar ${AUDIO_SAMPLING_RATE} \
-    -map v:0 -s:2 $V_SIZE_3 -b:v:2 365k -maxrate:2 390k -bufsize:2 640k \
+    -preset ${PRESET_P} -keyint_min ${GOP_SIZE} -g ${GOP_SIZE} \
+    -r ${FPS} -c:v ${VIDEO_CODEC} -c:a ${AUDIO_CODEC} -b:a ${AUDIO_BIT_RATE} -ac ${AUDIO_CHANNEL} -ar ${AUDIO_SAMPLING_RATE} \
+    -map v:0 -s:2 $V_SIZE_3 -b:v:2 2M -maxrate:2 3M -bufsize:2 4M \
     -map 0:a \
     -init_seg_name ${SEGMENT_NAME}_init\$RepresentationID\$.\$ext\$ -media_seg_name ${SEGMENT_NAME}_chunk\$RepresentationID\$-\$Number%05d\$.\$ext\$ \
-    -use_template 1 -use_timeline 0  \
-    -remove_at_exit 1 \
+    -use_template 1 -use_timeline 1  \
     -seg_duration ${SEG_DURATION} -adaptation_sets "id=0,streams=v id=1,streams=a" \
     -f dash ${VIDEO_OUT}
 
+
+
+    #-threads 16 \
+    # -remove_at_exit 1 \
+    #-sc_threshold 0
+    #-pix_fmt yuv420p
 
      #-map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M \
         #-map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k \

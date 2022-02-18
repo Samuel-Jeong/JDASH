@@ -146,7 +146,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             if (!isRegistered) { // GET MPD URI 수신 시 (not segment uri)
                 final HttpRequest requestWrapper = new HttpRequest(request);
                 final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri, uriFileName, ctx, dashUnit);
-                if (obj != null && obj.toString().equals(DashMessageHandler.LIVE_MESSAGE)) { return; }
                 String content = obj == null ? "" : obj.toString();
 
                 dashManager.writeResponse(ctx, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);

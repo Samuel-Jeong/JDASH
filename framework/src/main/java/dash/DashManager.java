@@ -181,18 +181,22 @@ public class DashManager {
     }
 
     public void loadMediaUriList() {
-        if (mediaManager.loadUriList()) {
-            httpMessageManager.clear();
-            for (String uri : mediaManager.getUriList()) {
-                httpMessageManager.get(
-                        uri,
-                        new DashMessageHandler(uri, getBaseEnvironment().getScheduleManager())
-                );
-            }
+        try {
+            if (mediaManager.loadUriList()) {
+                httpMessageManager.clear();
+                for (String uri : mediaManager.getUriList()) {
+                    httpMessageManager.get(
+                            uri,
+                            new DashMessageHandler(uri)
+                    );
+                }
 
-            logger.debug("[MediaManager] Success to load the uri list. \n{}", gson.toJson(httpMessageManager.getAllUris()));
-        } else {
-            logger.warn("[MediaManager] Fail to load the uri list.");
+                logger.debug("[MediaManager] Success to load the uri list. \n{}", gson.toJson(httpMessageManager.getAllUris()));
+            } else {
+                logger.warn("[MediaManager] Fail to load the uri list.");
+            }
+        } catch (Exception e) {
+            logger.warn("[MediaManager] loadMediaUriList.Exception. Fail to load the uri list.", e);
         }
     }
     ////////////////////////////////////////////////////////////

@@ -1,6 +1,8 @@
 package dash.unit;
 
 import config.ConfigManager;
+import ffmpeg.FfmpegManager;
+import net.bramp.ffmpeg.FFmpegExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import process.ProcessManager;
@@ -9,6 +11,7 @@ import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -52,15 +55,20 @@ public class DashUnit {
             return;
         }
 
-        // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
-        String scriptPath = configManager.getScriptPath();
-        String command = "sh " + scriptPath;
-        command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
-
-        liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
-        liveStreamingHandler.start();
-        isRtmpStreaming.set(true);
-        logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
+        try {
+            // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
+            //String scriptPath = configManager.getScriptPath();
+            //String command = "sh " + scriptPath;
+            //command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
+            //liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
+            liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, uriFileName, curRtmpUri, mpdPath);
+            liveStreamingHandler.start();
+            isRtmpStreaming.set(true);
+            //logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
+            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (uriFileName={}, curRtmpUri={}, mpdPath={})", id, uriFileName, curRtmpUri ,mpdPath);
+        } catch (Exception e) {
+            logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
+        }
     }
 
     public void finishRtmpStreaming() {
@@ -77,7 +85,27 @@ public class DashUnit {
     private static class LiveStreamingHandler extends Thread {
 
         private final AtomicBoolean isRtmpStreaming;
-        private final String command;
+        private final String segmentName;
+        private final String input;
+        private final String output;
+        private final FfmpegManager ffmpegManager;
+
+        public LiveStreamingHandler (AtomicBoolean isRtmpStreaming, String segmentName, String input, String output) throws IOException {
+            this.isRtmpStreaming = isRtmpStreaming;
+            this.segmentName = segmentName;
+            this.input = input;
+            this.output = output;
+            this.ffmpegManager = new FfmpegManager();
+        }
+
+        @Override
+        public void run() {
+            while (isRtmpStreaming.get()) {
+                ffmpegManager.startRtmpStreaming(segmentName, input, output);
+            }
+        }
+
+        /*private final String command;
 
         public LiveStreamingHandler(AtomicBoolean isRtmpStreaming, String command) {
             this.isRtmpStreaming = isRtmpStreaming;
@@ -89,7 +117,7 @@ public class DashUnit {
             while (isRtmpStreaming.get()) {
                 ProcessManager.runProcessWait(command);
             }
-        }
+        }*/
 
     }
 

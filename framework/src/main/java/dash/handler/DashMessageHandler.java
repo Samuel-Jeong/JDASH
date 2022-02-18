@@ -6,6 +6,7 @@ import dash.handler.definition.HttpMessageHandler;
 import dash.handler.definition.HttpRequest;
 import dash.handler.definition.HttpResponse;
 import dash.unit.DashUnit;
+import ffmpeg.FfmpegManager;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static dash.DashManager.DASH_SCHEDULE_JOB;
@@ -26,20 +28,18 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashMessageHandler.class);
 
-    public static final String LIVE_MESSAGE = "LIVE";
-
     private final String uri;
     private final String scriptPath;
-    private final ScheduleManager scheduleManager;
+    private final FfmpegManager ffmpegManager;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public DashMessageHandler(String uri, ScheduleManager scheduleManager) {
+    public DashMessageHandler(String uri) throws IOException {
         this.uri = uri;
+        this.ffmpegManager = new FfmpegManager();
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         scriptPath = configManager.getScriptPath();
-        this.scheduleManager = scheduleManager;
     }
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -85,9 +85,13 @@ public class DashMessageHandler implements HttpMessageHandler {
                     if (!mpdFile.exists()) {
                         ///////////////////////////
                         // sh rtmp_streaming.sh tigers /home/uangel/udash/media/animal/tigers.mp4 /home/uangel/udash/media/animal/tigers.mpd
-                        String command = "sh " + scriptPath;
+                        /*String command = "sh " + scriptPath;
                         command = command + " " + uriFileName + " " + uri + " " + mpdPath;
-                        ProcessManager.runProcessWait(command);
+                        ProcessManager.runProcessWait(command);*/
+                        ///////////////////////////
+
+                        ///////////////////////////
+                        ffmpegManager.startRtmpStreaming(uriFileName, uri, mpdPath);
                         ///////////////////////////
 
                         mpdFile = new File(mpdPath);
@@ -106,18 +110,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                 }
             } else {
                 mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
-
-                ///////////////////////////
-                /*DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
-                        scheduleManager,
-                        DashDynamicStreamHandler.class.getSimpleName(),
-                        0, 0, TimeUnit.MILLISECONDS,
-                        1, 1, false,
-                        uri, mpdPath, ctx, request.getRequest(), dashUnit
-                ); // every time for mpd request by dash unit
-                scheduleManager.startJob(DASH_SCHEDULE_JOB, dashDynamicStreamHandler);*/
-                //result = LIVE_MESSAGE;
-                ///////////////////////////
             }
 
             dashUnit.setInputFilePath(uri);
