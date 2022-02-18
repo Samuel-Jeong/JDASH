@@ -85,59 +85,46 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 PreLiveMediaProcessResponse preProcessResponse;
                 if (dashUnit == null) {
-                    logger.warn("[ProcessServerChannelHandler] DashUnit is already exist! (id={}, request={})", dashUnitId, preProcessRequest);
-
-                    preProcessResponse = new PreLiveMediaProcessResponse(
-                            new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.PREPROCESS_RES,
-                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
-                                    System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_ALREADY_EXIST.length()
-                            ),
-                            ResponseType.FORBIDDEN,
-                            ResponseType.REASON_ALREADY_EXIST.length(),
-                            ResponseType.REASON_ALREADY_EXIST
-                    );
-                } else {
-                    ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-                    String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                    String curRtmpUri = FileManager.concatFilePath(networkPath, uri);
-                    String mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
-                    File mpdPathFile = new File(mpdPath);
-                    if (!mpdPathFile.exists()) {
-                        if (mpdPathFile.mkdirs()) {
-                            logger.debug("[DashMessageHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
-                        }
-                    }
-
-                    String uriFileName = FileManager.getFileNameFromUri(uri);
-                    mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
-                    logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
-
-                    dashUnit.setInputFilePath(curRtmpUri);
-                    dashUnit.setOutputFilePath(mpdPath);
-                    dashUnit.setLiveStreaming(true);
-
-                    ///////////////////////////
-                    dashUnit.runRtmpStreaming(uriFileName, curRtmpUri, mpdPath);
-                    ///////////////////////////
-
-                    logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, preProcessRequest);
-
-                    preProcessResponse = new PreLiveMediaProcessResponse(
-                            new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.PREPROCESS_RES,
-                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
-                                    System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
-                            ),
-                            ResponseType.SUCCESS,
-                            ResponseType.REASON_SUCCESS.length(),
-                            ResponseType.REASON_SUCCESS
-                    );
+                    dashUnit = dashManager.getDashUnit(dashUnitId);
                 }
+
+                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+                String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+                String curRtmpUri = FileManager.concatFilePath(networkPath, uri);
+                String mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+                File mpdPathFile = new File(mpdPath);
+                if (!mpdPathFile.exists()) {
+                    if (mpdPathFile.mkdirs()) {
+                        logger.debug("[DashMessageHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
+                    }
+                }
+
+                String uriFileName = FileManager.getFileNameFromUri(uri);
+                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
+                logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
+
+                dashUnit.setInputFilePath(curRtmpUri);
+                dashUnit.setOutputFilePath(mpdPath);
+                dashUnit.setLiveStreaming(true);
+
+                ///////////////////////////
+                dashUnit.runRtmpStreaming(uriFileName, curRtmpUri, mpdPath);
+                ///////////////////////////
+
+                logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, preProcessRequest);
+
+                preProcessResponse = new PreLiveMediaProcessResponse(
+                        new MessageHeader(
+                                PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
+                                MessageType.PREPROCESS_RES,
+                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                System.currentTimeMillis(),
+                                PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
+                        ),
+                        ResponseType.SUCCESS,
+                        ResponseType.REASON_SUCCESS.length(),
+                        ResponseType.REASON_SUCCESS
+                );
                 responseByteData = preProcessResponse.getByteData();
             } else if (messageHeader.getMessageType() == MessageType.ENDPROCESS_REQ) {
                 EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(data);
@@ -168,7 +155,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     responseByteData = endLiveMediaProcessResponse.getByteData();
                 } else {
                     ///////////////////////////
-                    dashUnit.finishRtmpStreaming();
+                    dashManager.deleteDashUnit(dashUnitId);
                     ///////////////////////////
 
                     logger.debug("[ProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, endLiveMediaProcessRequest);

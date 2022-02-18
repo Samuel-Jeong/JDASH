@@ -143,6 +143,10 @@ public class DashMessageHandler implements HttpMessageHandler {
                 logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
                 ///////////////////////////
             } else {
+                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+                mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
+
                 DashDynamicStreamHandler dashDynamicStreamHandler = new DashDynamicStreamHandler(
                         scheduleManager,
                         DashDynamicStreamHandler.class.getSimpleName(),
