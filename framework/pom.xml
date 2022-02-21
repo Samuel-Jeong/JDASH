@@ -13,6 +13,22 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <source>10</source>
                     <target>10</target>
@@ -35,7 +51,44 @@
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.red5</groupId>
+                <artifactId>red5-parent</artifactId>
+                <version>1.2.12</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>xuggle repo</id>
+            <url>https://www.dcm4che.org/maven2/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+
+        <dependency>
+            <groupId>xuggle</groupId>
+            <artifactId>xuggle-xuggler</artifactId>
+            <version>5.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-client</artifactId>
+            <version>1.2.12</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-server</artifactId>
+            <version>1.2.12</version>
+            <type>jar</type>
+        </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>

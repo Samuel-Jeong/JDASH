@@ -6,7 +6,7 @@ VIDEO_IN=$2
 VIDEO_OUT=$3
 
 # VIDEO OPTIONS
-VIDEO_CODEC=libx265
+VIDEO_CODEC=libx264
 FPS=30
 GOP_SIZE=30
 V_SIZE_1=960x540
@@ -21,7 +21,7 @@ AUDIO_CODEC=aac
 AUDIO_SAMPLING_RATE=44100
 AUDIO_CHANNEL=1
 AUDIO_BIT_RATE=128k
-PRESET_P=ultrafast
+PRESET_P=slow
 
 # MPD
 SEG_DURATION=5
@@ -30,16 +30,17 @@ SEG_DURATION=5
 ffmpeg -i ${VIDEO_IN} \
     -preset ${PRESET_P} -keyint_min ${GOP_SIZE} -g ${GOP_SIZE} \
     -r ${FPS} -c:v ${VIDEO_CODEC} -c:a ${AUDIO_CODEC} -b:a ${AUDIO_BIT_RATE} -ac ${AUDIO_CHANNEL} -ar ${AUDIO_SAMPLING_RATE} \
-    -map v:0 -s:2 $V_SIZE_3 -b:v:2 1M -maxrate:2 2M -bufsize:2 3M \
+    -map v:0 -s:2 $V_SIZE_3 -b:v:2 50K -maxrate:2 1M -bufsize:2 2M \
     -map 0:a \
     -init_seg_name ${SEGMENT_NAME}_init\$RepresentationID\$.\$ext\$ -media_seg_name ${SEGMENT_NAME}_chunk\$RepresentationID\$-\$Number%05d\$.\$ext\$ \
-    -crf 28 -tune zerolatency \
+   -tune zerolatency \
     -use_template 1 -use_timeline 1  \
     -seg_duration ${SEG_DURATION} -adaptation_sets "id=0,streams=v id=1,streams=a" \
     -f dash ${VIDEO_OUT}
 
 
 
+    #-crf 28
     #-threads 16 \
     # -remove_at_exit 1 \
     #-sc_threshold 0

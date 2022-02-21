@@ -11,10 +11,17 @@ import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
+import org.bytedeco.librealsense.frame;
 import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Point;
 import org.bytedeco.opencv.opencv_core.Scalar;
+import org.red5.server.api.stream.IClientStream;
+import org.red5.server.api.stream.IPlaylistSubscriberStream;
+import org.red5.server.api.stream.ISingleItemSubscriberStream;
+import org.red5.server.net.rtmp.RTMPConnection;
+import org.red5.server.net.rtmp.RTMPMinaConnection;
+import org.red5.server.stream.StreamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -73,8 +80,8 @@ public class CameraService {
         //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        //fFmpegFrameRecorder.setFormat("matroska");
-        fFmpegFrameRecorder.setFormat("flv");
+        //fFmpegFrameRecorder.setFormat("matroska"); // > H265
+        fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
 
@@ -82,6 +89,8 @@ public class CameraService {
         audioService.initSampleService();
         fFmpegFrameRecorder.start();
         audioService.startSampling(FRAME_RATE);
+
+        ///////////////////////////////////////////////
     }
 
     public void output(Frame frame) throws Exception {
