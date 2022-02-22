@@ -6,16 +6,16 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import network.definition.NetAddress;
 import network.handler.ClientHandler;
 import network.handler.ServerHandler;
 import network.socket.GroupSocket;
-import network.definition.NetAddress;
 import network.socket.SocketManager;
 import network.socket.SocketProtocol;
 import org.junit.Assert;
 import org.junit.Test;
-import service.system.ResourceManager;
 import service.scheduler.schedule.ScheduleManager;
+import service.system.ResourceManager;
 
 public class NetworkTest {
 

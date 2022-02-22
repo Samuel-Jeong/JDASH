@@ -11,19 +11,13 @@ import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
-import org.bytedeco.librealsense.frame;
 import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Point;
 import org.bytedeco.opencv.opencv_core.Scalar;
-import org.red5.server.api.stream.IClientStream;
-import org.red5.server.api.stream.IPlaylistSubscriberStream;
-import org.red5.server.api.stream.ISingleItemSubscriberStream;
-import org.red5.server.net.rtmp.RTMPConnection;
-import org.red5.server.net.rtmp.RTMPMinaConnection;
-import org.red5.server.stream.StreamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rtmp.RtmpClient;
 import service.AppInstance;
 import service.ServiceManager;
 import util.module.FileManager;
@@ -89,7 +83,6 @@ public class CameraService {
         audioService.initSampleService();
         fFmpegFrameRecorder.start();
         audioService.startSampling(FRAME_RATE);
-
         ///////////////////////////////////////////////
     }
 

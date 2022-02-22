@@ -1,6 +1,7 @@
 package dash;
 
 import com.xuggle.xuggler.*;
+import org.junit.Test;
 import org.red5.client.net.rtmp.RTMPClient;
 import org.red5.io.utils.ObjectMap;
 import org.red5.server.api.event.IEvent;
@@ -10,16 +11,13 @@ import org.red5.server.api.service.IPendingServiceCallback;
 import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.net.rtmp.status.StatusCodes;
 import org.red5.server.stream.message.RTMPMessage;
-import tool.parser.mpd.MPD;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tool.parser.mpd.MPD;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DashTest {
 
@@ -249,33 +247,40 @@ public class DashTest {
             final RTMPClient client = new RTMPClient();
             client.setStreamEventDispatcher(new StreamEventDispatcher());
             client.setStreamEventHandler(notify -> {
-                System.out.printf("onStreamEvent: %s\n", notify);
+                logger.debug("onStreamEvent: {}", notify);
                 ObjectMap<?, ?> map = (ObjectMap<?, ?>) notify.getCall().getArguments()[0];
                 String code = (String) map.get("code");
-                System.out.printf("<:%s\n", code);
+                logger.debug("<:{}", code);
                 if (StatusCodes.NS_PLAY_STREAMNOTFOUND.equals(code)) {
-                    System.out.println("Requested stream was not found");
+                    logger.warn("Requested stream was not found");
                     client.disconnect();
                 } else if (StatusCodes.NS_PLAY_UNPUBLISHNOTIFY.equals(code) || StatusCodes.NS_PLAY_COMPLETE.equals(code)) {
-                    System.out.println("Source has stopped publishing or play is complete");
+                    logger.warn("Source has stopped publishing or play is complete");
                     client.disconnect();
                 }
             });
             client.setConnectionClosedHandler(() -> {
-                System.out.println("Source connection has been closed, server will be stopped");
+                logger.warn("Source connection has been closed, server will be stopped");
             });
             client.setExceptionHandler(throwable -> {
                 throwable.printStackTrace();
                 System.exit(1);
             });
 
+
             Timer timer = new Timer();
-            Map<String, Object> defParams = client.makeDefaultConnectionParams("192.168.5.222", 1940, "live/jamesj");
+            Map<String, Object> defParams = client.makeDefaultConnectionParams("192.168.5.222", 1940, "live");
+            if (logger.isDebugEnabled()) {
+                for (Map.Entry<String, Object> e : defParams.entrySet()) {
+                    logger.debug("Connection property: {} = {}", e.getKey(), e.getValue());
+                }
+            }
+
             client.connect("192.168.5.222", 1940, defParams, call -> {
                 if (call.getResult() == null) { return; }
 
                 ObjectMap<?, ?> map = (ObjectMap<?, ?>) call.getResult();
-                System.out.println("connectCallback");
+                logger.debug("connectCallback");
                 String code = (String) map.get("code");
                 if (code != null) {
                     if ("NetConnection.Connect.Rejected".equals(code)) {
@@ -283,9 +288,9 @@ public class DashTest {
                         client.disconnect();
                     } else if ("NetConnection.Connect.Success".equals(code)) {
                         logger.debug("@@@");
-                        timer.schedule(new BandwidthStatusTask(URI, client, timer), 2000L);
+                        timer.schedule(new BandwidthStatusTask("jamesj", client, timer), 2000L);
                     } else {
-                        System.out.printf("Unhandled response code: %s\n", code);
+                        logger.error("Unhandled response code: {}", code);
                     }
                 }
             });

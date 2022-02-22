@@ -4,6 +4,7 @@ import config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import process.ProcessManager;
+import rtmp.RtmpClient;
 import service.AppInstance;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
@@ -30,10 +31,11 @@ public class DashUnit {
 
     private boolean isLiveStreaming = false;
 
-    private LiveStreamingHandler liveStreamingHandler = null;
+    //private LiveStreamingHandler liveStreamingHandler = null;
     private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    private RtmpClient rtmpClient = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -52,31 +54,38 @@ public class DashUnit {
         }
 
         try {
+            rtmpClient = new RtmpClient(uriFileName, mpdPath);
+            rtmpClient.start();
+
             // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
-            String scriptPath = configManager.getScriptPath();
+            /*String scriptPath = configManager.getScriptPath();
             String command = "sh " + scriptPath;
             command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
             liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
             liveStreamingHandler.start();
             isRtmpStreaming.set(true);
-            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
+            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);*/
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
         }
     }
 
     public void finishRtmpStreaming() {
-        if (liveStreamingHandler != null && isRtmpStreaming.get()) {
+        if (rtmpClient != null) {
+            rtmpClient.stop();
+        }
+
+        /*if (liveStreamingHandler != null && isRtmpStreaming.get()) {
             liveStreamingHandler.interrupt();
             if (liveStreamingHandler.isInterrupted()) {
                 logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
                 isRtmpStreaming.set(false);
                 liveStreamingHandler = null;
             }
-        }
+        }*/
     }
 
-    private static class LiveStreamingHandler extends Thread {
+    /*private static class LiveStreamingHandler extends Thread {
 
         private final AtomicBoolean isRtmpStreaming;
         private final String command;
@@ -93,7 +102,7 @@ public class DashUnit {
             }
         }
 
-    }
+    }*/
 
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
