@@ -84,6 +84,16 @@ public class CameraService {
         fFmpegFrameRecorder.start();
         audioService.startSampling(FRAME_RATE);
         ///////////////////////////////////////////////
+
+        ///////////////////
+        // TODO : TEST
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        RtmpClient rtmpClient = new RtmpClient(
+                configManager.getCameraPath(),
+                FileManager.concatFilePath("/Users/jamesj/GIT_PROJECTS/JDASH/framework/src/test/resources", configManager.getCameraPath())
+        );
+        rtmpClient.start();
+        ///////////////////
     }
 
     public void output(Frame frame) throws Exception {

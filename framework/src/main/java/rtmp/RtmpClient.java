@@ -2,22 +2,29 @@ package rtmp;
 
 import config.ConfigManager;
 import org.apache.mina.core.buffer.IoBuffer;
+import org.red5.client.net.rtmp.BaseRTMPClientHandler;
 import org.red5.client.net.rtmp.RTMPClient;
 import org.red5.io.IStreamableFile;
 import org.red5.io.ITag;
 import org.red5.io.ITagWriter;
 import org.red5.io.flv.impl.Tag;
 import org.red5.io.utils.ObjectMap;
+import org.red5.server.api.IConnection;
+import org.red5.server.api.Red5;
 import org.red5.server.api.event.IEvent;
 import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
+import org.red5.server.api.stream.IBroadcastStream;
+import org.red5.server.api.stream.IClientStream;
 import org.red5.server.net.rtmp.RTMPConnection;
 import org.red5.server.net.rtmp.event.*;
 import org.red5.server.net.rtmp.status.StatusCodes;
 import org.red5.server.service.flv.impl.FLVService;
 import org.red5.server.stream.AbstractClientStream;
+import org.red5.server.stream.ClientBroadcastStream;
 import org.red5.server.stream.IStreamData;
+import org.red5.server.stream.consumer.ConnectionConsumer;
 import org.red5.server.stream.message.RTMPMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,9 +173,12 @@ public class RtmpClient extends RTMPClient {
     //////////////////////////////////////////////////////////
     private static final class StreamEventDispatcher implements IEventDispatcher {
 
-        private ITagWriter writer = null;
+        ////////////////////////////
+        //private ITagWriter writer = null;
         private int videoTs = 0;
         private int audioTs = 0;
+        private final ITag tag = new Tag();
+        ////////////////////////////
 
         ////////////////////////////
         public void start(String saveAsFileName) {
@@ -177,7 +187,7 @@ public class RtmpClient extends RTMPClient {
             flvService.setGenerateMetadata(true);
             try {
                 IStreamableFile flv = flvService.getStreamableFile(file);
-                writer = flv.getWriter();
+                //writer = flv.getWriter();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -186,10 +196,10 @@ public class RtmpClient extends RTMPClient {
         }
 
         public void stop() {
-            if (writer != null) {
+            /*if (writer != null) {
                 writer.close();
                 writer = null;
-            }
+            }*/
             logger.debug("[StreamEventDispatcher] STOP");
         }
         ////////////////////////////
@@ -200,7 +210,7 @@ public class RtmpClient extends RTMPClient {
             logger.debug("[StreamEventDispatcher] Dispatch Event(): {}", event.toString());
 
             try {
-                if (writer == null) { return; }
+                //if (writer == null) { return; }
 
                 if (!(event instanceof IRTMPEvent)) {
                     logger.warn("skipping non rtmp event: {}", event);
@@ -220,7 +230,6 @@ public class RtmpClient extends RTMPClient {
                     return;
                 }
 
-                ITag tag = new Tag();
                 tag.setDataType(rtmpEvent.getDataType());
                 if (rtmpEvent instanceof VideoData) {
                     videoTs += rtmpEvent.getTimestamp();
@@ -235,7 +244,8 @@ public class RtmpClient extends RTMPClient {
                 tag.setBody(data);
                 try {
                     logger.debug("[StreamEventDispatcher] WRITING: {}", tag);
-                    writer.writeTag(tag);
+
+                    //writer.writeTag(tag);
                 } catch (Exception e) {
                     logger.warn("[StreamEventDispatcher] dispatchEvent.writer.writeTag", e);
                     throw new RuntimeException(e);
@@ -293,6 +303,14 @@ public class RtmpClient extends RTMPClient {
 
     }
 
+    @Override
+    public void createStream(IPendingServiceCallback callback) {
+        logger.debug("[RtmpClient] createStream - callback: {}", callback);
+        IPendingServiceCallback wrapper = new CreateStreamCallback(conn, name, this);
+        this.invoke("createStream", null, wrapper);
+    }
+
+
     private static final class SubscribeStreamCallBack implements IPendingServiceCallback {
 
         @Override
@@ -317,6 +335,34 @@ public class RtmpClient extends RTMPClient {
         @Override
         public void resultReceived(IPendingServiceCall call) {
             Number streamId = (Number) call.getResult();
+
+            if (streamId != null) {
+                logger.debug("[CreateStreamCallback] Setting new net ClientBroadcastStream");
+                ClientBroadcastStream clientBroadcastStream = new ClientBroadcastStream();
+                clientBroadcastStream.setConnection(rtmpConnection);
+                clientBroadcastStream.setStreamId(streamId);
+                rtmpConnection.addClientStream(clientBroadcastStream);
+            }
+
+            ///////////////////////////////
+            IClientStream clientStream = rtmpConnection.getStreamById(streamId);
+            if (clientStream == null) { return; }
+
+            if (clientStream instanceof IBroadcastStream) {
+                logger.debug("[CreateStreamCallback] Getting new net ClientBroadcastStream");
+                IBroadcastStream iBroadcastStream = (IBroadcastStream) clientStream;
+                iBroadcastStream.addStreamListener(
+                        new VideoStreamListener(
+                                rtmpConnection.getScope(),
+                                iBroadcastStream,
+                                true,
+                                name,
+                                10000
+                        )
+                );
+            }
+            ///////////////////////////////
+
             // live buffer 0.5s / vod buffer 4s
             //if (Boolean.valueOf(PropertiesReader.getProperty("live"))) {
                 rtmpConnection.ping(new Ping(Ping.CLIENT_BUFFER, streamId, 500));
