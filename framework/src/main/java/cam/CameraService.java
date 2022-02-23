@@ -1,6 +1,13 @@
 package cam;
 
 import config.ConfigManager;
+import dash.DashManager;
+import dash.dynamic.PreProcessMediaManager;
+import dash.dynamic.message.PreLiveMediaProcessRequest;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.MessageType;
+import network.definition.DestinationRecord;
+import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
@@ -11,6 +18,7 @@ import org.bytedeco.opencv.opencv_core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import util.module.FileManager;
 
 import java.text.SimpleDateFormat;
@@ -183,7 +191,7 @@ public class CameraService {
     public void action() {
         try {
             //////////////////////////////////////
-            /*DashManager dashManager = ServiceManager.getInstance().getDashManager();
+            DashManager dashManager = ServiceManager.getInstance().getDashManager();
             PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
             GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
             if (listenSocket != null) {
@@ -209,7 +217,7 @@ public class CameraService {
                     target.getNettyChannel().sendData(requestByteData, requestByteData.length);
                     logger.debug("[CameraService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
                 }
-            }*/
+            }
             //////////////////////////////////////
 
             init();
