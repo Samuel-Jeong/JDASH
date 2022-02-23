@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
         "segmentList",
         "segmentTemplate",
         "labels",
-        "representations"
+        "representations",
+        "resync"
 })
 public class AdaptationSet extends RepresentationBase {
     @JacksonXmlProperty(localName = "Accessibility", namespace = MPD.NAMESPACE)
@@ -52,6 +53,9 @@ public class AdaptationSet extends RepresentationBase {
 
     @JacksonXmlProperty(localName = "BaseURL", namespace = MPD.NAMESPACE)
     private final List<BaseURL> baseURLs;
+
+    @JacksonXmlProperty(localName = "Resync", namespace = MPD.NAMESPACE)
+    private final Resync resync;
 
     @JacksonXmlProperty(localName = "SegmentBase", namespace = MPD.NAMESPACE)
     private final SegmentBase segmentBase;
@@ -125,7 +129,7 @@ public class AdaptationSet extends RepresentationBase {
     @JacksonXmlProperty(isAttribute = true)
     private final Boolean bitstreamSwitching;
 
-    private AdaptationSet(List<Descriptor> framePackings, List<Descriptor> audioChannelConfigurations, List<Descriptor> contentProtections, List<Descriptor> essentialProperties, List<Descriptor> supplementalProperties, List<EventStream> inbandEventStreams, String profiles, Long width, Long height, Ratio sar, FrameRate frameRate, String audioSamplingRate, String mimeType, String segmentProfiles, String codecs, Double maximumSAPPeriod, Long startWithSAP, Double maxPlayoutRate, Boolean codingDependency, VideoScanType scanType, List<Descriptor> accessibilities, List<Descriptor> roles, List<Descriptor> ratings, List<Descriptor> viewpoints, List<ContentComponent> contentComponents, List<BaseURL> baseURLs, SegmentBase segmentBase, SegmentList segmentList, SegmentTemplate segmentTemplate, List<String> labels, List<Representation> representations, String href, ActuateType actuate, Long id, Long group, String lang, String contentType, Ratio par, Long minBandwidth, Long maxBandwidth, Long minWidth, Long maxWidth, Long minHeight, Long maxHeight, FrameRate minFrameRate, FrameRate maxFrameRate, String segmentAlignment, String subsegmentAlignment, Long subsegmentStartsWithSAP, Boolean bitstreamSwitching) {
+    private AdaptationSet(List<Descriptor> framePackings, List<Descriptor> audioChannelConfigurations, List<Descriptor> contentProtections, List<Descriptor> essentialProperties, List<Descriptor> supplementalProperties, List<EventStream> inbandEventStreams, String profiles, Long width, Long height, Ratio sar, FrameRate frameRate, String audioSamplingRate, String mimeType, String segmentProfiles, String codecs, Double maximumSAPPeriod, Long startWithSAP, Double maxPlayoutRate, Boolean codingDependency, VideoScanType scanType, List<Descriptor> accessibilities, List<Descriptor> roles, List<Descriptor> ratings, List<Descriptor> viewpoints, List<ContentComponent> contentComponents, List<BaseURL> baseURLs, Resync resync, SegmentBase segmentBase, SegmentList segmentList, SegmentTemplate segmentTemplate, List<String> labels, List<Representation> representations, String href, ActuateType actuate, Long id, Long group, String lang, String contentType, Ratio par, Long minBandwidth, Long maxBandwidth, Long minWidth, Long maxWidth, Long minHeight, Long maxHeight, FrameRate minFrameRate, FrameRate maxFrameRate, String segmentAlignment, String subsegmentAlignment, Long subsegmentStartsWithSAP, Boolean bitstreamSwitching) {
         super(framePackings, audioChannelConfigurations, contentProtections, essentialProperties, supplementalProperties, inbandEventStreams, profiles, width, height, sar, frameRate, audioSamplingRate, mimeType, segmentProfiles, codecs, maximumSAPPeriod, startWithSAP, maxPlayoutRate, codingDependency, scanType);
         this.accessibilities = accessibilities;
         this.roles = roles;
@@ -133,6 +137,7 @@ public class AdaptationSet extends RepresentationBase {
         this.viewpoints = viewpoints;
         this.contentComponents = contentComponents;
         this.baseURLs = baseURLs;
+        this.resync = resync;
         this.segmentBase = segmentBase;
         this.segmentList = segmentList;
         this.segmentTemplate = segmentTemplate;
@@ -167,6 +172,7 @@ public class AdaptationSet extends RepresentationBase {
         this.viewpoints = null;
         this.contentComponents = null;
         this.baseURLs = null;
+        this.resync = null;
         this.segmentBase = null;
         this.segmentList = null;
         this.segmentTemplate = null;
@@ -215,6 +221,10 @@ public class AdaptationSet extends RepresentationBase {
 
     public List<BaseURL> getBaseURLs() {
         return Utils.unmodifiableList(baseURLs);
+    }
+
+    public Resync getResync() {
+        return resync;
     }
 
     public SegmentBase getSegmentBase() {
@@ -325,6 +335,7 @@ public class AdaptationSet extends RepresentationBase {
                 Objects.equals(viewpoints, that.viewpoints) &&
                 Objects.equals(contentComponents, that.contentComponents) &&
                 Objects.equals(baseURLs, that.baseURLs) &&
+                Objects.equals(resync, that.resync) &&
                 Objects.equals(segmentBase, that.segmentBase) &&
                 Objects.equals(segmentList, that.segmentList) &&
                 Objects.equals(segmentTemplate, that.segmentTemplate) &&
@@ -353,7 +364,7 @@ public class AdaptationSet extends RepresentationBase {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), accessibilities, roles, ratings, viewpoints, contentComponents, baseURLs, segmentBase, segmentList, segmentTemplate, labels, representations, href, actuate, id, group, lang, contentType, par, minBandwidth, maxBandwidth, minWidth, maxWidth, minHeight, maxHeight, minFrameRate, maxFrameRate, segmentAlignment, subsegmentAlignment, subsegmentStartsWithSAP, bitstreamSwitching);
+        return Objects.hash(super.hashCode(), accessibilities, roles, ratings, viewpoints, contentComponents, baseURLs, resync, segmentBase, segmentList, segmentTemplate, labels, representations, href, actuate, id, group, lang, contentType, par, minBandwidth, maxBandwidth, minWidth, maxWidth, minHeight, maxHeight, minFrameRate, maxFrameRate, segmentAlignment, subsegmentAlignment, subsegmentStartsWithSAP, bitstreamSwitching);
     }
 
     @Override
@@ -366,6 +377,7 @@ public class AdaptationSet extends RepresentationBase {
                 ", viewpoints=" + viewpoints +
                 ", contentComponents=" + contentComponents +
                 ", baseURLs=" + baseURLs +
+                ", resync=" + resync +
                 ", segmentBase=" + segmentBase +
                 ", segmentList=" + segmentList +
                 ", segmentTemplate=" + segmentTemplate +
@@ -401,6 +413,7 @@ public class AdaptationSet extends RepresentationBase {
                 .withViewpoints(viewpoints)
                 .withContentComponents(contentComponents)
                 .withBaseURLs(baseURLs)
+                .withResync(resync)
                 .withSegmentBase(segmentBase)
                 .withSegmentList(segmentList)
                 .withSegmentTemplate(segmentTemplate)
@@ -438,6 +451,7 @@ public class AdaptationSet extends RepresentationBase {
         private List<Descriptor> viewpoints;
         private List<ContentComponent> contentComponents;
         private List<BaseURL> baseURLs;
+        private Resync resync;
         private SegmentBase segmentBase;
         private SegmentList segmentList;
         private SegmentTemplate segmentTemplate;
@@ -507,6 +521,11 @@ public class AdaptationSet extends RepresentationBase {
 
         public Builder withBaseURLs(List<BaseURL> baseURLs) {
             this.baseURLs = baseURLs;
+            return this;
+        }
+
+        public Builder withResync(Resync resync) {
+            this.resync = resync;
             return this;
         }
 
@@ -648,7 +667,7 @@ public class AdaptationSet extends RepresentationBase {
             return new AdaptationSet(framePackings, audioChannelConfigurations, contentProtections, essentialProperties,
                     supplementalProperties, inbandEventStreams, profiles, width, height, sar, frameRate, audioSamplingRate,
                     mimeType, segmentProfiles, codecs, maximumSAPPeriod, startWithSAP, maxPlayoutRate, codingDependency,
-                    scanType, accessibilities, roles, ratings, viewpoints, contentComponents, baseURLs, segmentBase,
+                    scanType, accessibilities, roles, ratings, viewpoints, contentComponents, baseURLs, resync, segmentBase,
                     segmentList, segmentTemplate, labels, representations, href, actuate, id, group, lang, contentType, par,
                     minBandwidth, maxBandwidth, minWidth, maxWidth, minHeight, maxHeight, minFrameRate, maxFrameRate,
                     segmentAlignment, subsegmentAlignment, subsegmentStartsWithSAP, bitstreamSwitching);

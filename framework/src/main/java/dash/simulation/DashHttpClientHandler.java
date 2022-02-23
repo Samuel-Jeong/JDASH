@@ -18,7 +18,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
+    protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) throws Exception {
         if (httpObject instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) httpObject;
 
@@ -49,4 +49,5 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             }
         }
     }
+
 }

@@ -34,7 +34,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     ////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) {
+    protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
         try {
             DashManager dashManager = ServiceManager.getInstance().getDashManager();
             PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();

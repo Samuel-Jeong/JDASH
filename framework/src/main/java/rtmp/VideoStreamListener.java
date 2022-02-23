@@ -24,23 +24,23 @@ public class VideoStreamListener implements IStreamListener {
 
     private volatile boolean firstPacketReceived = false;
     // Maximum time between video packets
-    private int videoTimeout = 10000;
+    private final int videoTimeout;
     private long firstPacketTime = 0L;
     private long packetCount = 0L;
     // Last time video was received, not video timestamp
     private long lastVideoTime;
-    private String userId;
+    private final String userId;
     // Stream being observed
-    private IBroadcastStream stream;
+    private final IBroadcastStream stream;
     // if this stream is recorded or not
-    private boolean record;
+    private final boolean record;
     // Scheduler
-    private ISchedulingService scheduler;
+    private final ISchedulingService scheduler;
     // Event queue worker job name
     private String timeoutJobName;
     private volatile boolean publishing = false;
     private volatile boolean streamPaused = false;
-    private IScope scope;
+    private final IScope scope;
 
     public VideoStreamListener(IScope scope, IBroadcastStream stream, Boolean record, String userId, int packetTimeout) {
         this.scope = scope;
@@ -48,10 +48,11 @@ public class VideoStreamListener implements IStreamListener {
         this.record = record;
         this.videoTimeout = packetTimeout;
         this.userId = userId;
-
-        // get the scheduler
-        //scheduler = (ISchedulingService) scope.getParent().getContext().getBean(JDKSchedulingService.BEAN_NAME);
-        scheduler = (ISchedulingService) ScopeUtils.getScopeService(scope, ISchedulingService.class, JDKSchedulingService.class, false);
+        this.scheduler = (ISchedulingService) ScopeUtils.getScopeService(
+                scope,
+                ISchedulingService.class, JDKSchedulingService.class,
+                false
+        );
     }
 
     private Long genTimestamp() {
@@ -60,6 +61,8 @@ public class VideoStreamListener implements IStreamListener {
 
     @Override
     public void packetReceived(IBroadcastStream stream, IStreamPacket packet) {
+        logger.debug("[VideoStreamListener] IN");
+
         IoBuffer buf = packet.getData();
         if (buf != null)
             buf.rewind();
@@ -121,7 +124,6 @@ public class VideoStreamListener implements IStreamListener {
     }
 
     private class TimeoutJob implements IScheduledJob {
-        private boolean streamStopped = false;
 
         public void execute(ISchedulingService service) {
             Map<String, Object> logData = new HashMap<>();

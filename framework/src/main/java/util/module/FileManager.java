@@ -12,16 +12,16 @@ public class FileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(FileManager.class);
 
-    public static boolean writeBytes(String fileName, byte[] data) {
-        if (fileName == null) { return false; }
+    public static boolean writeBytes(File file, byte[] data, boolean isAppend) {
+        if (file == null || data == null || data.length == 0) { return false; }
 
         BufferedOutputStream bufferedOutputStream = null;
         try {
-            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName));
+            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, isAppend));
             bufferedOutputStream.write(data);
             return true;
         } catch (Exception e) {
-            logger.warn("[FileManager] Fail to write the file. (fileName={})", fileName);
+            logger.warn("[FileManager] Fail to write the file. (fileName={})", file.getAbsolutePath(), e);
             return false;
         } finally {
             try {
@@ -29,7 +29,30 @@ public class FileManager {
                     bufferedOutputStream.close();
                 }
             } catch (Exception e) {
-                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName);
+                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", file.getAbsolutePath());
+            }
+        }
+    }
+
+
+    public static boolean writeBytes(String fileName, byte[] data, boolean isAppend) {
+        if (fileName == null) { return false; }
+
+        BufferedOutputStream bufferedOutputStream = null;
+        try {
+            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName, isAppend));
+            bufferedOutputStream.write(data);
+            return true;
+        } catch (Exception e) {
+            logger.warn("[FileManager] Fail to write the file. (fileName={})", fileName, e);
+            return false;
+        } finally {
+            try {
+                if (bufferedOutputStream != null) {
+                    bufferedOutputStream.close();
+                }
+            } catch (Exception e) {
+                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName, e);
             }
         }
     }
@@ -42,7 +65,7 @@ public class FileManager {
             bufferedInputStream = new BufferedInputStream(new FileInputStream(fileName));
             return bufferedInputStream.readAllBytes();
         } catch (Exception e) {
-            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
+            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName, e);
             return null;
         } finally {
             try {
@@ -76,7 +99,7 @@ public class FileManager {
                     bufferedReader.close();
                 }
             } catch (IOException e) {
-                logger.warn("[FileManager] Fail to close the buffer reader. (fileName={})", fileName);
+                logger.warn("[FileManager] Fail to close the buffer reader. (fileName={})", fileName, e);
             }
         }
     }
