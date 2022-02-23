@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
-import tool.parser.MPDParser;
 import tool.parser.mpd.*;
 import tool.parser.mpd.descriptor.Descriptor;
 import util.module.FileManager;
@@ -27,7 +26,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -166,8 +164,10 @@ public class RtmpClient extends RTMPClient {
     private final class StreamEventDispatcher implements IEventDispatcher {
 
         ////////////////////////////
+        private static final int SEGMENT_DURATION = 10000;
+        private static final int SEGMENT_GAP = 5;
+
         private final String manifestFileName = saveAsManifestFileName;
-        private final int segmentDuration = 1000000;
 
         private File videoFile = null;
         private String curVideoName = saveAsVideoFileName;
@@ -243,7 +243,7 @@ public class RtmpClient extends RTMPClient {
                         prevVideoTsGap = videoTs;
                     }
 
-                    if (curVideoTsGap >= segmentDuration) {
+                    if (curVideoTsGap >= SEGMENT_DURATION) {
                         curVideoName = String.format(saveAsVideoFileName, ++curVideoSeqNum);
                         videoFile = new File(curVideoName);
 
@@ -266,7 +266,7 @@ public class RtmpClient extends RTMPClient {
                         prevAudioTsGap = audioTs;
                     }
 
-                    if (curAudioTsGap >= segmentDuration) {
+                    if (curAudioTsGap >= SEGMENT_DURATION) {
                         curAudioName = String.format(saveAsAudioFileName, ++curAudioSeqNum);
                         audioFile = new File(curAudioName);
 
@@ -285,9 +285,30 @@ public class RtmpClient extends RTMPClient {
 
                 //////////////
                 // GENERATE MPD
-                if (curVideoCount > 1 && curAudioCount > 1) {
+                if (curVideoCount > SEGMENT_GAP && curAudioCount > SEGMENT_GAP) {
                     //////////////
-                    // SEGMENT
+                    // SEGMENT LIST (URL)
+                    List<SegmentURL> videoSegmentURLs = new ArrayList<>();
+                    for (int i = curVideoSeqNum; i <= curVideoCount; i++) {
+                        videoSegmentURLs.add(
+                                SegmentURL.builder()
+                                        .withMedia(String.format(saveAsVideoFileName, i))
+                                        .build()
+                        );
+                    }
+
+                    List<SegmentURL> audioSegmentURLs = new ArrayList<>();
+                    for (int i = curVideoSeqNum; i <= curVideoCount; i++) {
+                        audioSegmentURLs.add(
+                                SegmentURL.builder()
+                                        .withMedia(String.format(saveAsAudioFileName, i))
+                                        .build()
+                        );
+                    }
+                    //////////////
+
+                    //////////////
+                    // SEGMENT TIMELINE
                     List<Segment> videoSegments = new ArrayList<>();
                     /*for (int i = 0; i < curVideoCount; i++) {
                         videoSegments.add(
@@ -321,20 +342,35 @@ public class RtmpClient extends RTMPClient {
                                 Representation.builder()
                                         .withId(String.valueOf(i))
                                         .withBandwidth(128000)
-                                        .withCodecs("avc1.64001f")
+                                        .withCodecs("avc1")
                                         .withHeight(1280)
                                         .withWidth(720)
                                         .withSar(new Ratio(1L, 1L))
                                         .withMimeType("video/mp4")
-                                        .withSegmentTemplate(
+                                        /*.withSegmentBase(
+                                                SegmentBase.builder()
+                                                        .withInitialization(
+                                                                URLType.builder()
+                                                                        .withSourceURL()
+                                                                        .build()
+                                                        )
+                                                        .build()
+                                        )*/
+                                        .withSegmentList(
+                                                SegmentList.builder()
+                                                        .withDuration((long) (SEGMENT_DURATION / 1000))
+                                                        .withSegmentURLs(videoSegmentURLs)
+                                                        .build()
+                                        )
+                                        /*.withSegmentTemplate(
                                                 SegmentTemplate.builder()
                                                         .withTimescale(15360L)
                                                         .withInitialization(name + "_init$RepresentationID$.m4s")
                                                         .withMedia(name + "_chunk$RepresentationID$-$Number%05d$.m4s")
-                                                        .withStartNumber((long) (i + 1))
+                                                        .withStartNumber((long) curVideoCount)
                                                         .withSegmentTimeline(videoSegments)
                                                         .build()
-                                        )
+                                        )*/
                                         .build()
                         );
                     }
@@ -346,7 +382,6 @@ public class RtmpClient extends RTMPClient {
                                 public String getValue() { return null; }
                             }
                     );
-
                     List<Representation> audioRepresentations = new ArrayList<>();
                     for (int i = 0; i < 1; i++) { // TODO: 화질 개수 설정
                         audioRepresentations.add(
@@ -358,15 +393,30 @@ public class RtmpClient extends RTMPClient {
                                         .withSar(new Ratio(1L, 1L))
                                         .withMimeType("audio/mp4")
                                         .withAudioChannelConfigurations(audioChannelConfigurations)
-                                        .withSegmentTemplate(
+                                        /*.withSegmentBase(
+                                                SegmentBase.builder()
+                                                        .withInitialization(
+                                                                URLType.builder()
+                                                                        .withSourceURL()
+                                                                        .build()
+                                                        )
+                                                        .build()
+                                        )*/
+                                        .withSegmentList(
+                                                SegmentList.builder()
+                                                        .withDuration((long) (SEGMENT_DURATION / 1000))
+                                                        .withSegmentURLs(audioSegmentURLs)
+                                                        .build()
+                                        )
+                                        /*.withSegmentTemplate(
                                                 SegmentTemplate.builder()
                                                         .withTimescale(44100L)
                                                         .withInitialization(name + "_init$RepresentationID$.m4s")
                                                         .withMedia(name + "_chunk$RepresentationID$-$Number%05d$.m4s")
-                                                        .withStartNumber((long) (i + 1))
+                                                        .withStartNumber((long) curAudioCount)
                                                         .withSegmentTimeline(audioSegments)
                                                         .build()
-                                        )
+                                        )*/
                                         .build()
                         );
                     }
@@ -406,7 +456,7 @@ public class RtmpClient extends RTMPClient {
                     List<Period> periods = new ArrayList<>();
                     Period period = Period.builder()
                             .withId(String.valueOf(0))
-                            .withStart(Duration.parse("PT0.0S")) // TODO
+                            .withStart(Duration.ofSeconds(0, 0))
                             .withAdaptationSets(adaptationSets)
                             .build();
                     periods.add(period);
@@ -414,10 +464,11 @@ public class RtmpClient extends RTMPClient {
 
                     //////////////
                     // MPD
+                    ConfigManager configManager = AppInstance.getInstance().getConfigManager();
                     List<ProgramInformation> programInformations = new ArrayList<>();
                     programInformations.add(
                             ProgramInformation.builder()
-                                    .withCopyright("UANGEL")
+                                    .withCopyright(configManager.getServiceName())
                                     .withLang("KR")
                                     //.withSource()
                                     //.withMoreInformationURL()
@@ -447,10 +498,10 @@ public class RtmpClient extends RTMPClient {
                             //.withAvailabilityStartTime() // TODO
                             //.withAvailabilityEndTime() // TODO
                             //.withPublishTime()
-                            .withMediaPresentationDuration(Duration.parse("PT36.6S")) // TODO
+                            .withMediaPresentationDuration(Duration.ofSeconds(36, 6)) // TODO
                             //.withMinimumUpdatePeriod() // TODO
-                            .withMinBufferTime(Duration.parse("PT10.0S")) // TODO
-                            .withMaxSegmentDuration(Duration.parse("PT5.0S")) // TODO
+                            .withMinBufferTime(Duration.ofSeconds(10, 0)) // TODO
+                            .withMaxSegmentDuration(Duration.ofSeconds(5, 0)) // TODO
                             .withSchemaLocation("urn:mpeg:DASH:schema:MPD:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd")
                             .build();
 
