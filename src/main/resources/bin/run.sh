@@ -20,7 +20,8 @@ function exec_start() {
                 ulimit -Hs 65535
                 ulimit -Hu 10240
 
-                java -jar $JAVA_OPT $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
+                #/usr/lib/jvm/java-11/bin/java -jar $JAVA_OPT $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
+                /usr/lib/jvm/java-11/bin/java $JAVA_OPT -classpath $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
                 echo "$SERVICE_NAME started ..."
         fi
 }

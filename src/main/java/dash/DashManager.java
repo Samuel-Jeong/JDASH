@@ -5,6 +5,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.dynamic.PreProcessMediaManager;
+import dash.dynamic.message.EndLiveMediaProcessRequest;
+import dash.dynamic.message.PreLiveMediaProcessRequest;
+import dash.dynamic.message.base.MessageHeader;
+import dash.dynamic.message.base.MessageType;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
 import dash.unit.DashUnit;
@@ -16,10 +20,13 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import media.MediaManager;
+import network.definition.DestinationRecord;
+import network.socket.GroupSocket;
 import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import tool.parser.MPDParser;
 import tool.parser.mpd.MPD;
@@ -140,7 +147,7 @@ public class DashManager {
 
     public void stop() {
         //////////////////////////////////////
-        /*ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (configManager.isEnableClient()) {
             DashManager dashManager = ServiceManager.getInstance().getDashManager();
             PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
@@ -166,7 +173,7 @@ public class DashManager {
                     logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
                 }
             }
-        }*/
+        }
         //////////////////////////////////////
 
         preProcessMediaManager.stop();
