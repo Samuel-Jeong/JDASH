@@ -87,11 +87,11 @@ public class CameraService {
 
         ///////////////////
         // TODO : TEST
-        /*ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+       /* ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
         RtmpClient rtmpClient = new RtmpClient(
                 configManager.getCameraPath(),
-                FileManager.concatFilePath("/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources", configManager.getCameraPath())
+                FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
         );
         rtmpClient.start();*/
         ///////////////////

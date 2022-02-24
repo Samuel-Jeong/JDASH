@@ -147,7 +147,7 @@ public class DashManager {
 
     public void stop() {
         //////////////////////////////////////
-        /*ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (configManager.isEnableClient()) {
             DashManager dashManager = ServiceManager.getInstance().getDashManager();
             PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
@@ -173,7 +173,7 @@ public class DashManager {
                     logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
                 }
             }
-        }*/
+        }
         //////////////////////////////////////
 
         preProcessMediaManager.stop();

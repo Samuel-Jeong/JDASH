@@ -130,11 +130,11 @@
             <version>1.7.36</version>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -158,7 +158,7 @@
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
-            <version>20030211.134440</version>
+            <version>1.9.4</version>
         </dependency>
 
         <dependency>
