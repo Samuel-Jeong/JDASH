@@ -118,17 +118,23 @@
             <version>0.5.4</version>
         </dependency>
 
-        <!--<dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>
-        </dependency>-->
+        </dependency>
 
-        <!--<dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
-        </dependency>-->
+        </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -218,28 +224,8 @@
                 </executions>
             </plugin>
 
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <configuration>
-                    <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>
-                                DashServerMain
-                            </mainClass>
-                        </transformer>
-                    </transformers>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <!--<groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.1</version>
                 <executions>
@@ -253,8 +239,8 @@
                             <includeScope>compile</includeScope>
                         </configuration>
                     </execution>
-                </executions>-->
-            </plugin>
+                </executions>
+            </plugin>-->
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -288,11 +274,14 @@
                             <directory>/home/uangel/udash/lib/</directory>
                             <sources>
                                 <source>
+                                    <location>${project.basedir}/out/artifacts/JDASH_jar/</location>
+                                </source>
+                                <!--<source>
                                     <location>${project.basedir}/target/JDASH-1.0.0.jar/</location>
                                 </source>
                                 <source>
                                     <location>${project.basedir}/lib/</location>
-                                </source>
+                                </source>-->
                             </sources>
                         </mapping>
 

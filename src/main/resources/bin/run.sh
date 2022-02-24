@@ -2,9 +2,13 @@
 
 SERVICE_HOME=/home/uangel/udash
 SERVICE_NAME=udash
-PATH_TO_JAR=$SERVICE_HOME/lib/JDASH-1.0.0.jar
+#LD_LIBRARY_PATH=$SERVICE_HOME/lib
+#export LD_LIBRARY_PATH
+#PATH_TO_JAR=$SERVICE_HOME/lib/JDASH-1.0.0.jar
+PATH_TO_JAR=$SERVICE_HOME/lib/JDASH.jar
 JAVA_CONF=$SERVICE_HOME/config/user_conf.ini
 JAVA_OPT="-Dlogback.configurationFile=$SERVICE_HOME/config/logback.xml"
+#JAVA_OPT="$JAVA_OPT -Djava.library.path=$SERVICE_HOME/lib"
 JAVA_OPT="$JAVA_OPT -XX:+UseG1GC -XX:G1RSetUpdatingPauseTimePercent=5 -XX:MaxGCPauseMillis=500 -verbose:gc -Xlog:gc=debug:file=$SERVICE_HOME/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=100m"
 
 function exec_start() {
@@ -20,8 +24,8 @@ function exec_start() {
                 ulimit -Hs 65535
                 ulimit -Hu 10240
 
-                #/usr/lib/jvm/java-11/bin/java -jar $JAVA_OPT $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
-                /usr/lib/jvm/java-11/bin/java $JAVA_OPT -classpath $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
+                /usr/lib/jvm/java-11/bin/java -jar $JAVA_OPT $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
+                #/usr/lib/jvm/java-11/bin/java $JAVA_OPT -classpath $PATH_TO_JAR DashServerMain $JAVA_CONF > /dev/null 2>&1 &
                 echo "$SERVICE_NAME started ..."
         fi
 }

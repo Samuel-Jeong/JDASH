@@ -61,8 +61,8 @@ public class RtmpClient extends RTMPClient {
         this.host = configManager.getRtmpPublishIp();
         this.port = configManager.getRtmpPublishPort();
         this.saveAsManifestFileName = saveAsFileName + ".mpd";
-        this.saveAsVideoFileName = saveAsFileName + "_chunk0_%05d.m4s";
-        this.saveAsAudioFileName = saveAsFileName + "_chunk1_%05d.m4s";
+        this.saveAsVideoFileName = saveAsFileName + "_chunk0_%05d.m4v";
+        this.saveAsAudioFileName = saveAsFileName + "_chunk1_%05d.m4a";
 
         if (uri.indexOf("/") == 0) {
             uri = uri.substring(1);
@@ -164,15 +164,20 @@ public class RtmpClient extends RTMPClient {
     private final class StreamEventDispatcher implements IEventDispatcher {
 
         ////////////////////////////
-        private static final int SEGMENT_DURATION = 10000;
+        private static final int SEGMENT_DURATION = 1000;
         private static final int SEGMENT_GAP = 5;
+
+        private long videoTimeGap = 0;
+        private long videoPrevTime = System.currentTimeMillis();
+        private long audioTimeGap = 0;
+        private long audioPrevTime = System.currentTimeMillis();
 
         private final String manifestFileName = saveAsManifestFileName;
 
         private File videoFile = null;
         private String curVideoName = saveAsVideoFileName;
         private int curVideoSeqNum = 1;
-        private int videoTs = 0;
+        private int videoTotalTs = 0;
         private int curVideoTsGap = 0;
         private int prevVideoTsGap = 0;
         private int videoOffset = 0;
@@ -181,7 +186,7 @@ public class RtmpClient extends RTMPClient {
         private File audioFile = null;
         private String curAudioName = saveAsAudioFileName;
         private int curAudioSeqNum = 1;
-        private int audioTs = 0;
+        private int audioTotalTs = 0;
         private int curAudioTsGap = 0;
         private int prevAudioTsGap = 0;
         private int audioOffset = 0;
@@ -232,53 +237,64 @@ public class RtmpClient extends RTMPClient {
 
                 //////////////
                 // SAVE DATA
+                long curTime = System.currentTimeMillis();
                 InputStream inputStream = ((IStreamData) rtmpEvent).getData().asInputStream();
                 byte[] data = inputStream.readAllBytes();
                 if (rtmpEvent instanceof VideoData) {
-                    videoTs += rtmpEvent.getTimestamp();
+                    videoTotalTs += rtmpEvent.getTimestamp();
 
-                    if (prevVideoTsGap > 0) {
-                        curVideoTsGap = videoTs - prevVideoTsGap;
-                    } else {
-                        prevVideoTsGap = videoTs;
-                    }
-
-                    if (curVideoTsGap >= SEGMENT_DURATION) {
+                    if (videoPrevTime > 0) { videoTimeGap = curTime - videoPrevTime; }
+                    else { videoPrevTime = curTime; }
+                    if (videoTimeGap >= SEGMENT_DURATION) {
                         curVideoName = String.format(saveAsVideoFileName, ++curVideoSeqNum);
                         videoFile = new File(curVideoName);
-
-                        prevVideoTsGap = 0;
-                        curVideoTsGap = 0;
+                        videoTimeGap = 0;
+                        videoPrevTime = 0;
                         curVideoCount++;
                     }
 
+                    /*if (prevVideoTsGap > 0) { curVideoTsGap = videoTotalTs - prevVideoTsGap; }
+                    else { prevVideoTsGap = videoTs; }
+                    if (curVideoTsGap >= SEGMENT_DURATION) {
+                        curVideoName = String.format(saveAsVideoFileName, ++curVideoSeqNum);
+                        videoFile = new File(curVideoName);
+                        prevVideoTsGap = 0;
+                        curVideoTsGap = 0;
+                        curVideoCount++;
+                    }*/
+
                     FileManager.writeBytes(videoFile, data, true);
                     videoOffset += data.length;
-                    logger.debug("[RtmpClient.StreamEventDispatcher] [prevVideoTsGap={}, curVideoTsGap={}] VIDEO(curVideoName={}, offset={}, timestamp={})",
-                            prevVideoTsGap, curVideoTsGap, curVideoName, videoOffset, videoTs
+                    logger.debug("[RtmpClient.StreamEventDispatcher] [prevVideoTsGap={}, curVideoTsGap={}] VIDEO(curVideoName={}, offset={}, videoTotalTs={})",
+                            prevVideoTsGap, curVideoTsGap, curVideoName, videoOffset, videoTotalTs
                     );
                 } else if (rtmpEvent instanceof AudioData) {
-                    audioTs += rtmpEvent.getTimestamp();
+                    audioTotalTs += rtmpEvent.getTimestamp();
 
-                    if (prevAudioTsGap > 0) {
-                        curAudioTsGap = audioTs - prevAudioTsGap;
-                    } else {
-                        prevAudioTsGap = audioTs;
-                    }
-
-                    if (curAudioTsGap >= SEGMENT_DURATION) {
+                    if (audioPrevTime > 0) { audioTimeGap = curTime - audioPrevTime; }
+                    else { audioPrevTime = curTime; }
+                    if (audioTimeGap >= SEGMENT_DURATION) {
                         curAudioName = String.format(saveAsAudioFileName, ++curAudioSeqNum);
                         audioFile = new File(curAudioName);
-
-                        prevAudioTsGap = 0;
-                        curAudioTsGap = 0;
+                        audioTimeGap = 0;
+                        audioPrevTime = 0;
                         curAudioCount++;
                     }
 
+                    /*if (prevAudioTsGap > 0) { curAudioTsGap = audioTotalTs - prevAudioTsGap; }
+                    else { prevAudioTsGap = audioTs; }
+                    if (curAudioTsGap >= SEGMENT_DURATION) {
+                        curAudioName = String.format(saveAsAudioFileName, ++curAudioSeqNum);
+                        audioFile = new File(curAudioName);
+                        prevAudioTsGap = 0;
+                        curAudioTsGap = 0;
+                        curAudioCount++;
+                    }*/
+
                     FileManager.writeBytes(audioFile, data, true);
                     audioOffset += data.length;
-                    logger.debug("[RtmpClient.StreamEventDispatcher] [prevAudioTsGap={}, curAudioTsGap={}] AUDIO(curAudioName={}, offset={}, timestamp={})",
-                            prevAudioTsGap, curAudioTsGap, curAudioName, audioOffset, audioTs
+                    logger.debug("[RtmpClient.StreamEventDispatcher] [prevAudioTsGap={}, curAudioTsGap={}] AUDIO(curAudioName={}, offset={}, audioTotalTs={})",
+                            prevAudioTsGap, curAudioTsGap, curAudioName, audioOffset, audioTotalTs
                     );
                 }
                 //////////////
@@ -495,13 +511,13 @@ public class RtmpClient extends RTMPClient {
                             )
                             .withPeriods(periods)
                             .withType(PresentationType.DYNAMIC)
-                            //.withAvailabilityStartTime() // TODO
-                            //.withAvailabilityEndTime() // TODO
+                            //.withAvailabilityStartTime()
+                            //.withAvailabilityEndTime()
                             //.withPublishTime()
-                            .withMediaPresentationDuration(Duration.ofSeconds(36, 6)) // TODO
-                            //.withMinimumUpdatePeriod() // TODO
-                            .withMinBufferTime(Duration.ofSeconds(10, 0)) // TODO
-                            .withMaxSegmentDuration(Duration.ofSeconds(5, 0)) // TODO
+                            .withMediaPresentationDuration(Duration.ofSeconds(36, 6))
+                            //.withMinimumUpdatePeriod()
+                            .withMinBufferTime(Duration.ofSeconds(10, 0))
+                            .withMaxSegmentDuration(Duration.ofSeconds(5, 0))
                             .withSchemaLocation("urn:mpeg:DASH:schema:MPD:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd")
                             .build();
 
