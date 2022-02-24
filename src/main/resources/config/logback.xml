@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="2 seconds">
+
+    <property name="LOGS_ABSOLUTE_PATH" value="../logs" />
+
+    <!--    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">-->
+    <!--        <layout class="ch.qos.logback.classic.PatternLayout">-->
+    <!--            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5p] [%t] %m - \(%F:%L\)%n</pattern>-->
+    <!--        </layout>-->
+    <!--    </appender>-->
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_ABSOLUTE_PATH}/jdash.log</file>
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5p] [%t] %m - \(%F:%L\)%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS_ABSOLUTE_PATH}/jdash.log.%d{yyyyMMdd}.%i.log</fileNamePattern>
+            <maxFileSize>1000MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5p] [%F]%M\(%L\) : %m%n</pattern>
+        </layout>
+    </appender>
+
+    <!-- trace/debug/info/warn/error -->
+    <root level="warn">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>

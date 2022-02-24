@@ -1,0 +1,9 @@
+package tool.validator.rules;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(value = RetentionPolicy.RUNTIME)
+public @interface ValidationRule {
+    String value();
+}

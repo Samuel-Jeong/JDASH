@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>JDASH</groupId>
+    <artifactId>JDASH</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <rpm.release.version>1</rpm.release.version>
+        <rpm.binary.dir>target/rpm/${project.artifactId}/RPMS/noarch</rpm.binary.dir>
+        <rpm.binary.name>${project.artifactId}-${project.version}-${rpm.release.version}.noarch.rpm</rpm.binary.name>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
+
+   <!-- <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.red5</groupId>
+                <artifactId>red5-parent</artifactId>
+                <version>1.2.12</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>-->
+
+    <repositories>
+        <repository>
+            <id>default repo</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+
+        <!--<dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+            <version>2.0.21</version>
+            <type>bundle</type>
+        </dependency>-->
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-parent</artifactId>
+            <version>1.2.12</version>
+            <type>pom</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-client</artifactId>
+            <version>1.2.12</version>
+            <type>jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-server</artifactId>
+            <version>1.2.12</version>
+            <type>jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>20030203.000550</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jcodec</groupId>
+            <artifactId>jcodec</artifactId>
+            <version>0.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcodec</groupId>
+            <artifactId>jcodec-javase</artifactId>
+            <version>0.2.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>2.13.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>20030805.205232</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>0.5.4</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>-->
+
+        <!--<dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>-->
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>20030211.134440</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>5.0.0.Alpha2</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <source>10</source>
+                    <target>10</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-h</arg>
+                        <arg>${project.build.directory}/native/javah/</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>1.0-beta-3</version>
+                <configuration>
+                    <buildNumberPropertyName>buildNumber</buildNumberPropertyName>
+                    <format>{0,date,yyyy/MM/dd}</format>
+                    <items>
+                        <item>timestamp</item>
+                    </items>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>lib</outputDirectory>
+                            <includeScope>compile</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.0.1</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>rpm</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <copyright>2022, UANGEL</copyright>
+                    <group>DASH</group>
+                    <description>dash</description>
+                    <release>${rpm.release.version}</release>
+                    <autoRequires>false</autoRequires>
+                    <targetOS>linux</targetOS>
+                    <defaultDirmode>755</defaultDirmode>
+                    <defaultFilemode>644</defaultFilemode>
+                    <defaultUsername>uangel</defaultUsername>
+                    <defaultGroupname>uangel</defaultGroupname>
+                    <mappings>
+                        <mapping>
+                            <directory>/home/uangel/udash/</directory>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/lib/</directory>
+                            <sources>
+                                <source><location>${project.basedir}/target/JDASH-1.0.0.jar/</location></source>
+                            </sources>
+                            <sources>
+                                <source><location>${project.basedir}/lib/</location></source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/bin/</directory>
+                            <filemode>755</filemode>
+                            <directoryIncluded>false</directoryIncluded>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/bin/run.sh</location>
+                                </source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
+                            <configuration>noreplace</configuration>
+                            <directory>/home/uangel/udash/config/</directory>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/config/user_conf.ini</location>
+                                </source>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/config/logback.xml</location>
+                                </source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/logs/</directory>
+                            <filemode>755</filemode>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/media/</directory>
+                            <filemode>755</filemode>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/media_info/</directory>
+                            <filemode>755</filemode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/media_info/video_list.txt</location>
+                                </source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/script/</directory>
+                            <filemode>755</filemode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/script/rtmp_streaming.sh</location>
+                                </source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
+                            <directory>/home/uangel/udash/validation_xsd/</directory>
+                            <filemode>755</filemode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/validation_xsd/DASH-MPD.xsd</location>
+                                </source>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/validation_xsd/xlink.xsd</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
