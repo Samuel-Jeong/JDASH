@@ -1,3 +1,115 @@
 Manifest-Version: 1.0
 Main-Class: DashServerMain
+Class-Path: tesseract-5.0.1-1.5.7-macosx-x86_64.jar opencv-platform-4.5.
+ 5-1.5.7.jar libfreenect-0.5.7-1.5.7.jar opencv-4.5.5-1.5.7-android-x86.
+ jar libdc1394-2.2.6-1.5.7-linux-arm64.jar flycapture-2.13.3.31-1.5.7.ja
+ r leptonica-1.82.0-1.5.7-windows-x86.jar openblas-platform-0.3.19-1.5.7
+ .jar libfreenect-0.5.7-1.5.7-windows-x86.jar librealsense-1.12.4-1.5.7-
+ windows-x86_64.jar tesseract-5.0.1-1.5.7-linux-armhf.jar artoolkitplus-
+ 2.3.1-1.5.7-android-x86_64.jar openblas-0.3.19-1.5.7-linux-x86_64.jar c
+ ommons-codec-1.13.jar javacpp-1.5.7-linux-x86.jar artoolkitplus-2.3.1-1
+ .5.7-android-arm.jar librealsense2-2.50.0-1.5.7-windows-x86_64.jar open
+ cv-4.5.5-1.5.7-macosx-arm64.jar commons-collections-3.2.2.jar spring-ex
+ pression-5.3.2.jar openblas-0.3.19-1.5.7-macosx-arm64.jar flycapture-2.
+ 13.3.31-1.5.7-windows-x86.jar ini4j-0.5.4.jar librealsense-1.12.4-1.5.7
+ -windows-x86.jar libfreenect-0.5.7-1.5.7-windows-x86_64.jar librealsens
+ e-1.12.4-1.5.7-macosx-x86_64.jar librealsense-1.12.4-1.5.7-linux-arm64.
+ jar ffmpeg-5.0-1.5.7-linux-x86.jar flycapture-2.13.3.31-1.5.7-windows-x
+ 86_64.jar bcprov-jdk15on-1.62.jar ehcache-2.10.6.jar tesseract-5.0.1-1.
+ 5.7.jar flycapture-2.13.3.31-1.5.7-linux-armhf.jar tesseract-5.0.1-1.5.
+ 7-linux-x86.jar javacpp-1.5.7.jar libdc1394-2.2.6-1.5.7-linux-armhf.jar
+  leptonica-1.82.0-1.5.7-android-x86_64.jar flandmark-1.07-1.5.7-android
+ -x86_64.jar flandmark-1.07-1.5.7-windows-x86_64.jar javacv-platform-1.5
+ .7.jar javacpp-1.5.7-android-arm64.jar libfreenect2-platform-0.2.0-1.5.
+ 7.jar opencv-4.5.5-1.5.7-windows-x86_64.jar commons-net-20030805.205232
+ .jar leptonica-1.82.0-1.5.7-android-arm.jar red5-server-common-1.2.12.j
+ ar javacpp-1.5.7-android-arm.jar tesseract-5.0.1-1.5.7-windows-x86.jar 
+ flycapture-platform-2.13.3.31-1.5.7.jar ffmpeg-5.0-1.5.7-macosx-arm64.j
+ ar opencv-4.5.5-1.5.7-ios-x86_64.jar commons-beanutils-1.9.4.jar libdc1
+ 394-2.2.6-1.5.7.jar openblas-0.3.19-1.5.7-linux-x86.jar libfreenect2-0.
+ 2.0-1.5.7.jar javacpp-1.5.7-linux-armhf.jar libfreenect-0.5.7-1.5.7-lin
+ ux-ppc64le.jar flycapture-2.13.3.31-1.5.7-linux-x86.jar videoinput-0.20
+ 0-1.5.7-windows-x86.jar tesseract-5.0.1-1.5.7-linux-ppc64le.jar libfree
+ nect-0.5.7-1.5.7-linux-arm64.jar ffmpeg-5.0-1.5.7-android-x86_64.jar ar
+ toolkitplus-2.3.1-1.5.7-android-x86.jar jackson-core-2.13.1.jar libfree
+ nect-platform-0.5.7-1.5.7.jar leptonica-1.82.0-1.5.7-linux-arm64.jar li
+ bfreenect-0.5.7-1.5.7-linux-x86_64.jar ffmpeg-5.0-1.5.7-windows-x86_64.
+ jar tesseract-5.0.1-1.5.7-linux-x86_64.jar flandmark-1.07-1.5.7-macosx-
+ x86_64.jar openblas-0.3.19-1.5.7-linux-armhf.jar spring-webmvc-5.3.2.ja
+ r openblas-0.3.19-1.5.7-ios-arm64.jar jackson-dataformat-xml-2.13.1.jar
+  openblas-0.3.19-1.5.7-linux-ppc64le.jar javacpp-1.5.7-android-x86_64.j
+ ar spring-web-5.3.2.jar commons-text-1.8.jar jcodec-0.2.5.jar tesseract
+ -5.0.1-1.5.7-android-x86_64.jar librealsense2-2.50.0-1.5.7-linux-x86_64
+ .jar openblas-0.3.19-1.5.7-macosx-x86_64.jar opencv-4.5.5-1.5.7.jar lep
+ tonica-1.82.0-1.5.7-linux-x86.jar ffmpeg-5.0-1.5.7-linux-ppc64le.jar ff
+ mpeg-5.0-1.5.7.jar libdc1394-2.2.6-1.5.7-windows-x86.jar javacv-1.5.7.j
+ ar jackson-databind-2.13.1.jar flandmark-1.07-1.5.7-linux-x86_64.jar op
+ encv-4.5.5-1.5.7-linux-x86.jar ffmpeg-5.0-1.5.7-linux-arm64.jar openbla
+ s-0.3.19-1.5.7-ios-x86_64.jar tesseract-5.0.1-1.5.7-linux-arm64.jar lib
+ realsense2-2.50.0-1.5.7-linux-armhf.jar opencv-4.5.5-1.5.7-macosx-x86_6
+ 4.jar openblas-0.3.19-1.5.7-windows-x86_64.jar libfreenect-0.5.7-1.5.7-
+ macosx-x86_64.jar spring-beans-5.3.2.jar log4j-1.2.17.jar commons-lang3
+ -3.9.jar librealsense-1.12.4-1.5.7.jar javacpp-1.5.7-android-x86.jar ff
+ mpeg-platform-5.0-1.5.7.jar javacpp-1.5.7-windows-x86.jar openblas-0.3.
+ 19-1.5.7-windows-x86.jar gson-2.9.0.jar flycapture-2.13.3.31-1.5.7-linu
+ x-arm64.jar libfreenect-0.5.7-1.5.7-linux-x86.jar libfreenect2-0.2.0-1.
+ 5.7-windows-x86_64.jar javacpp-1.5.7-ios-arm64.jar flandmark-1.07-1.5.7
+ -android-x86.jar javacpp-1.5.7-windows-x86_64.jar libdc1394-2.2.6-1.5.7
+ -macosx-x86_64.jar leptonica-1.82.0-1.5.7-linux-x86_64.jar librealsense
+ -platform-1.12.4-1.5.7.jar librealsense2-2.50.0-1.5.7-linux-arm64.jar f
+ fmpeg-5.0-1.5.7-linux-armhf.jar libfreenect2-0.2.0-1.5.7-linux-x86_64.j
+ ar artoolkitplus-2.3.1-1.5.7-windows-x86_64.jar flandmark-1.07-1.5.7.ja
+ r flandmark-platform-1.07-1.5.7.jar tesseract-platform-5.0.1-1.5.7.jar 
+ flandmark-1.07-1.5.7-android-arm64.jar flycapture-2.13.3.31-1.5.7-linux
+ -x86_64.jar flandmark-1.07-1.5.7-windows-x86.jar ffmpeg-5.0-1.5.7-macos
+ x-x86_64.jar tesseract-5.0.1-1.5.7-android-arm.jar librealsense-1.12.4-
+ 1.5.7-linux-x86_64.jar isoparser-1.9.39.jar stax2-api-4.2.1.jar artoolk
+ itplus-2.3.1-1.5.7-linux-x86.jar red5-io-1.2.12.jar leptonica-1.82.0-1.
+ 5.7-linux-armhf.jar openblas-0.3.19-1.5.7-linux-arm64.jar javacpp-1.5.7
+ -ios-x86_64.jar libdc1394-2.2.6-1.5.7-linux-x86.jar commons-configurati
+ on2-2.7.jar libdc1394-2.2.6-1.5.7-windows-x86_64.jar libdc1394-2.2.6-1.
+ 5.7-linux-x86_64.jar librealsense-1.12.4-1.5.7-linux-armhf.jar flandmar
+ k-1.07-1.5.7-linux-x86.jar jackson-annotations-2.13.1.jar librealsense-
+ 1.12.4-1.5.7-linux-x86.jar librealsense2-2.50.0-1.5.7-windows-x86.jar a
+ rtoolkitplus-2.3.1-1.5.7.jar openblas-0.3.19-1.5.7-android-x86_64.jar a
+ rtoolkitplus-2.3.1-1.5.7-android-arm64.jar slf4j-api-1.7.36.jar httpcor
+ e-4.4.13.jar openblas-0.3.19-1.5.7.jar opencv-4.5.5-1.5.7-linux-ppc64le
+ .jar videoinput-0.200-1.5.7-windows-x86_64.jar artoolkitplus-2.3.1-1.5.
+ 7-windows-x86.jar ffmpeg-5.0-1.5.7-linux-x86_64.jar artoolkitplus-platf
+ orm-2.3.1-1.5.7.jar jcl-over-slf4j-1.7.30.jar junit-4.13.2.jar javacpp-
+ 1.5.7-linux-ppc64le.jar libfreenect2-0.2.0-1.5.7-linux-x86.jar spring-c
+ ore-5.3.2.jar opencv-4.5.5-1.5.7-android-arm.jar javafx-base-11-mac.jar
+  javafx-graphics-11-mac.jar opencv-4.5.5-1.5.7-android-arm64.jar videoi
+ nput-0.200-1.5.7.jar logback-core-1.2.10.jar javacpp-1.5.7-macosx-arm64
+ .jar librealsense2-platform-2.50.0-1.5.7.jar mina-core-2.0.21.jar woods
+ tox-core-6.2.7.jar flandmark-1.07-1.5.7-android-arm.jar spring-context-
+ 5.3.2.jar flandmark-1.07-1.5.7-linux-armhf.jar opencv-4.5.5-1.5.7-windo
+ ws-x86.jar logback-classic-1.2.10.jar leptonica-1.82.0-1.5.7-android-ar
+ m64.jar javafx-base-11.jar libdc1394-2.2.6-1.5.7-linux-ppc64le.jar comm
+ ons-io-20030203.000550.jar tesseract-5.0.1-1.5.7-windows-x86_64.jar net
+ ty-all-5.0.0.Alpha2.jar opencv-4.5.5-1.5.7-ios-arm64.jar jul-to-slf4j-1
+ .7.30.jar opencv-4.5.5-1.5.7-linux-armhf.jar openblas-0.3.19-1.5.7-andr
+ oid-arm.jar opencv-4.5.5-1.5.7-linux-arm64.jar flandmark-1.07-1.5.7-lin
+ ux-arm64.jar librealsense2-2.50.0-1.5.7.jar ffmpeg-5.0-1.5.7-windows-x8
+ 6.jar ffmpeg-5.0-1.5.7-android-x86.jar librealsense2-2.50.0-1.5.7-linux
+ -x86.jar javafx-graphics-11.jar openblas-0.3.19-1.5.7-android-x86.jar r
+ ed5-server-1.2.12.jar opencv-4.5.5-1.5.7-android-x86_64.jar tesseract-5
+ .0.1-1.5.7-android-arm64.jar tesseract-5.0.1-1.5.7-android-x86.jar hamc
+ rest-core-1.3.jar openblas-0.3.19-1.5.7-android-arm64.jar javacpp-platf
+ orm-1.5.7.jar artoolkitplus-2.3.1-1.5.7-linux-arm64.jar spring-context-
+ support-5.3.2.jar leptonica-1.82.0-1.5.7-windows-x86_64.jar leptonica-1
+ .82.0-1.5.7.jar ffmpeg-5.0-1.5.7-android-arm.jar leptonica-platform-1.8
+ 2.0-1.5.7.jar flandmark-1.07-1.5.7-linux-ppc64le.jar jcodec-javase-0.2.
+ 5.jar httpclient-4.5.13.jar spring-jcl-5.3.2.jar javacpp-1.5.7-linux-x8
+ 6_64.jar leptonica-1.82.0-1.5.7-linux-ppc64le.jar libfreenect2-0.2.0-1.
+ 5.7-macosx-x86_64.jar artoolkitplus-2.3.1-1.5.7-linux-armhf.jar libdc13
+ 94-platform-2.2.6-1.5.7.jar libfreenect-0.5.7-1.5.7-linux-armhf.jar lib
+ realsense2-2.50.0-1.5.7-macosx-x86_64.jar artoolkitplus-2.3.1-1.5.7-mac
+ osx-x86_64.jar ffmpeg-5.0-1.5.7-android-arm64.jar spring-aop-5.3.2.jar 
+ artoolkitplus-2.3.1-1.5.7-linux-x86_64.jar log4j-over-slf4j-1.7.30.jar 
+ javacpp-1.5.7-macosx-x86_64.jar commons-daemon-1.2.4.jar leptonica-1.82
+ .0-1.5.7-android-x86.jar opencv-4.5.5-1.5.7-linux-x86_64.jar videoinput
+ -platform-0.200-1.5.7.jar red5-client-1.2.12.jar javacpp-1.5.7-linux-ar
+ m64.jar leptonica-1.82.0-1.5.7-macosx-x86_64.jar artoolkitplus-2.3.1-1.
+ 5.7-linux-ppc64le.jar commons-logging-1.2.jar
 

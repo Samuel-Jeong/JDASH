@@ -67,7 +67,7 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.warn("ProcessClientChannelHandler.Exception", cause);
+        //logger.warn("ProcessClientChannelHandler.Exception", cause);
     }
 
 }
