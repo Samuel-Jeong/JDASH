@@ -1,17 +1,12 @@
 package rtmp;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import config.ConfigManager;
 import dash.DashManager;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.red5.client.net.rtmp.INetStreamEventHandler;
 import org.red5.client.net.rtmp.RTMPClient;
-import org.red5.io.amf.AMF;
 import org.red5.io.amf.Input;
 import org.red5.io.amf.Output;
-import org.red5.io.object.DataTypes;
-import org.red5.io.object.Deserializer;
 import org.red5.io.utils.ObjectMap;
 import org.red5.server.api.IConnection;
 import org.red5.server.api.Red5;
@@ -20,7 +15,6 @@ import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
 import org.red5.server.net.rtmp.RTMPConnection;
-import org.red5.server.net.rtmp.codec.RTMPProtocolDecoder;
 import org.red5.server.net.rtmp.event.*;
 import org.red5.server.net.rtmp.status.StatusCodes;
 import org.red5.server.stream.IStreamData;
@@ -36,7 +30,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
@@ -384,7 +377,7 @@ public class RtmpClient extends RTMPClient {
 
                             String entryValue = String.valueOf(entry.getValue());
                             streamMetaDataMap.putIfAbsent(entryKey, String.valueOf(entryValue));
-                            logger.warn("[RtmpClient.StreamEventDispatcher] [{}] : [{}]", entryKey, entryValue);
+                            logger.debug("[RtmpClient.StreamEventDispatcher] [{}] : [{}]", entryKey, entryValue);
                         }
                     }
 
@@ -473,7 +466,7 @@ public class RtmpClient extends RTMPClient {
                         //////////////
                         // REPRESENTATIONS
                         List<Representation> videoRepresentations = new ArrayList<>();
-                        for (int i = 0; i < 1; i++) { // TODO: 화질 개수 설정
+                        for (int i = 0; i < 1; i++) { // TODO:  화질 설정에 따른 값 설정 필요
                             videoRepresentations.add(
                                     Representation.builder()
                                             .withId(String.valueOf(i))
@@ -520,7 +513,7 @@ public class RtmpClient extends RTMPClient {
                                 }
                         );
                         List<Representation> audioRepresentations = new ArrayList<>();
-                        for (int i = 0; i < 1; i++) { // TODO: 화질 개수 설정
+                        for (int i = 0; i < 1; i++) { // TODO: 화질 설정에 따른 값 설정 필요
                             audioRepresentations.add(
                                     Representation.builder()
                                             .withId(String.valueOf(i))
@@ -808,35 +801,35 @@ public class RtmpClient extends RTMPClient {
     //////////////////////////////////////////////////////////
 
     public Object decodeStreamData(IoBuffer in) {
-        logger.warn("decodeStreamData");
+        logger.debug("decodeStreamData");
 
         Object ret;
         IConnection.Encoding encoding = Red5.getConnectionLocal().getEncoding();
-        logger.warn("Encoding: {}", encoding);
+        logger.debug("Encoding: {}", encoding);
         in.mark();
         org.red5.io.object.Input input = new Input(in);
         if (encoding == IConnection.Encoding.AMF3) {
-            logger.warn("Client indicates its using AMF3");
+            logger.debug("Client indicates its using AMF3");
         }
 
         byte dataType = input.readDataType();
-        logger.warn("Data type: {}", dataType);
+        logger.debug("Data type: {}", dataType);
         if (dataType == 4) {
             String action = input.readString();
             byte object;
             if ("@setDataFrame".equals(action)) {
                 object = input.readDataType();
-                logger.warn("Dataframe method type: {}", object);
+                logger.debug("Dataframe method type: {}", object);
                 String onCueOrOnMeta = input.readString();
                 object = input.readDataType();
                 if (object == -17) {
-                    logger.warn("Switching decoding to AMF3");
+                    logger.debug("Switching decoding to AMF3");
                     input = new org.red5.io.amf3.Input(in);
                     ((org.red5.io.amf3.Input)input).enforceAMF3();
                     object = input.readDataType();
                 }
 
-                logger.warn("Dataframe params type: {}", object);
+                logger.debug("Dataframe params type: {}", object);
                 Object params;
                 if (object == 7) {
                     params = input.readMap();
@@ -844,19 +837,19 @@ public class RtmpClient extends RTMPClient {
                     params = input.readArray(Object[].class);
                 } else if (object == 4) {
                     String str = input.readString();
-                    logger.warn("String params: {}", str);
+                    logger.debug("String params: {}", str);
                     params = new HashMap();
                     ((Map)params).put("0", str);
                 } else {
                     try {
                         params = input.readObject();
                     } catch (Exception var13) {
-                        logger.warn("Dataframe decode error", var13);
+                        logger.debug("Dataframe decode error", var13);
                         params = Collections.EMPTY_MAP;
                     }
                 }
 
-                logger.warn("Dataframe: {} params: {}", onCueOrOnMeta, params.toString());
+                logger.debug("Dataframe: {} params: {}", onCueOrOnMeta, params.toString());
 
                 IoBuffer buf = IoBuffer.allocate(64);
                 buf.setAutoExpand(true);
@@ -868,29 +861,29 @@ public class RtmpClient extends RTMPClient {
             } else {
                 object = input.readDataType();
                 if (object == -17) {
-                    logger.warn("Switching decoding to AMF3");
+                    logger.debug("Switching decoding to AMF3");
                     input = new org.red5.io.amf3.Input(in);
                     ((org.red5.io.amf3.Input)input).enforceAMF3();
                     object = input.readDataType();
                 }
 
-                logger.warn("Stream send: {}", action);
+                logger.debug("Stream send: {}", action);
                 Map<Object, Object> params = null;
-                logger.warn("Params type: {}", object);
+                logger.debug("Params type: {}", object);
                 if (object == 7) {
                     params = (Map) input.readMap();
-                    logger.warn("Map params: {}", params.toString());
+                    logger.debug("Map params: {}", params.toString());
                 } else if (object == 6) {
                     params = (Map) input.readArray(Object[].class);
-                    logger.warn("Array params: {}", params);
+                    logger.debug("Array params: {}", params);
                 } else if (object == 4) {
                     String str = input.readString();
-                    logger.warn("String params: {}", str);
+                    logger.debug("String params: {}", str);
                     params = new HashMap();
                     params.put("0", str);
                 } else if (object == 9) {
                     params = (Map) input.readObject();
-                    logger.warn("Object params: {}", params);
+                    logger.debug("Object params: {}", params);
                 } else if (logger.isDebugEnabled()) {
                     logger.debug("Stream send did not provide a parameter map");
                 }
