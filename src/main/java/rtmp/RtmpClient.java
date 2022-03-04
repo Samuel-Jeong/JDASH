@@ -9,7 +9,6 @@ import org.red5.codec.AudioCodec;
 import org.red5.codec.VideoCodec;
 import org.red5.io.amf.Input;
 import org.red5.io.amf.Output;
-import org.red5.io.flv.impl.Tag;
 import org.red5.io.utils.ObjectMap;
 import org.red5.server.api.IConnection;
 import org.red5.server.api.Red5;
@@ -18,11 +17,9 @@ import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
 import org.red5.server.net.rtmp.RTMPConnection;
-import org.red5.server.net.rtmp.codec.RTMPProtocolDecoder;
 import org.red5.server.net.rtmp.event.*;
 import org.red5.server.net.rtmp.status.StatusCodes;
 import org.red5.server.stream.IStreamData;
-import org.red5.server.stream.consumer.ImmutableTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -54,7 +51,7 @@ public class RtmpClient extends RTMPClient {
     private final String saveAsVideoInitFileName;
     private final String saveAsAudioFileName;
     private final String saveAsAudioInitFileName;
-    private final String saveAsMp4FileName;
+    private final String saveAsFlvFileName;
     //////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////
@@ -75,9 +72,9 @@ public class RtmpClient extends RTMPClient {
         this.saveAsManifestFileName = uri + ".mpd";
         this.saveAsVideoFileName = uri + "_chunk0_%05d.m4s"; // 화질 추가 필요
         this.saveAsVideoInitFileName = uri + "_init0.m4s"; // 화질 추가 필요
-        this.saveAsAudioFileName = uri + "_chunk1_%05d.aac";
+        this.saveAsAudioFileName = uri + "_chunk1_%05d.m4s";
         this.saveAsAudioInitFileName = uri + "_init1.m4s";
-        this.saveAsMp4FileName = uri + ".mp4";
+        this.saveAsFlvFileName = uri + ".flv";
 
         if (uri.indexOf("/") == 0) {
             uri = uri.substring(1);
@@ -182,42 +179,53 @@ public class RtmpClient extends RTMPClient {
         private static final int SEGMENT_DURATION = 1000;
         private static final int SEGMENT_GAP = 5;
         private static final int FILE_DELETION_WATERMARK = 5 * SEGMENT_GAP; // SEGMENT_GAP 배수 만큼 저장
+        private static final String INIT_SEGMENT_PREFIX = "_init$RepresentationID$";
+        private static final String MEDIA_SEGMENT_PREFIX = "_chunk$RepresentationID$_$Number%05d$";
 
         private long videoTimeGap = 0;
         private long videoPrevTime = System.currentTimeMillis();
         private long audioTimeGap = 0;
         private long audioPrevTime = System.currentTimeMillis();
 
-        private File mp4File = null;
-        private String curMp4Name = null;
+        private File flvFile = null;
+        private String curFlvName = null;
         private long timeGap = 0;
         private long prevTime = System.currentTimeMillis();
 
-        private boolean isManifestCreate = true;
+        private boolean isManifestCreate = false;
         private String manifestFileName;
         private int manifestFileCount = 0;
         private boolean isDelete = false;
         private final List<String> deleteFiles = new ArrayList<>();
-
+        private String videoCodecName = null;
+        private static final String videoInitFileName = INIT_SEGMENT_PREFIX + ".m4s";
+        private static final String videoMediaFileName = MEDIA_SEGMENT_PREFIX + ".m4s";
         private File videoInitFile = null;
         private File videoFile = null;
         private String curVideoName = null;
         private int curVideoSeqNum = 1;
         private long videoTotalTs = 0;
+        private long curVideoTs = 0;
         private long curVideoTotalTs = 0;
         private long curVideoTsGap = 0;
         private long prevVideoTsGap = 0;
         private int curVideoCount = 0;
+        private long videoTimescale = 1000000;
 
+        private String audioCodecName = null;
+        private static final String audioInitFileName = INIT_SEGMENT_PREFIX + ".m4s";
+        private static final String audioMediaFileName = MEDIA_SEGMENT_PREFIX + ".m4s";
         private File audioInitFile = null;
         private File audioFile = null;
         private String curAudioName = null;
         private int curAudioSeqNum = 1;
         private long audioTotalTs = 0;
+        private long curAudioTs = 0;
         private long curAudioTotalTs = 0;
         private long curAudioTsGap = 0;
         private long prevAudioTsGap = 0;
         private int curAudioCount = 0;
+        private long audioTimescale = 1000000;
 
         private final Map<String, String> streamMetaDataMap = new HashMap<>();
         private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -244,10 +252,10 @@ public class RtmpClient extends RTMPClient {
                 FileManager.deleteFile(curAudioName);
             }
 
-            curMp4Name = FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsMp4FileName);
-            mp4File = new File(curMp4Name);
-            if (mp4File.exists()) {
-                FileManager.deleteFile(curMp4Name);
+            curFlvName = FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsFlvFileName);
+            flvFile = new File(curFlvName);
+            if (flvFile.exists()) {
+                FileManager.deleteFile(curFlvName);
             }
         }
 
@@ -291,22 +299,46 @@ public class RtmpClient extends RTMPClient {
                 boolean isConfig;
                 int codecId;
 
+                //long[] videoTsArray = new long[SEGMENT_GAP];
+                //long[] audioTsArray = new long[SEGMENT_GAP];
+
                 if (rtmpEvent instanceof VideoData) {
-                    isConfig = ((VideoData) rtmpEvent).isConfig();
-                    VideoData.FrameType frameType = ((VideoData) rtmpEvent).getFrameType();
                     /**
                      *     JPEG((byte)1), H263((byte)2), SCREEN_VIDEO((byte)3),
                      *     VP6((byte)4), VP6a((byte)5), SCREEN_VIDEO2((byte)6),
-                     *     AVC((byte)7), VP8((byte)8), VP9((byte)9),
+                     *     AVC((byte)7) (*), VP8((byte)8), VP9((byte)9),
                      *     AV1((byte)10), MPEG1((byte)11), HEVC((byte)12);
                      */
                     codecId = ((VideoData) rtmpEvent).getCodecId();
-                    logger.warn("[RtmpClient.StreamEventDispatcher] [VIDEO] isConfig: {}, codecId={}, frameType={}", isConfig, codecId, frameType);
+                    isConfig = ((VideoData) rtmpEvent).isConfig();
+                    /**
+                     *     UNKNOWN,
+                     *     KEYFRAME,                (*)
+                     *     INTERFRAME,              (*)
+                     *     DISPOSABLE_INTERFRAME,
+                     *     END_OF_SEQUENCE;
+                     */
+                    VideoData.FrameType frameType = ((VideoData) rtmpEvent).getFrameType();
+                    if (frameType.equals(VideoData.FrameType.KEYFRAME) || frameType.equals(VideoData.FrameType.END_OF_SEQUENCE)) {
+                        logger.warn("[RtmpClient.StreamEventDispatcher] [VIDEO] isConfig: {}, codecId={}, frameType={}", isConfig, codecId, frameType);
+                    }
 
+                    //videoTsArray[curVideoCount] = rtmpEvent.getTimestamp();
                     videoTotalTs += rtmpEvent.getTimestamp();
+                    curVideoTs += rtmpEvent.getTimestamp();
                     curVideoTotalTs += rtmpEvent.getTimestamp();
 
-                    if (videoPrevTime > 0) { videoTimeGap = curTime - videoPrevTime; }
+                    /*if (curVideoTs >= videoTimescale) {
+                        curVideoName = FileManager.concatFilePath(configManager.getMediaBasePath(), String.format(saveAsVideoFileName, curVideoSeqNum++));
+                        videoFile = new File(curVideoName);
+                        if (videoFile.exists()) {
+                            FileManager.deleteFile(curVideoName);
+                        }
+                        curVideoTs = 0;
+                        curVideoCount++;
+                    }*/
+
+                    /*if (videoPrevTime > 0) { videoTimeGap = curTime - videoPrevTime; }
                     else { videoPrevTime = curTime; }
                     if (videoTimeGap >= (SEGMENT_DURATION * SEGMENT_GAP)) {
                         curVideoName = FileManager.concatFilePath(configManager.getMediaBasePath(), String.format(saveAsVideoFileName, curVideoSeqNum++));
@@ -317,7 +349,7 @@ public class RtmpClient extends RTMPClient {
                         videoTimeGap = 0;
                         videoPrevTime = 0;
                         curVideoCount++;
-                    }
+                    }*/
 
                     /*if (prevVideoTsGap > 0) { curVideoTsGap = videoTotalTs - prevVideoTsGap; }
                     else { prevVideoTsGap = videoTotalTs; }
@@ -332,28 +364,40 @@ public class RtmpClient extends RTMPClient {
                         curVideoCount++;
                     }*/
 
-                    FileManager.writeBytes(videoFile, data, true);
+                    /*FileManager.writeBytes(videoFile, data, true);
                     if (logger.isTraceEnabled()) {
                         logger.trace("[RtmpClient.StreamEventDispatcher] [prevVideoTsGap={}, curVideoTsGap={}] VIDEO(curVideoCount={}, curVideoName={}, videoTotalTs={})",
                                 prevVideoTsGap, curVideoTsGap, curVideoCount, curVideoName, videoTotalTs
                         );
-                    }
+                    }*/
                 } else if (rtmpEvent instanceof AudioData) {
-                    isConfig = ((AudioData) rtmpEvent).isConfig();
                     /**
                      *     PCM((byte)0), ADPCM((byte)1), MP3((byte)2), PCM_LE((byte)3),
                      *     NELLY_MOSER_16K((byte)4), NELLY_MOSER_8K((byte)5), NELLY_MOSER((byte)6),
                      *     PCM_ALAW((byte)7), PCM_MULAW((byte)8), RESERVED((byte)9),
-                     *     AAC((byte)10), SPEEX((byte)11), MP2((byte)12),
+                     *     AAC((byte)10) (*), SPEEX((byte)11), MP2((byte)12),
                      *     OPUS((byte)13), MP3_8K((byte)14), DEVICE_SPECIFIC((byte)15);
                      */
-                    codecId = ((AudioData) rtmpEvent).getCodecId();
-                    logger.warn("[RtmpClient.StreamEventDispatcher] [AUDIO] isConfig: {}, codecId={}", isConfig, codecId);
+                    //codecId = ((AudioData) rtmpEvent).getCodecId();
+                    //isConfig = ((AudioData) rtmpEvent).isConfig();
+                    //logger.warn("[RtmpClient.StreamEventDispatcher] [AUDIO] isConfig: {}, codecId={}", isConfig, codecId);
 
+                    //audioTsArray[curAudioCount] = rtmpEvent.getTimestamp();
                     audioTotalTs += rtmpEvent.getTimestamp();
+                    curAudioTs += rtmpEvent.getTimestamp();
                     curAudioTotalTs += rtmpEvent.getTimestamp();
 
-                    if (audioPrevTime > 0) { audioTimeGap = curTime - audioPrevTime; }
+                    /*if (curAudioTs >= audioTimescale) {
+                        curAudioName = FileManager.concatFilePath(configManager.getMediaBasePath(), String.format(saveAsAudioFileName, curAudioSeqNum++));
+                        audioFile = new File(curAudioName);
+                        if (audioFile.exists()) {
+                            FileManager.deleteFile(curAudioName);
+                        }
+                        curAudioTs = 0;
+                        curAudioCount++;
+                    }*/
+
+                    /*if (audioPrevTime > 0) { audioTimeGap = curTime - audioPrevTime; }
                     else { audioPrevTime = curTime; }
                     if (audioTimeGap >= (SEGMENT_DURATION * SEGMENT_GAP)) {
                         curAudioName = FileManager.concatFilePath(configManager.getMediaBasePath(), String.format(saveAsAudioFileName, curAudioSeqNum++));
@@ -364,7 +408,7 @@ public class RtmpClient extends RTMPClient {
                         audioTimeGap = 0;
                         audioPrevTime = 0;
                         curAudioCount++;
-                    }
+                    }*/
 
                     /*if (prevAudioTsGap > 0) { curAudioTsGap = audioTotalTs - prevAudioTsGap; }
                     else { prevAudioTsGap = audioTotalTs; }
@@ -379,12 +423,12 @@ public class RtmpClient extends RTMPClient {
                         curAudioCount++;
                     }*/
 
-                    FileManager.writeBytes(audioFile, data, true);
+                    /*FileManager.writeBytes(audioFile, data, true);
                     if (logger.isTraceEnabled()) {
                         logger.trace("[RtmpClient.StreamEventDispatcher] [prevAudioTsGap={}, curAudioTsGap={}] AUDIO(curAudioCount={}, curAudioName={}, audioTotalTs={})",
                                 prevAudioTsGap, curAudioTsGap, curAudioCount, curAudioName, audioTotalTs
                         );
-                    }
+                    }*/
                 } else if (rtmpEvent instanceof Notify) {
                     // MUST GET DECODED STREAM META DATA
                     // [2022-02-25 08:23:33.107][DEBUG] [NioProcessor-2] Map params:
@@ -394,10 +438,13 @@ public class RtmpClient extends RTMPClient {
                     //          stereo=false, audiocodecid=10.0, encoder=Lavf59.16.100, filesize=0.0}
                     // - (RTMPProtocolDecoder.java:939)
 
+                    ///////////////////
+                    // PARSE STREAM META DATA
                     IoBuffer streamMetaDataIoBuffer = IoBuffer.wrap(data);
                     Object decodeResult = decodeStreamData(streamMetaDataIoBuffer);
 
                     if (decodeResult instanceof Map) {
+                        logger.warn("[RtmpClient.StreamEventDispatcher] [Decoded Stream Meta Data START+]");
                         Map<Object, Object> decodeResultMap = (Map<Object, Object>) decodeResult;
                         for (Map.Entry<Object, Object> entry : decodeResultMap.entrySet()) {
                             if (entry == null) { continue; }
@@ -409,21 +456,39 @@ public class RtmpClient extends RTMPClient {
                             streamMetaDataMap.putIfAbsent(entryKey, String.valueOf(entryValue));
                             logger.warn("[RtmpClient.StreamEventDispatcher] [{}] : [{}]", entryKey, entryValue);
                         }
+                        logger.warn("[RtmpClient.StreamEventDispatcher] [Decoded Stream Meta Data END-]");
                     }
+                    ///////////////////
 
-                    if (videoInitFile.exists()) {
-                        FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsVideoInitFileName));
-                    }
-                    FileManager.writeBytes(videoInitFile, data, true);
-                    //FileManager.writeBytes(videoFile, data, true);
+                    ///////////////////
+                    // VIDEO
+                    /*if (streamMetaDataMap.get(StreamMetaDataKey.VIDEO_CODEC_ID) != null) {
+                        videoCodecName = VideoCodec.values()[(int) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.VIDEO_CODEC_ID))) - 1].name().toLowerCase();
+                        //videoInitFileName = INIT_SEGMENT_PREFIX + "." + videoCodecName;
+                        //videoMediaFileName = MEDIA_SEGMENT_PREFIX + "." + videoCodecName;
+                        if (videoInitFile.exists()) {
+                            FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsVideoInitFileName));
+                        }
+                        FileManager.writeBytes(videoInitFile, data, true);
+                        //FileManager.writeBytes(videoFile, data, true);
+                    }*/
+                    ///////////////////
 
-                    if (audioInitFile.exists()) {
-                        FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsAudioInitFileName));
-                    }
-                    FileManager.writeBytes(audioInitFile, data, true);
-                    //FileManager.writeBytes(audioFile, data, true);
+                    ///////////////////
+                    // AUDIO
+                    /*if (streamMetaDataMap.get(StreamMetaDataKey.AUDIO_CODEC_ID) != null) {
+                        audioCodecName = AudioCodec.values()[(int) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.AUDIO_CODEC_ID)))].name().toLowerCase();
+                        //audioInitFileName = INIT_SEGMENT_PREFIX + "." + audioCodecName;
+                        //audioMediaFileName = MEDIA_SEGMENT_PREFIX + "." + audioCodecName;
+                        if (audioInitFile.exists()) {
+                            FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), saveAsAudioInitFileName));
+                        }
+                        FileManager.writeBytes(audioInitFile, data, true);
+                        //FileManager.writeBytes(audioFile, data, true);
+                    }*/
+                    ///////////////////
 
-                    return;
+                    //return;
                 }
 
                 /*if (prevTime > 0) { timeGap = curTime - prevTime; }
@@ -431,12 +496,12 @@ public class RtmpClient extends RTMPClient {
                 if (timeGap >= (SEGMENT_DURATION * SEGMENT_GAP)) {
                     timeGap = 0;
                     prevTime = 0;
-                }
+                }*/
 
-                FileManager.writeBytes(mp4File, data, true);
+                FileManager.writeBytes(flvFile, data, true);
                 logger.debug("[RtmpClient.StreamEventDispatcher] MEDIA(curName={}, audioTotalTs={}, videoTotalTs={})",
-                        curMp4Name, audioTotalTs, videoTotalTs
-                );*/
+                        curFlvName, audioTotalTs, videoTotalTs
+                );
                 //////////////
 
                 if (isManifestCreate) {
@@ -446,7 +511,7 @@ public class RtmpClient extends RTMPClient {
                         //////////////
                         // SEGMENT LIST (URL)
                         //List<SegmentURL> videoSegmentURLs = new ArrayList<>();
-                        for (int i = (curVideoSeqNum - 1) - SEGMENT_GAP; i < (curVideoSeqNum - 1) - SEGMENT_GAP + curVideoCount; i++) {
+                        for (int i = curVideoSeqNum - SEGMENT_GAP; i < curVideoSeqNum - SEGMENT_GAP + curVideoCount; i++) {
                             /*videoSegmentURLs.add(
                                     SegmentURL.builder()
                                             .withMedia(String.format(saveAsVideoFileName, i))
@@ -457,7 +522,7 @@ public class RtmpClient extends RTMPClient {
                         }
 
                         //List<SegmentURL> audioSegmentURLs = new ArrayList<>();
-                        for (int i = (curAudioSeqNum - 1) - SEGMENT_GAP; i < (curAudioSeqNum - 1) - SEGMENT_GAP + curAudioCount; i++) {
+                        for (int i = curAudioSeqNum - SEGMENT_GAP; i < curAudioSeqNum - SEGMENT_GAP + curAudioCount; i++) {
                             /*audioSegmentURLs.add(
                                     SegmentURL.builder()
                                             .withMedia(String.format(saveAsAudioFileName, i))
@@ -470,40 +535,51 @@ public class RtmpClient extends RTMPClient {
 
                         //////////////
                         // SEGMENT TIMELINE
-                        //List<Segment> videoSegments = new ArrayList<>();
-                    /*for (int i = 0; i < curVideoCount; i++) {
-                        videoSegments.add(
-                                Segment.builder()
-                                        .withT()
-                                        .withD()
-                                        .withR()
-                                        //.withN()
-                                        .build()
-                        );
-                    }*/
+                        /*List<Segment> videoSegments = new ArrayList<>();
+                        for (int i = 0; i < curVideoCount; i++) {
+                            long t = 0;
+                            long d = videoTsArray[i];
+                            if (i > 0) {
+                                t = videoTsArray[i];
+                                long prevT = videoTsArray[i - 1];
+                                d -= prevT;
+                            }
 
-                        //List<Segment> audioSegments = new ArrayList<>();
-                    /*for (int i = 0; i < curAudioCount; i++) {
-                        audioSegments.add(
-                                Segment.builder()
-                                        .withT()
-                                        .withD()
-                                        .withR()
-                                        //.withN()
-                                        .build()
-                        );
-                    }*/
+                            videoSegments.add(
+                                    Segment.builder()
+                                            .withT(t)
+                                            .withD(d)
+                                            //.withR()
+                                            //.withN()
+                                            .build()
+                            );
+                        }
+
+                        List<Segment> audioSegments = new ArrayList<>();
+                        for (int i = 0; i < curAudioCount; i++) {
+                            audioSegments.add(
+                                    Segment.builder()
+                                            .withT(audioTsArray[i])
+                                            .withD()
+                                            //.withR()
+                                            //.withN()
+                                            .build()
+                            );
+                        }*/
                         //////////////
 
                         //////////////
                         // REPRESENTATIONS
+                        int representationLimit = 2;
+                        int representationId = 0;
                         List<Representation> videoRepresentations = new ArrayList<>();
-                        for (int i = 0; i < 1; i++) { // TODO:  화질 설정에 따른 값 설정 필요
+                        for (; representationId < 1; representationId++) { // TODO:  화질 설정에 따른 값 설정 필요
                             videoRepresentations.add(
                                     Representation.builder()
-                                            .withId(String.valueOf(i))
+                                            .withId(String.valueOf(representationId))
                                             .withBandwidth((long) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.VIDEO_DATA_RATE)) * 1000))
-                                            .withCodecs(VideoCodec.valueOfById(Integer.parseInt(streamMetaDataMap.get(StreamMetaDataKey.VIDEO_CODEC_ID))).name())
+                                            .withCodecs(videoCodecName)
+                                            //.withCodecs("avc1.6401f")
                                             .withWidth((long) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.WIDTH))))
                                             .withHeight((long) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.HEIGHT))))
                                             .withSar(new Ratio(1L, 1L))
@@ -517,22 +593,25 @@ public class RtmpClient extends RTMPClient {
                                                             )
                                                             .build()
                                             )*/
-                                            /*.withSegmentList(
-                                                    SegmentList.builder()
-                                                            .withDuration((long) (SEGMENT_DURATION / 1000))
-                                                            .withSegmentURLs(videoSegmentURLs)
-                                                            .build()
-                                            )*/
                                             .withSegmentTemplate(
                                                     SegmentTemplate.builder()
-                                                            .withTimescale(90000L)
-                                                            .withDuration(curVideoTotalTs)
-                                                            .withInitialization(name + "_init$RepresentationID$.m4s")
-                                                            .withMedia(name + "_chunk$RepresentationID$-$Number%05d$.m4s")
-                                                            .withStartNumber((long) (curVideoSeqNum - 1) - SEGMENT_GAP)
+                                                            //.withTimescale(90000L)
+                                                            .withTimescale(videoTimescale)
+                                                            //.withDuration(curVideoTotalTs)
+                                                            .withDuration(videoTimescale * SEGMENT_GAP)
+                                                            .withInitialization(name + videoInitFileName)
+                                                            .withMedia(name + videoMediaFileName)
+                                                            .withStartNumber((long) curVideoSeqNum - SEGMENT_GAP)
                                                             //.withSegmentTimeline(videoSegments)
                                                             .build()
                                             )
+                                            /*.withSegmentList(
+                                                    SegmentList.builder()
+                                                            //.withDuration((long) (SEGMENT_DURATION / 1000))
+                                                            .withDuration(curVideoTotalTs)
+                                                            .withSegmentURLs(videoSegmentURLs)
+                                                            .build()
+                                            )*/
                                             .build()
                             );
                         }
@@ -541,16 +620,18 @@ public class RtmpClient extends RTMPClient {
                         audioChannelConfigurations.add(
                                 new Descriptor("urn:mpeg:dash:23003:3:audio_channel_configuration:2011", "1") {
                                     @Override
-                                    public String getValue() { return null; }
+                                    public String getValue() {
+                                        return "2"; }
                                 }
                         );
                         List<Representation> audioRepresentations = new ArrayList<>();
-                        for (int i = 0; i < 1; i++) { // TODO: 화질 설정에 따른 값 설정 필요
+                        for (; representationId < representationLimit; representationId++) { // TODO: 화질 설정에 따른 값 설정 필요
                             audioRepresentations.add(
                                     Representation.builder()
-                                            .withId(String.valueOf(i))
+                                            .withId(String.valueOf(representationId))
                                             .withBandwidth((long) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.AUDIO_DATA_RATE)) * 1000))
-                                            .withCodecs(AudioCodec.valueOfById(Integer.parseInt(streamMetaDataMap.get(StreamMetaDataKey.AUDIO_CODEC_ID))).name())
+                                            .withCodecs(audioCodecName)
+                                            //.withCodecs("mp4a.40.2")
                                             .withAudioSamplingRate(streamMetaDataMap.get(StreamMetaDataKey.AUDIO_SAMPLE_RATE))
                                             .withSar(new Ratio(1L, 1L))
                                             .withMimeType("audio/mp4")
@@ -564,22 +645,25 @@ public class RtmpClient extends RTMPClient {
                                                             )
                                                             .build()
                                             )*/
-                                            /*.withSegmentList(
-                                                    SegmentList.builder()
-                                                            .withDuration((long) (SEGMENT_DURATION / 1000))
-                                                            .withSegmentURLs(audioSegmentURLs)
-                                                            .build()
-                                            )*/
                                             .withSegmentTemplate(
                                                     SegmentTemplate.builder()
-                                                            .withTimescale(44100L)
-                                                            .withDuration(curAudioTotalTs)
-                                                            //.withInitialization(name + "_init$RepresentationID$.aac")
-                                                            .withMedia(name + "_chunk$RepresentationID$-$Number%05d$.aac")
-                                                            .withStartNumber((long) (curAudioSeqNum - 1) - SEGMENT_GAP)
+                                                            //.withTimescale(44100L)
+                                                            .withTimescale(audioTimescale)
+                                                            //.withDuration(curAudioTotalTs)
+                                                            .withDuration(audioTimescale * SEGMENT_GAP)
+                                                            .withInitialization(name + audioInitFileName)
+                                                            .withMedia(name + audioMediaFileName)
+                                                            .withStartNumber((long) curAudioSeqNum - SEGMENT_GAP)
                                                             //.withSegmentTimeline(audioSegments)
                                                             .build()
                                             )
+                                            /*.withSegmentList(
+                                                    SegmentList.builder()
+                                                            //.withDuration((long) (SEGMENT_DURATION / 1000))
+                                                            .withDuration(curAudioTotalTs)
+                                                            .withSegmentURLs(audioSegmentURLs)
+                                                            .build()
+                                            )*/
                                             .build()
                             );
                         }
@@ -600,6 +684,7 @@ public class RtmpClient extends RTMPClient {
                                         .withFrameRate(new FrameRate((long) (Double.parseDouble(streamMetaDataMap.get(StreamMetaDataKey.FRAME_RATE))), 1L))
                                         .withSegmentAlignment("true")
                                         .withRepresentations(videoRepresentations)
+                                        .withLang("KR")
                                         .build()
                         );
                         adaptationSets.add(
@@ -610,6 +695,7 @@ public class RtmpClient extends RTMPClient {
                                         .withStartWithSAP(1L) // 세그먼트 순차 접근 or 세그먼트 랜덤 접근(2)
                                         .withSegmentAlignment("true")
                                         .withRepresentations(audioRepresentations)
+                                        .withLang("KR")
                                         .build()
                         );
                         //////////////
@@ -644,12 +730,12 @@ public class RtmpClient extends RTMPClient {
                                         .build()
                         );
 
-                        List<BaseURL> baseUrls = new ArrayList<>();
+                        /*List<BaseURL> baseUrls = new ArrayList<>();
                         baseUrls.add(
                                 BaseURL.builder()
                                         .withValue(configManager.getMediaBasePath())
                                         .build()
-                        );
+                        );*/
 
                         List<Profile> profiles = new ArrayList<>();
                         profiles.add(Profile.MPEG_DASH_LIVE);
@@ -657,7 +743,7 @@ public class RtmpClient extends RTMPClient {
                         MPD mpd = MPD.builder()
                                 .withProgramInformations(programInformations)
                                 .withServiceDescriptions(serviceDescriptions)
-                                .withBaseURLs(baseUrls)
+                                //.withBaseURLs(baseUrls)
                                 .withProfiles(
                                         Profiles.builder()
                                                 .withProfiles(profiles)
@@ -670,7 +756,7 @@ public class RtmpClient extends RTMPClient {
                                 //.withPublishTime()
                                 .withMediaPresentationDuration(Duration.ofSeconds((long) SEGMENT_DURATION * SEGMENT_GAP / 1000, 0))
                                 //.withMinimumUpdatePeriod()
-                                .withMinBufferTime(Duration.ofSeconds((long) SEGMENT_DURATION * SEGMENT_GAP / 1000, 0))
+                                .withMinBufferTime(Duration.ofSeconds((long) SEGMENT_DURATION * SEGMENT_GAP * 2 / 1000, 0))
                                 .withMaxSegmentDuration(Duration.ofSeconds((long) SEGMENT_DURATION * SEGMENT_GAP / 1000, 0))
                                 .withSchemaLocation("urn:mpeg:DASH:schema:MPD:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd")
                                 .build();

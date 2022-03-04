@@ -34,7 +34,7 @@ ffmpeg -i ${VIDEO_IN} \
     -map 0:a \
     -init_seg_name ${SEGMENT_NAME}_init\$RepresentationID\$.\$ext\$ -media_seg_name ${SEGMENT_NAME}_chunk\$RepresentationID\$-\$Number%05d\$.\$ext\$ \
    -tune zerolatency \
-    -use_template 1 -use_timeline 1  \
+    -use_template 1 -use_timeline 0  \
     -seg_duration ${SEG_DURATION} -adaptation_sets "id=0,streams=v id=1,streams=a" \
     -f dash ${VIDEO_OUT}
 

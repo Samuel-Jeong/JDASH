@@ -78,6 +78,7 @@ public class CameraService {
         fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
+        FFmpegLogCallback.set();
 
         audioService.setRecorderParams(fFmpegFrameRecorder);
         audioService.initSampleService();
@@ -87,11 +88,13 @@ public class CameraService {
 
         ///////////////////
         // TODO : TEST
-       /* ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        //ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
-        RtmpClient rtmpClient = new RtmpClient(
-                configManager.getCameraPath(),
-                FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
+        /*RemoteCameraService remoteCameraService = new RemoteCameraService(configManager);
+        remoteCameraService.start();*/
+
+        /*RtmpClient rtmpClient = new RtmpClient(
+                configManager.getCameraPath()
         );
         rtmpClient.start();*/
         ///////////////////
@@ -123,7 +126,7 @@ public class CameraService {
 
     private void process() {
         try {
-            final CanvasFrame cameraFrame = new CanvasFrame("Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
+            final CanvasFrame cameraFrame = new CanvasFrame("[LOCAL] Live stream", CanvasFrame.getDefaultGamma() / grabber.getGamma());
 
             Frame capturedFrame;
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

@@ -1,5 +1,6 @@
 package dash.unit;
 
+import cam.RemoteCameraService;
 import config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class DashUnit {
 
     private boolean isLiveStreaming = false;
 
+    private RemoteCameraService remoteCameraService = null;
     private LiveStreamingHandler liveStreamingHandler = null;
     private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
 
@@ -58,13 +60,17 @@ public class DashUnit {
             rtmpClient.start();*/
 
             // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
-            String scriptPath = configManager.getScriptPath();
+            /*String scriptPath = configManager.getScriptPath();
             String command = "sh " + scriptPath;
             command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
             liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
             liveStreamingHandler.start();
+            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);*/
+
+            remoteCameraService = new RemoteCameraService(configManager, uriFileName, curRtmpUri, mpdPath);
+            remoteCameraService.start();
             isRtmpStreaming.set(true);
-            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);
+            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming", id);
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
         }
@@ -75,12 +81,26 @@ public class DashUnit {
             rtmpClient.stop();
         }
 
-        if (liveStreamingHandler != null && isRtmpStreaming.get()) {
+        /*if (liveStreamingHandler != null && isRtmpStreaming.get()) {
             liveStreamingHandler.interrupt();
             if (liveStreamingHandler.isInterrupted()) {
                 logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
                 isRtmpStreaming.set(false);
                 liveStreamingHandler = null;
+            }
+        }*/
+
+        if (remoteCameraService != null && isRtmpStreaming.get()) {
+            remoteCameraService.finish();
+            try {
+                remoteCameraService.join();
+            } catch (Exception e) {
+                logger.warn("[DashUnit(id={})] [-FINISH] RtmpStreaming JOIN FAILED", id);
+            }
+            if (remoteCameraService.isFinished()) {
+                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
+                isRtmpStreaming.set(false);
+                remoteCameraService = null;
             }
         }
     }
