@@ -320,6 +320,7 @@
                         </mapping>
 
                         <mapping>
+                            <configuration>noreplace</configuration>
                             <directory>/home/uangel/udash/media_info/</directory>
                             <filemode>755</filemode>
                             <sources>

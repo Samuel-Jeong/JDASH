@@ -5,8 +5,6 @@ import dash.DashManager;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.red5.client.net.rtmp.INetStreamEventHandler;
 import org.red5.client.net.rtmp.RTMPClient;
-import org.red5.codec.AudioCodec;
-import org.red5.codec.VideoCodec;
 import org.red5.io.amf.Input;
 import org.red5.io.amf.Output;
 import org.red5.io.utils.ObjectMap;

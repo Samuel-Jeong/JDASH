@@ -17,7 +17,6 @@ import org.bytedeco.opencv.opencv_core.Point;
 import org.bytedeco.opencv.opencv_core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rtmp.RtmpClient;
 import service.AppInstance;
 import service.ServiceManager;
 import util.module.FileManager;
@@ -71,10 +70,10 @@ public class CameraService {
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setVideoBitrate(2000000);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
         //fFmpegFrameRecorder.setFormat("matroska"); // > H265
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
         fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
