@@ -7,8 +7,10 @@
 + REF : FFMPEG & FFPROBE version 5
 (https://github.com/FFmpeg/FFmpeg)
 
-2) Make MPD & Segments (under developing)
-+ REF : python-ffmpeg-video-streaming (Deprecated)
+2) Make MPD & Segments
++ REF : org.bytedeco.javacv (LIVE, dynamic)
+(https://github.com/bytedeco/javacv)
++ REF : python-ffmpeg-video-streaming (VOD, static)
 (https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
 
 3) MPD class object & Validatation of MPD file
