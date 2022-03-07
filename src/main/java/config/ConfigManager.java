@@ -49,6 +49,7 @@ public class ConfigManager {
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
     public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
     public static final String FIELD_PREPROCESS_TARGET_PORT = "PREPROCESS_TARGET_PORT";
+    public static final String FIELD_PREPROCESS_INIT_IDLE_TIME = "PREPROCESS_INIT_IDLE_TIME";
 
     // NETWORK
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
@@ -85,6 +86,7 @@ public class ConfigManager {
     private int preprocessListenPort = 0;
     private String preprocessTargetIp = null;
     private int preprocessTargetPort = 0;
+    private long preprocessInitIdleTime = 0; // ms
 
     // NETWORK
     private int threadCount = 0;
@@ -244,6 +246,12 @@ public class ConfigManager {
                 logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
                 System.exit(1);
             }
+        }
+
+        this.preprocessInitIdleTime = Long.parseLong(getIniValue(SECTION_LIVE, FIELD_PREPROCESS_INIT_IDLE_TIME));
+        if (this.preprocessInitIdleTime < 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_LIVE, FIELD_PREPROCESS_INIT_IDLE_TIME, preprocessInitIdleTime);
+            System.exit(1);
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_LIVE);
@@ -448,6 +456,10 @@ public class ConfigManager {
 
     public int getPreprocessTargetPort() {
         return preprocessTargetPort;
+    }
+
+    public long getPreprocessInitIdleTime() {
+        return preprocessInitIdleTime;
     }
 
     public String getFfmpegPath() {

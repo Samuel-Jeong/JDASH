@@ -29,6 +29,8 @@ public class CameraService {
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(CameraService.class);
 
+    private final ConfigManager configManager;
+
     protected static final int CAMERA_INDEX = 0;
     protected static final int MIKE_INDEX = 4;
 
@@ -50,7 +52,7 @@ public class CameraService {
 
     ////////////////////////////////////////////////////////////////////////////////
     public CameraService() {
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        configManager = AppInstance.getInstance().getConfigManager();
         //URI = FileManager.concatFilePath(configManager.getCameraMp4Path(), "cam_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".mp4");
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
@@ -147,7 +149,7 @@ public class CameraService {
                     startTime = System.currentTimeMillis();
                 } else {
                     if (!isPreMediaReqSent) {
-                        if (System.currentTimeMillis() - startTime >= 5000) { // 5초 후에 PLAY 전송
+                        if (System.currentTimeMillis() - startTime >= configManager.getPreprocessInitIdleTime()) { // 5초 후에 PLAY 전송
                             sendPreLiveMediaProcessRequest();
                             isPreMediaReqSent = true;
                         }
