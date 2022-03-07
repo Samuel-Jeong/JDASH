@@ -45,6 +45,7 @@ public class CameraService {
 
     private static long startTime = 0;
     private boolean alive = true;
+    private boolean isPreMediaReqSent = false;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -144,6 +145,13 @@ public class CameraService {
 
                 if (startTime == 0) {
                     startTime = System.currentTimeMillis();
+                } else {
+                    if (!isPreMediaReqSent) {
+                        if (System.currentTimeMillis() - startTime >= 5000) { // 5초 후에 PLAY 전송
+                            sendPreLiveMediaProcessRequest();
+                            isPreMediaReqSent = true;
+                        }
+                    }
                 }
 
                 long videoTS = 1000 * (System.currentTimeMillis() - startTime);
@@ -193,36 +201,6 @@ public class CameraService {
 
     public void action() {
         try {
-            //////////////////////////////////////
-            DashManager dashManager = ServiceManager.getInstance().getDashManager();
-            PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
-            GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
-            if (listenSocket != null) {
-                DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
-                if (target != null) {
-                    ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-                    PreLiveMediaProcessRequest preLiveMediaProcessRequest = new PreLiveMediaProcessRequest(
-                            new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.PREPROCESS_REQ,
-                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
-                                    System.currentTimeMillis(),
-                                    PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
-                            ),
-                            configManager.getPreprocessListenIp().length(),
-                            configManager.getPreprocessListenIp(),
-                            configManager.getCameraPath().length(),
-                            configManager.getCameraPath(),
-                            1800
-                    );
-                    byte[] requestByteData = preLiveMediaProcessRequest.getByteData();
-                    target.getNettyChannel().sendData(requestByteData, requestByteData.length);
-                    logger.debug("[CameraService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
-                }
-            }
-            //////////////////////////////////////
-
             init();
             process();
         } catch (Exception e) {
@@ -233,6 +211,36 @@ public class CameraService {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    private void sendPreLiveMediaProcessRequest () {
+        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+        GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+        if (listenSocket != null) {
+            DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+            if (target != null) {
+                ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
+                PreLiveMediaProcessRequest preLiveMediaProcessRequest = new PreLiveMediaProcessRequest(
+                        new MessageHeader(
+                                PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
+                                MessageType.PREPROCESS_REQ,
+                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                System.currentTimeMillis(),
+                                PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                        ),
+                        configManager.getPreprocessListenIp().length(),
+                        configManager.getPreprocessListenIp(),
+                        configManager.getCameraPath().length(),
+                        configManager.getCameraPath(),
+                        1800
+                );
+                byte[] requestByteData = preLiveMediaProcessRequest.getByteData();
+                target.getNettyChannel().sendData(requestByteData, requestByteData.length);
+                logger.debug("[CameraService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
+            }
+        }
+    }
+
     public boolean isAlive() {
         return alive;
     }
