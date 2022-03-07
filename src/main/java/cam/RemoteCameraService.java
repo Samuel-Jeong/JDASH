@@ -82,15 +82,17 @@ public class RemoteCameraService extends Thread {
 
             /////////////////////////////////
             // [OUTPUT] FFmpegFrameRecorder
-            FFmpegFrameRecorder fFmpegFrameRecorder = new FFmpegFrameRecorder(DASH_PATH, CAPTURE_WIDTH, CAPTURE_HEIGHT, 1); // TODO : 화질 커스텀
-            // (audioChannels > 0: not record / 1: record)
-            fFmpegFrameRecorder.setInterleaved(true);
+            FFmpegFrameRecorder fFmpegFrameRecorder = new FFmpegFrameRecorder(
+                    DASH_PATH,
+                    CAPTURE_WIDTH, CAPTURE_HEIGHT, // TODO : 화질 커스텀
+                    AudioService.CHANNEL_NUM // (audioChannels > 0: not record / 1: record)
+            );
+            //fFmpegFrameRecorder.setInterleaved(true);
             fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
             fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
             fFmpegFrameRecorder.setVideoOption("crf", "28");
             fFmpegFrameRecorder.setVideoBitrate(2000000);
             fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-            fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
             fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
             //fFmpegFrameRecorder.setFormat("matroska"); // > H265
             //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
@@ -99,6 +101,13 @@ public class RemoteCameraService extends Thread {
             fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
             fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
             fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
+
+            fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+            fFmpegFrameRecorder.setAudioOption("crf", "0");
+            fFmpegFrameRecorder.setAudioQuality(0);
+            fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE);
+            fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
+            fFmpegFrameRecorder.setAudioBitrate(192000);
 
             FFmpegLogCallback.set();
             fFmpegFrameRecorder.start();
@@ -117,11 +126,22 @@ public class RemoteCameraService extends Thread {
                     continue;
                 }
 
-                fFmpegFrameRecorder.record(frame);
+                //long count = 0;
+                if (frame.image != null) {
+                    //logger.debug("[{}]+VIDEO", count);
+                    fFmpegFrameRecorder.record(frame);
 
-                if (cameraFrame != null && cameraFrame.isVisible()) {
-                    cameraFrame.showImage(frame);
+                    if (cameraFrame != null && cameraFrame.isVisible()) {
+                        cameraFrame.showImage(frame);
+                    }
                 }
+
+                if (frame.samples != null) {
+                    //logger.debug("[{}]+AUDIO", count);
+                    fFmpegFrameRecorder.record(frame);
+                }
+
+                //count++;
             }
             /////////////////////////////////
 
