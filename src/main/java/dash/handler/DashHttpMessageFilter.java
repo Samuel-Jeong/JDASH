@@ -115,7 +115,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
+            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use jdash.) : {}", uri);
             return;
         }
 
@@ -140,7 +140,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         if (!isRegistered) {
             uriRoute = uriRouteTable.findUriRoute(method, uri);
             if (uriRoute == null) {
-                logger.warn("[DashHttpMessageFilter] NOT FOUND URI: {}", uri);
+                logger.warn("[DashHttpMessageFilter] NOT FOUND URI (from the route table) : {}", uri);
                 dashManager.writeNotFound(channelHandlerContext, request);
                 return;
             }
