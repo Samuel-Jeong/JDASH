@@ -49,6 +49,9 @@ public class DashUnit {
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
         this.DASH_UNIT_SCHEDULE_KEY = "SCHEDULE_" + id;
+        if (scheduleManager.initJob(DASH_UNIT_SCHEDULE_KEY, 1, 1)) {
+            logger.debug("[DashUnit(id={})] Success to init job scheduler", id);
+        }
     }
     ////////////////////////////////////////////////////////////
 
