@@ -44,26 +44,12 @@
             <type>bundle</type>
         </dependency>-->
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.red5</groupId>
             <artifactId>red5-parent</artifactId>
             <version>1.2.12</version>
             <type>pom</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.red5</groupId>
-            <artifactId>red5-client</artifactId>
-            <version>1.2.12</version>
-            <type>jar</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.red5</groupId>
-            <artifactId>red5-server</artifactId>
-            <version>1.2.12</version>
-            <type>jar</type>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>commons-io</groupId>
@@ -87,6 +73,24 @@
             <artifactId>javacv-platform</artifactId>
             <version>1.5.7</version>
         </dependency>
+
+        <!--<dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.5.5-1.5.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>ffmpeg</artifactId>
+            <version>5.0-1.5.7</version>
+        </dependency>-->
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

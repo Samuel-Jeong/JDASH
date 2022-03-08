@@ -4,9 +4,16 @@ import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
+import org.bytedeco.opencv.global.opencv_imgproc;
+import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.Point;
+import org.bytedeco.opencv.opencv_core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.module.FileManager;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class RemoteCameraService extends Thread {
 
@@ -19,6 +26,8 @@ public class RemoteCameraService extends Thread {
     private final ConfigManager configManager;
 
     private final String dashUnitId;
+
+    private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
 
     private final String URI_FILE_NAME;
     private final String RTMP_PATH;
@@ -87,7 +96,7 @@ public class RemoteCameraService extends Thread {
                     CAPTURE_WIDTH, CAPTURE_HEIGHT, // TODO : 화질 커스텀
                     AudioService.CHANNEL_NUM // (audioChannels > 0: not record / 1: record)
             );
-            //fFmpegFrameRecorder.setInterleaved(true);
+            fFmpegFrameRecorder.setInterleaved(true);
             fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
             fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
             fFmpegFrameRecorder.setVideoOption("crf", "28");
@@ -103,8 +112,8 @@ public class RemoteCameraService extends Thread {
             fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
 
             fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-            fFmpegFrameRecorder.setAudioOption("crf", "0");
-            fFmpegFrameRecorder.setAudioQuality(0);
+            //fFmpegFrameRecorder.setAudioOption("crf", "0");
+            //fFmpegFrameRecorder.setAudioQuality(0);
             fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE);
             fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
             fFmpegFrameRecorder.setAudioBitrate(192000);
@@ -120,28 +129,38 @@ public class RemoteCameraService extends Thread {
                 cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / fFmpegFrameGrabber.getGamma());
             }
 
+            Mat mat;
+            Point point = new Point(15, 35);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            long count = 0;
             while (!exit) {
                 Frame frame = fFmpegFrameGrabber.grab();
                 if(frame == null){
                     continue;
                 }
 
-                //long count = 0;
-                if (frame.image != null) {
-                    //logger.debug("[{}]+VIDEO", count);
+                if (frame.image != null && frame.samples != null) {
                     fFmpegFrameRecorder.record(frame);
-
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(frame);
                     }
-                }
-
-                if (frame.samples != null) {
-                    //logger.debug("[{}]+AUDIO", count);
+                    logger.debug("[{}] [V + A]", count);
+                } else if (frame.image != null) {
+                    mat = openCVConverter.convertToMat(frame);
+                    opencv_imgproc.putText(mat, simpleDateFormat.format(new Date()) + " > REMOTE (" + URI_FILE_NAME + ")", point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, new Scalar(0, 200, 255, 0), 1, 0, false);
+                    frame = openCVConverter.convert(mat);
                     fFmpegFrameRecorder.record(frame);
+                    if (cameraFrame != null && cameraFrame.isVisible()) {
+                        cameraFrame.showImage(frame);
+                    }
+                    //logger.debug("[{}] [V]", count);
+                } else if (frame.samples != null) {
+                    //fFmpegFrameRecorder.recordSamples(AudioService.SAMPLE_RATE, AudioService.CHANNEL_NUM, frame.samples);
+                    //logger.debug("[{}] [A]", count);
                 }
 
-                //count++;
+                count++;
             }
             /////////////////////////////////
 
