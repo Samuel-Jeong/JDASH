@@ -80,7 +80,6 @@ public class CameraService {
         fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
-        FFmpegLogCallback.set();
 
         audioService.setRecorderParams(fFmpegFrameRecorder);
         audioService.initSampleService();
@@ -132,13 +131,16 @@ public class CameraService {
 
             Frame capturedFrame;
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date curData = new Date();
 
             Mat mat;
             Point point = new Point(15, 35);
+            Scalar scalar = new Scalar(0, 200, 255, 0);
 
             while ((capturedFrame = grabber.grab()) != null) {
                 mat = openCVConverter.convertToMat(capturedFrame);
-                opencv_imgproc.putText(mat, simpleDateFormat.format(new Date()), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, new Scalar(0, 200, 255, 0), 1, 0, false);
+                curData.setTime(System.currentTimeMillis());
+                opencv_imgproc.putText(mat, simpleDateFormat.format(curData), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
                 capturedFrame = openCVConverter.convert(mat);
 
                 if (alive && cameraFrame.isVisible()) {
@@ -174,6 +176,7 @@ public class CameraService {
                 }
             }
         } catch (Exception e) {
+            FFmpegLogCallback.set();
             logger.warn("CameraService.process.Exception", e);
         }
     }

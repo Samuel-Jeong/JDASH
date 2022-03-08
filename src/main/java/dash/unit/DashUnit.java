@@ -5,10 +5,14 @@ import config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.scheduler.job.Job;
+import service.scheduler.schedule.ScheduleManager;
 import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.time.Duration;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DashUnit {
@@ -31,7 +35,9 @@ public class DashUnit {
     private boolean isLiveStreaming = false;
 
     private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
-    //private LiveStreamingHandler liveStreamingHandler = null;
+
+    public final String DASH_UNIT_SCHEDULE_KEY;
+    private final ScheduleManager scheduleManager = new ScheduleManager();
     private RemoteCameraService remoteCameraService = null;
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -42,6 +48,7 @@ public class DashUnit {
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
+        this.DASH_UNIT_SCHEDULE_KEY = "SCHEDULE_" + id;
     }
     ////////////////////////////////////////////////////////////
 
@@ -53,16 +60,17 @@ public class DashUnit {
         }
 
         try {
-            // sh rtmp_streaming.sh jamesj rtmp://192.168.5.222:1940/live/jamesj /home/uangel/udash/media/live/jamesj/jamesj.mpd
-            /*String scriptPath = configManager.getScriptPath();
-            String command = "sh " + scriptPath;
-            command = command + " " + uriFileName + " " + curRtmpUri + " " + mpdPath;
-            liveStreamingHandler = new LiveStreamingHandler(isRtmpStreaming, command);
-            liveStreamingHandler.start();
-            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming (command={})", id, command);*/
-
-            remoteCameraService = new RemoteCameraService(id, configManager, uriFileName, curRtmpUri, mpdPath);
-            remoteCameraService.start();
+            remoteCameraService = new RemoteCameraService(
+                    scheduleManager,
+                    RemoteCameraService.class.getSimpleName(),
+                    0, 1, TimeUnit.MILLISECONDS,
+                    1, 1, false,
+                    id, configManager, uriFileName, curRtmpUri, mpdPath
+            );
+            scheduleManager.startJob(
+                    DASH_UNIT_SCHEDULE_KEY,
+                    remoteCameraService
+            );
             isRtmpStreaming.set(true);
             logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming", id);
         } catch (Exception e) {
@@ -71,48 +79,13 @@ public class DashUnit {
     }
 
     public void finishRtmpStreaming() {
-        /*if (liveStreamingHandler != null && isRtmpStreaming.get()) {
-            liveStreamingHandler.interrupt();
-            if (liveStreamingHandler.isInterrupted()) {
-                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
-                isRtmpStreaming.set(false);
-                liveStreamingHandler = null;
-            }
-        }*/
-
-        if (remoteCameraService != null && isRtmpStreaming.get()) {
-            remoteCameraService.finish();
-            try {
-                remoteCameraService.join();
-            } catch (Exception e) {
-                logger.warn("[DashUnit(id={})] [-FINISH] RtmpStreaming JOIN FAILED", id);
-            }
-            if (remoteCameraService.isFinished()) {
-                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
-                isRtmpStreaming.set(false);
-                remoteCameraService = null;
-            }
+        if (isRtmpStreaming.get() && remoteCameraService != null) {
+            scheduleManager.stopJob(DASH_UNIT_SCHEDULE_KEY, remoteCameraService);
+            remoteCameraService = null;
+            logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
+            isRtmpStreaming.set(false);
         }
     }
-
-    /*private static class LiveStreamingHandler extends Thread {
-
-        private final AtomicBoolean isRtmpStreaming;
-        private final String command;
-
-        public LiveStreamingHandler(AtomicBoolean isRtmpStreaming, String command) {
-            this.isRtmpStreaming = isRtmpStreaming;
-            this.command = command;
-        }
-
-        @Override
-        public void run() {
-            while (isRtmpStreaming.get()) {
-                ProcessManager.runProcessWait(command);
-            }
-        }
-
-    }*/
 
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
