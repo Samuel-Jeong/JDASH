@@ -25,7 +25,6 @@ import network.socket.GroupSocket;
 import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import register.channel.RtmpRegisterNettyChannel;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
@@ -67,8 +66,6 @@ public class DashManager {
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-    private RtmpRegisterNettyChannel dashRegisterNettyChannel = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -126,17 +123,6 @@ public class DashManager {
         baseEnvironment.start();
 
         ///////////////////////////
-        // REGISTER
-        addRegisterChannel();
-        getRegisterChannel().sendRegister(
-                myDashUnit.getId(),
-                configManager.getRegisterTargetIp(),
-                configManager.getRegisterTargetPort(),
-                null
-        );
-        ///////////////////////////
-
-        ///////////////////////////
         // LOAD MEDIA URI
         loadMediaUriList();
         ///////////////////////////
@@ -168,16 +154,6 @@ public class DashManager {
 
     public void stop() {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-        ///////////////////////////
-        // REGISTER
-        getRegisterChannel().sendUnRegister(
-                myDashUnit.getId(),
-                configManager.getRegisterTargetIp(),
-                configManager.getRegisterTargetPort()
-        );
-        removeRegisterChannel();
-        ///////////////////////////
 
         //////////////////////////////////////
         if (configManager.isEnableClient()) {
@@ -584,40 +560,6 @@ public class DashManager {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.CONTINUE));
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    public void addRegisterChannel() {
-        if (dashRegisterNettyChannel != null) {
-            return;
-        }
-
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-        dashRegisterNettyChannel = new RtmpRegisterNettyChannel(
-                configManager.getRegisterListenIp(),
-                configManager.getRegisterListenPort()
-        );
-        dashRegisterNettyChannel.run();
-        dashRegisterNettyChannel.connect(configManager.getRegisterTargetIp(), configManager.getRegisterTargetPort());
-
-        logger.info("[DashManager] [+] Register channel is enabled.");
-    }
-
-    // 프로그램 종료 시 호출
-    public void removeRegisterChannel() {
-        if (dashRegisterNettyChannel == null) {
-            return;
-        }
-
-        dashRegisterNettyChannel.stop();
-        dashRegisterNettyChannel = null;
-
-        logger.info("[DashManager] [-] Register channel is disabled.");
-    }
-
-    public RtmpRegisterNettyChannel getRegisterChannel() {
-        return dashRegisterNettyChannel;
     }
     ////////////////////////////////////////////////////////////
 

@@ -30,8 +30,6 @@ public class RemoteCameraService extends Job {
 
     private final String dashUnitId;
 
-    //private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
-
     private final String URI_FILE_NAME;
     private final String RTMP_PATH;
     private final String DASH_PATH;
@@ -131,7 +129,7 @@ public class RemoteCameraService extends Job {
                     CAPTURE_WIDTH, CAPTURE_HEIGHT,
                     AudioService.CHANNEL_NUM // (audioChannels > 0: not record / 1: record)
             );
-            //fFmpegFrameRecorder.setInterleaved(true);
+            fFmpegFrameRecorder.setInterleaved(true);
             setVideoOptions(fFmpegFrameRecorder);
             setAudioOptions(fFmpegFrameRecorder);
             fFmpegFrameRecorder.start();
@@ -144,12 +142,12 @@ public class RemoteCameraService extends Job {
                 cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / frameGrabber.getGamma());
             }
 
-            /*Mat mat;
+            OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
+            Mat mat;
             Point point = new Point(15, 65);
-            Scalar scalar = new Scalar(0, 200, 255, 0);*/
+            Scalar scalar = new Scalar(0, 200, 255, 0);
             long curTimeStamp;
 
-            //long count = 0;
             while (!exit) {
                 Frame capturedFrame = frameGrabber.grab();
                 if(capturedFrame == null){
@@ -166,18 +164,17 @@ public class RemoteCameraService extends Job {
                     fFmpegFrameRecorder.setTimestamp(curTimeStamp);
                 }
 
-                //logger.debug("[{}] FRAME: {} {}", count, capturedFrame.timestamp, capturedFrame.getTypes());
-
                 // TODO : 영상은 정상인데, 음성은 계속 앞에 재생되던 사운드가 Loopback 되는 현상 발생 중
                 if (capturedFrame.image != null && capturedFrame.samples != null) {
                     fFmpegFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
                     }
+                    logger.debug("[@ INTERLEAVED @] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
                 } else if (capturedFrame.image != null) {
-                    /*mat = openCVConverter.convertToMat(capturedFrame);
+                    mat = openCVConverter.convertToMat(capturedFrame);
                     opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                    capturedFrame = openCVConverter.convert(mat);*/
+                    capturedFrame = openCVConverter.convert(mat);
                     fFmpegFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
@@ -185,8 +182,6 @@ public class RemoteCameraService extends Job {
                 } else if (capturedFrame.samples != null) {
                     fFmpegFrameRecorder.record(capturedFrame);
                 }
-
-                //count++;
             }
             /////////////////////////////////
 
