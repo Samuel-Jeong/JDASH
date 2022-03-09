@@ -35,6 +35,7 @@ public class DashUnit {
     private boolean isLiveStreaming = false;
 
     private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
+    private boolean isRegistered = false;
 
     public final String DASH_UNIT_SCHEDULE_KEY;
     private final ScheduleManager scheduleManager = new ScheduleManager();
@@ -85,6 +86,7 @@ public class DashUnit {
         if (isRtmpStreaming.get() && remoteCameraService != null) {
             scheduleManager.stopJob(DASH_UNIT_SCHEDULE_KEY, remoteCameraService);
             remoteCameraService = null;
+            clearMpdPath();
             logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
             isRtmpStreaming.set(false);
         }
@@ -169,6 +171,14 @@ public class DashUnit {
 
     public void setLiveStreaming(boolean liveStreaming) {
         isLiveStreaming = liveStreaming;
+    }
+
+    public boolean isRegistered() {
+        return isRegistered;
+    }
+
+    public void setRegistered(boolean registered) {
+        isRegistered = registered;
     }
 
     @Override

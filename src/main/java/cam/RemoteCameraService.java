@@ -30,7 +30,7 @@ public class RemoteCameraService extends Job {
 
     private final String dashUnitId;
 
-    private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
+    //private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
 
     private final String URI_FILE_NAME;
     private final String RTMP_PATH;
@@ -108,6 +108,7 @@ public class RemoteCameraService extends Job {
     }
     ///////////////////////////////////////////////////////////////////////////
 
+    ///////////////////////////////////////////////////////////////////////////
     @Override
     public void run() {
         logger.info("[RemoteCameraService] RUNNING...");
@@ -143,9 +144,9 @@ public class RemoteCameraService extends Job {
                 cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / frameGrabber.getGamma());
             }
 
-            Mat mat;
+            /*Mat mat;
             Point point = new Point(15, 65);
-            Scalar scalar = new Scalar(0, 200, 255, 0);
+            Scalar scalar = new Scalar(0, 200, 255, 0);*/
             long curTimeStamp;
 
             //long count = 0;
@@ -173,9 +174,9 @@ public class RemoteCameraService extends Job {
                         cameraFrame.showImage(capturedFrame);
                     }
                 } else if (capturedFrame.image != null) {
-                    mat = openCVConverter.convertToMat(capturedFrame);
+                    /*mat = openCVConverter.convertToMat(capturedFrame);
                     opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                    capturedFrame = openCVConverter.convert(mat);
+                    capturedFrame = openCVConverter.convert(mat);*/
                     fFmpegFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
@@ -233,32 +234,32 @@ public class RemoteCameraService extends Job {
         //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
         // -map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M
-        fFmpegFrameRecorder.setOption("map", "v:0");
+        /*fFmpegFrameRecorder.setOption("map", "v:0");
         fFmpegFrameRecorder.setOption("s:0", V_SIZE_1);
         fFmpegFrameRecorder.setOption("b:v:0", "2M");
         fFmpegFrameRecorder.setOption("maxrate:0", "2.14M");
-        fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");
+        fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");*/
 
         // -map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k
-        fFmpegFrameRecorder.setOption("map", "v:0");
+        /*fFmpegFrameRecorder.setOption("map", "v:0");
         fFmpegFrameRecorder.setOption("s:1", V_SIZE_2);
         fFmpegFrameRecorder.setOption("b:v:1", "145K");
         fFmpegFrameRecorder.setOption("maxrate:1", "155k");
-        fFmpegFrameRecorder.setOption("bufsize:1", "220k");
+        fFmpegFrameRecorder.setOption("bufsize:1", "220k");*/
 
         // -map v:0 -s:2 $V_SIZE_3 -b:v:2 50K -maxrate:2 1M -bufsize:2 2M
-        fFmpegFrameRecorder.setOption("map", "v:0");
+        /*fFmpegFrameRecorder.setOption("map", "v:0");
         fFmpegFrameRecorder.setOption("s:2", V_SIZE_3);
         fFmpegFrameRecorder.setOption("b:v:2", "50K");
         fFmpegFrameRecorder.setOption("maxrate:2", "1M");
-        fFmpegFrameRecorder.setOption("bufsize:2", "2M");
+        fFmpegFrameRecorder.setOption("bufsize:2", "2M");*/
 
         // -map v:0 -s:3 $V_SIZE_4 -b:v:3 730k -maxrate:3 781k -bufsize:3 1278k
-            /*fFmpegFrameRecorder.setOption("map", "v:0");
-            fFmpegFrameRecorder.setOption("s:3", V_SIZE_4);
-            fFmpegFrameRecorder.setOption("b:v:3", "730k");
-            fFmpegFrameRecorder.setOption("maxrate:3", "781k");
-            fFmpegFrameRecorder.setOption("bufsize:3", "1278k");*/
+        /*fFmpegFrameRecorder.setOption("map", "v:0");
+        fFmpegFrameRecorder.setOption("s:3", V_SIZE_4);
+        fFmpegFrameRecorder.setOption("b:v:3", "730k");
+        fFmpegFrameRecorder.setOption("maxrate:3", "781k");
+        fFmpegFrameRecorder.setOption("bufsize:3", "1278k");*/
 
         fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);

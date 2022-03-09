@@ -26,14 +26,16 @@ public class ConfigManager {
     public static final String SECTION_LIVE = "LIVE"; // LIVE Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
+    public static final String SECTION_REGISTER = "REGISTER"; // REGISTER Section 이름
     public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     // Field String
     // COMMON
-    public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
+    public static final String FIELD_ID = "ID";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
+    public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
 
     // MEDIA
@@ -62,6 +64,14 @@ public class ConfigManager {
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
     public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
 
+    // REGISTER
+    public static final String FIELD_REGISTER_MAGIC_COOKIE = "REGISTER_MAGIC_COOKIE";
+    public static final String FIELD_REGISTER_HASH_KEY = "REGISTER_HASH_KEY";
+    public static final String FIELD_REGISTER_LISTEN_IP = "REGISTER_LISTEN_IP";
+    public static final String FIELD_REGISTER_LISTEN_PORT = "REGISTER_LISTEN_PORT";
+    public static final String FIELD_REGISTER_TARGET_IP = "REGISTER_TARGET_IP";
+    public static final String FIELD_REGISTER_TARGET_PORT = "REGISTER_TARGET_PORT";
+
     // SCRIPT
     public static final String FIELD_SCRIPT_PATH = "PATH";
     ////////////////////////////////////////////////////////////
@@ -69,8 +79,9 @@ public class ConfigManager {
     ////////////////////////////////////////////////////////////
     // VARIABLES
     // COMMON
-    private boolean enableClient = false;
+    private String id = null;
     private String serviceName = null;
+    private boolean enableClient = false;
     private long localSessionLimitTime = 0; // ms
 
     // MEDIA
@@ -99,6 +110,14 @@ public class ConfigManager {
     private String rtmpPublishIp = null;
     private int rtmpPublishPort = 0;
 
+    // REGISTER
+    private String registerMagicCookie = null;
+    private String registerHashKey = null;
+    private String registerListenIp = null;
+    private int registerListenPort = 0;
+    private String registerTargetIp = null;
+    private int registerTargetPort = 0;
+
     // SCRIPT
     private String scriptPath = null;
     ////////////////////////////////////////////////////////////
@@ -125,6 +144,7 @@ public class ConfigManager {
             loadLiveConfig();
             loadNetworkConfig();
             loadRtmpConfig();
+            loadRegisterConfig();
             loadScriptConfig();
 
             logger.info("Load config [{}]", configPath);
@@ -140,18 +160,24 @@ public class ConfigManager {
      * @brief COMMON Section 을 로드하는 함수
      */
     private void loadCommonConfig() {
-        String enableClientString = getIniValue(SECTION_COMMON, FIELD_ENABLE_CLIENT);
-        if (enableClientString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ENABLE_CLIENT);
+        this.id = getIniValue(SECTION_COMMON, FIELD_ID);
+        if (id == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ID);
             System.exit(1);
-        } else {
-            this.enableClient = Boolean.parseBoolean(enableClientString);
         }
 
         this.serviceName = getIniValue(SECTION_COMMON, FIELD_SERVICE_NAME);
         if (serviceName == null) {
             logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_SERVICE_NAME);
             System.exit(1);
+        }
+
+        String enableClientString = getIniValue(SECTION_COMMON, FIELD_ENABLE_CLIENT);
+        if (enableClientString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ENABLE_CLIENT);
+            System.exit(1);
+        } else {
+            this.enableClient = Boolean.parseBoolean(enableClientString);
         }
 
         this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
@@ -328,6 +354,62 @@ public class ConfigManager {
     }
 
     /**
+     * @fn private void loadRegisterConfig()
+     * @brief REGISTER Section 을 로드하는 함수
+     */
+    private void loadRegisterConfig() {
+        this.registerMagicCookie = getIniValue(SECTION_REGISTER, FIELD_REGISTER_MAGIC_COOKIE);
+        if (this.registerMagicCookie == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_MAGIC_COOKIE);
+            System.exit(1);
+        }
+
+        this.registerHashKey = getIniValue(SECTION_REGISTER, FIELD_REGISTER_HASH_KEY);
+        if (this.registerHashKey == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_HASH_KEY);
+            System.exit(1);
+        }
+
+        this.registerListenIp = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LISTEN_IP);
+        if (this.registerListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String registerListenPortString = getIniValue(SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+        if (registerListenPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.registerListenPort = Integer.parseInt(registerListenPortString);
+            if (this.registerListenPort <= 0 || this.registerListenPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_LISTEN_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.registerTargetIp = getIniValue(SECTION_REGISTER, FIELD_REGISTER_TARGET_IP);
+        if (this.registerTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_IP);
+            System.exit(1);
+        }
+
+        String registerTargetPortString = getIniValue(SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+        if (registerTargetPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.registerTargetPort = Integer.parseInt(registerTargetPortString);
+            if (this.registerTargetPort <= 0 || this.registerTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_REGISTER, FIELD_REGISTER_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        logger.debug("Load [{}] config...(OK)", SECTION_REGISTER);
+    }
+
+    /**
      * @fn private void loadScriptConfig()
      * @brief SCRIPT Section 을 로드하는 함수
      */
@@ -382,12 +464,16 @@ public class ConfigManager {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    public boolean isEnableClient() {
-        return enableClient;
+    public String getId() {
+        return id;
     }
 
     public String getServiceName() {
         return serviceName;
+    }
+
+    public boolean isEnableClient() {
+        return enableClient;
     }
 
     public long getLocalSessionLimitTime() {
@@ -468,5 +554,29 @@ public class ConfigManager {
 
     public String getFfprobePath() {
         return ffprobePath;
+    }
+
+    public String getRegisterMagicCookie() {
+        return registerMagicCookie;
+    }
+
+    public String getRegisterHashKey() {
+        return registerHashKey;
+    }
+
+    public String getRegisterListenIp() {
+        return registerListenIp;
+    }
+
+    public int getRegisterListenPort() {
+        return registerListenPort;
+    }
+
+    public String getRegisterTargetIp() {
+        return registerTargetIp;
+    }
+
+    public int getRegisterTargetPort() {
+        return registerTargetPort;
     }
 }

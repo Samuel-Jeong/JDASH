@@ -36,7 +36,7 @@ public class HaHandler extends Job {
         String cpuUsageStr = systemManager.getCpuUsage();
         String memoryUsageStr = systemManager.getHeapMemoryUsage();
 
-        logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | DashUnitCount=[{}]",
+        logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | RemoteDashUnitCount=[{}]",
                 cpuUsageStr, memoryUsageStr, Thread.activeCount(),
                 ServiceManager.getInstance().getDashManager().getDashUnitMapSize()
         );
