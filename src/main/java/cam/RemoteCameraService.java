@@ -131,7 +131,7 @@ public class RemoteCameraService extends Job {
                     CAPTURE_WIDTH, CAPTURE_HEIGHT,
                     AudioService.CHANNEL_NUM // (audioChannels > 0: not record / 1: record)
             );
-            fFmpegFrameRecorder.setInterleaved(true);
+            //fFmpegFrameRecorder.setInterleaved(true);
             setVideoOptions(fFmpegFrameRecorder);
             setAudioOptions(fFmpegFrameRecorder);
             fFmpegFrameRecorder.start();
@@ -168,6 +168,7 @@ public class RemoteCameraService extends Job {
 
                 //logger.debug("[{}] FRAME: {} {}", count, capturedFrame.timestamp, capturedFrame.getTypes());
 
+                // TODO : 영상은 정상인데, 음성은 계속 앞에 재생되던 사운드가 Loopback 되는 현상 발생 중
                 if (capturedFrame.image != null && capturedFrame.samples != null) {
                     fFmpegFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
