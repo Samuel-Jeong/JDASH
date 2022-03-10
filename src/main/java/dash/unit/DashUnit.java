@@ -67,16 +67,21 @@ public class DashUnit {
             remoteCameraService = new RemoteCameraService(
                     scheduleManager,
                     RemoteCameraService.class.getSimpleName(),
-                    0, 1, TimeUnit.MILLISECONDS,
+                    0, 1000, TimeUnit.MILLISECONDS,
                     1, 1, false,
                     id, configManager, uriFileName, curRtmpUri, mpdPath
             );
-            scheduleManager.startJob(
-                    DASH_UNIT_SCHEDULE_KEY,
-                    remoteCameraService
-            );
-            isRtmpStreaming.set(true);
-            logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming", id);
+
+            if (remoteCameraService.init()) {
+                scheduleManager.startJob(
+                        DASH_UNIT_SCHEDULE_KEY,
+                        remoteCameraService
+                );
+                isRtmpStreaming.set(true);
+                logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming", id);
+            } else {
+                logger.warn("[DashUnit(id={})] [-RUN FAIL] RtmpStreaming", id);
+            }
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
         }
@@ -84,9 +89,9 @@ public class DashUnit {
 
     public void finishRtmpStreaming() {
         if (isRtmpStreaming.get() && remoteCameraService != null) {
+            remoteCameraService.stop();
             scheduleManager.stopJob(DASH_UNIT_SCHEDULE_KEY, remoteCameraService);
             remoteCameraService = null;
-            clearMpdPath();
             logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
             isRtmpStreaming.set(false);
         }

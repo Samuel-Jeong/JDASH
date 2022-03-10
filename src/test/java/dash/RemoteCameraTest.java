@@ -17,6 +17,7 @@ public class RemoteCameraTest {
                 0, 1, TimeUnit.MILLISECONDS,
                 1, 1, false
         );
+        remoteCameraService.init();
         scheduleManager.startJob(
                 "REMOTE_CAMERA_TEST",
                 remoteCameraService

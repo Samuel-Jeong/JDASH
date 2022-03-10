@@ -8,14 +8,13 @@ import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Point;
 import org.bytedeco.opencv.opencv_core.Scalar;
+import org.jcodec.audio.Audio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 import util.module.FileManager;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class RemoteCameraService extends Job {
@@ -26,6 +25,13 @@ public class RemoteCameraService extends Job {
     private static final String INIT_SEGMENT_POSTFIX = "_init$RepresentationID$.m4s";
     private static final String MEDIA_SEGMENT_POSTFIX = "_chunk$RepresentationID$_$Number%05d$.m4s";
 
+    public static final String V_SIZE_1 = "960x540";
+    public static final String V_SIZE_2 = "416x234";
+    public static final String V_SIZE_3 = "640x360";
+    public static final String V_SIZE_4 = "768x432";
+    public static final String V_SIZE_5 = "1280x720";
+    public static final String V_SIZE_6 = "1920x1080";
+
     private final ConfigManager configManager;
 
     private final String dashUnitId;
@@ -34,22 +40,23 @@ public class RemoteCameraService extends Job {
     private final String RTMP_PATH;
     private final String DASH_PATH;
     public final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 1280;
-    public static final int CAPTURE_HEIGHT = 720;
+    public static final int CAPTURE_WIDTH = 640;
+    public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 30;
 
     private final String SUBTITLE;
-    public static final String V_SIZE_1 = "960x540";
-    public static final String V_SIZE_2 = "416x234";
-    public static final String V_SIZE_3 = "640x360";
-    public static final String V_SIZE_4 = "768x432";
-    public static final String V_SIZE_5 = "1280x720";
-    public static final String V_SIZE_6 = "1920x1080";
 
     private static long startTime = 0;
-
     private boolean exit = false;
-    private boolean isFinished = false;
+
+    private CanvasFrame cameraFrame = null;
+    private FrameGrabber frameGrabber = null;
+    //private FFmpegFrameRecorder videoFrameRecorder = null;
+    //private FFmpegFrameRecorder audioFrameRecorder = null;
+
+    private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
+    private final Point point = new Point(15, 65);
+    private final Scalar scalar = new Scalar(0, 200, 255, 0);
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
@@ -104,109 +111,161 @@ public class RemoteCameraService extends Job {
         URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
         SUBTITLE = "TEST";
     }
-    ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    @Override
-    public void run() {
-        logger.info("[RemoteCameraService] RUNNING...");
-        logger.debug("[RemoteCameraService] RTMP_PATH=[{}], DASH_PATH=[{}]", RTMP_PATH, DASH_PATH);
-
+    public boolean init() {
         try {
+            cameraFrame = null;
+            if (configManager.isEnableClient()) {
+                cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / frameGrabber.getGamma());
+            }
+
             /////////////////////////////////
             // [INPUT] FFmpegFrameGrabber
-            FrameGrabber frameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
+            frameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
             //FrameGrabber frameGrabber = new OpenCVFrameGrabber(RTMP_PATH);
             frameGrabber.setImageWidth(CAPTURE_WIDTH);
             frameGrabber.setImageHeight(CAPTURE_HEIGHT);
             frameGrabber.start();
             /////////////////////////////////
-
-            /////////////////////////////////
-            // [OUTPUT] FFmpegFrameRecorder
-            FFmpegFrameRecorder fFmpegFrameRecorder = new FFmpegFrameRecorder(
-                    DASH_PATH,
-                    CAPTURE_WIDTH, CAPTURE_HEIGHT,
-                    AudioService.CHANNEL_NUM // (audioChannels > 0: not record / 1: record)
-            );
-            fFmpegFrameRecorder.setInterleaved(true);
-            setVideoOptions(fFmpegFrameRecorder);
-            setAudioOptions(fFmpegFrameRecorder);
-            fFmpegFrameRecorder.start();
-            /////////////////////////////////
-
-            /////////////////////////////////
-            // [GRAB FRAME]
-            CanvasFrame cameraFrame = null;
-            if (configManager.isEnableClient()) {
-                cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / frameGrabber.getGamma());
-            }
-
-            OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
-            Mat mat;
-            Point point = new Point(15, 65);
-            Scalar scalar = new Scalar(0, 200, 255, 0);
-            long curTimeStamp;
-
-            while (!exit) {
-                Frame capturedFrame = frameGrabber.grab();
-                if(capturedFrame == null){
-                    continue;
-                }
-
-                if (startTime == 0) {
-                    startTime = System.currentTimeMillis();
-                }
-
-                // Check for AV drift
-                curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
-                if (curTimeStamp > fFmpegFrameRecorder.getTimestamp()) { // Lip-flap correction
-                    fFmpegFrameRecorder.setTimestamp(curTimeStamp);
-                }
-
-                // TODO : 영상은 정상인데, 음성은 계속 앞에 재생되던 사운드가 Loopback 되는 현상 발생 중
-                if (capturedFrame.image != null && capturedFrame.samples != null) {
-                    fFmpegFrameRecorder.record(capturedFrame);
-                    if (cameraFrame != null && cameraFrame.isVisible()) {
-                        cameraFrame.showImage(capturedFrame);
-                    }
-                    logger.debug("[@ INTERLEAVED @] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
-                } else if (capturedFrame.image != null) {
-                    mat = openCVConverter.convertToMat(capturedFrame);
-                    opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                    capturedFrame = openCVConverter.convert(mat);
-                    fFmpegFrameRecorder.record(capturedFrame);
-                    if (cameraFrame != null && cameraFrame.isVisible()) {
-                        cameraFrame.showImage(capturedFrame);
-                    }
-                } else if (capturedFrame.samples != null) {
-                    fFmpegFrameRecorder.record(capturedFrame);
-                }
-
-                /*fFmpegFrameRecorder.record(capturedFrame);
-                if (cameraFrame != null && cameraFrame.isVisible()) {
-                    cameraFrame.showImage(capturedFrame);
-                }*/
-            }
-            /////////////////////////////////
-
-            frameGrabber.stop();
-            frameGrabber.release();
-            fFmpegFrameRecorder.stop();
-            fFmpegFrameRecorder.release();
-
-            FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath()));
         } catch (Exception e) {
-            FFmpegLogCallback.set();
-            logger.warn("RemoteCameraService.run.Exception", e);
+            logger.warn("RemoteCameraService.init.Exception", e);
+            return false;
         }
 
-        isFinished = true;
-        logger.info("[RemoteCameraService] STOPPING...");
+        logger.debug("[RemoteCameraService] RTMP_PATH=[{}], DASH_PATH=[{}]", RTMP_PATH, DASH_PATH);
+        return true;
     }
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
+    @Override
+    public void run() {
+        //logger.info("[RemoteCameraService] RUNNING...");
+
+        FFmpegFrameRecorder videoFrameRecorder = null;
+        //FFmpegFrameRecorder audioFrameRecorder = null;
+        try {
+            /////////////////////////////////
+            // [OUTPUT] FFmpegFrameRecorder
+            videoFrameRecorder = new FFmpegFrameRecorder(
+                    DASH_PATH,
+                    CAPTURE_WIDTH, CAPTURE_HEIGHT,
+                    AudioService.CHANNEL_NUM
+            );
+            setVideoOptions(videoFrameRecorder);
+            setAudioOptions(videoFrameRecorder);
+            setDashOptions(videoFrameRecorder);
+            videoFrameRecorder.start();
+
+            /*audioFrameRecorder = new FFmpegFrameRecorder(
+                    DASH_PATH,
+                    AudioService.CHANNEL_NUM
+            );
+            setAudioOptions(audioFrameRecorder);
+            setDashOptions(audioFrameRecorder);
+            audioFrameRecorder.start();*/
+            /////////////////////////////////
+
+            /////////////////////////////////
+            // [GRAB FRAME]
+            Mat mat;
+            long curTimeStamp;
+
+            while (!exit) {
+                //////////////////////////////////////
+                // GRAB FRAME
+                Frame capturedFrame = frameGrabber.grab();
+                if(capturedFrame == null){
+                    continue;
+                }
+                //////////////////////////////////////
+
+                //////////////////////////////////////
+                // Check for AV drift
+                if (startTime == 0) {
+                    startTime = System.currentTimeMillis();
+                }
+
+                curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
+                if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
+                    videoFrameRecorder.setTimestamp(curTimeStamp);
+                }
+                /*if (curTimeStamp > audioFrameRecorder.getTimestamp()) { // Lip-flap correction
+                    audioFrameRecorder.setTimestamp(curTimeStamp);
+                }*/
+                //////////////////////////////////////
+
+                //////////////////////////////////////
+                // TODO : 영상은 정상인데, 음성은 계속 앞에 재생되던 사운드가 Loopback 되는 현상 발생 중
+                //////////////////////////////////////
+                // INTERLEAVED DATA
+                /*if (capturedFrame.image != null && capturedFrame.samples != null) {
+                    videoFrameRecorder.record(capturedFrame);
+                    if (cameraFrame != null && cameraFrame.isVisible()) {
+                        cameraFrame.showImage(capturedFrame);
+                    }
+                    logger.debug("[@ INTERLEAVED @] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
+                }*/
+                //////////////////////////////////////
+                // VIDEO DATA
+                if (capturedFrame.image != null && capturedFrame.image.length > 0 && (capturedFrame.samples == null || capturedFrame.samples.length <= 0)) {
+                    mat = openCVConverter.convertToMat(capturedFrame);
+                    opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
+                    capturedFrame = openCVConverter.convert(mat);
+                    videoFrameRecorder.record(capturedFrame);
+                    if (cameraFrame != null && cameraFrame.isVisible()) {
+                        cameraFrame.showImage(capturedFrame);
+                    }
+                }
+                //////////////////////////////////////
+                // AUDIO DATA
+                else if (capturedFrame.samples != null && capturedFrame.samples.length > 0 && (capturedFrame.image == null || capturedFrame.image.length <= 0)) {
+                    videoFrameRecorder.record(capturedFrame);
+                    //audioFrameRecorder.record(capturedFrame);
+                }
+                /////////////////////////////////////
+            }
+            /////////////////////////////////
+        } catch (Exception e) {
+            FFmpegLogCallback.set();
+            logger.warn("RemoteCameraService.run.Exception", e);
+        } finally {
+            try {
+                if (videoFrameRecorder != null) {
+                    videoFrameRecorder.stop();
+                    videoFrameRecorder.release();
+                }
+
+                /*if (audioFrameRecorder != null) {
+                    audioFrameRecorder.stop();
+                    audioFrameRecorder.release();
+                }*/
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        //logger.info("[RemoteCameraService] STOPPING...");
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    public void stop() {
+        finish();
+
+        try {
+            if (frameGrabber != null) {
+                frameGrabber.stop();
+                frameGrabber.release();
+                frameGrabber = null;
+            }
+        } catch (Exception e) {
+            logger.warn("RemoteCameraService.run.finally.Exception", e);
+        }
+
+        FileManager.deleteFile(FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath()));
+    }
+
     public void finish() {
         exit = true;
     }
@@ -217,36 +276,20 @@ public class RemoteCameraService extends Job {
         return dashUnitId;
     }
 
-    public boolean isFinished() {
-        return isFinished;
-    }
-
-    private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
-        fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
-        fFmpegFrameRecorder.setVideoOption("crf", "28");
-        fFmpegFrameRecorder.setFormat("dash");
-        fFmpegFrameRecorder.setVideoBitrate(2000000);
-        fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
-        fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        //fFmpegFrameRecorder.setFormat("matroska"); // > H265
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
-
+    private void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         // -map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
+        fFmpegFrameRecorder.setOption("map", "v:0");
         fFmpegFrameRecorder.setOption("s:0", V_SIZE_1);
         fFmpegFrameRecorder.setOption("b:v:0", "2M");
         fFmpegFrameRecorder.setOption("maxrate:0", "2.14M");
-        fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");*/
+        fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");
 
         // -map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
+        fFmpegFrameRecorder.setOption("map", "v:0");
         fFmpegFrameRecorder.setOption("s:1", V_SIZE_2);
         fFmpegFrameRecorder.setOption("b:v:1", "145K");
         fFmpegFrameRecorder.setOption("maxrate:1", "155k");
-        fFmpegFrameRecorder.setOption("bufsize:1", "220k");*/
+        fFmpegFrameRecorder.setOption("bufsize:1", "220k");
 
         // -map v:0 -s:2 $V_SIZE_3 -b:v:2 50K -maxrate:2 1M -bufsize:2 2M
         /*fFmpegFrameRecorder.setOption("map", "v:0");
@@ -262,19 +305,38 @@ public class RemoteCameraService extends Job {
         fFmpegFrameRecorder.setOption("maxrate:3", "781k");
         fFmpegFrameRecorder.setOption("bufsize:3", "1278k");*/
 
+        fFmpegFrameRecorder.setOption("map", "0:a");
+
+        fFmpegFrameRecorder.setFormat("dash");
         fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("use_template", "1");
         fFmpegFrameRecorder.setOption("use_timeline", "0");
+        fFmpegFrameRecorder.setOption("seg_duration", "5");
+        fFmpegFrameRecorder.setOption("adaptation_sets", "id=0,streams=v id=1,streams=a");
+    }
+
+    private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        /*fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
+        fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
+        fFmpegFrameRecorder.setVideoOption("crf", "28");*/
+        //fFmpegFrameRecorder.setVideoBitrate(2000000); // default: 400000
+        fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
+        fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
+        //fFmpegFrameRecorder.setFormat("matroska"); // > H265
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
         fFmpegFrameRecorder.setAudioOption("crf", "0");
         fFmpegFrameRecorder.setAudioQuality(0);
-        fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE);
+        fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
-        fFmpegFrameRecorder.setAudioBitrate(192000);
+        fFmpegFrameRecorder.setAudioBitrate(192000); // default: 64000
     }
     ///////////////////////////////////////////////////////////////////////////
 
