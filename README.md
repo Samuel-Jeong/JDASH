@@ -3,29 +3,22 @@
 비디오 라이브 스트리밍 서버
 
 @ REFERENCE
-1) Video & audio processing (LIVE, dynamic)
-+ REF : FFMPEG & FFPROBE version 5
-(https://github.com/FFmpeg/FFmpeg)
-
-2) Make MPD & Segments
+1) Make MPD & Segments
 + REF : org.bytedeco.javacv (LIVE, dynamic)
 (https://github.com/bytedeco/javacv)
 + REF : python-ffmpeg-video-streaming (VOD, static)
 (https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
 
-3) MPD class object & Validatation of MPD file
+2) MPD class object & Validatation of MPD file
 + REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
 (https://github.com/carlanton/mpd-tools)
 
-4) Camera
+3) Camera
 + REF : org.bytedeco.javacv
 (https://github.com/bytedeco/javacv)
 
-5) Media platform
-+ REF : RED5
-(https://github.com/Red5)
-+ REF : NGINX, RTMP (Deprecated)
-(https://github.com/arut/nginx-rtmp-module)
+4) Media platform
++ REF : FFmpegFrameGrabber, FFmpegFrameRecorder
 
 ~~~
 
