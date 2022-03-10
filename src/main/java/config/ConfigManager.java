@@ -44,8 +44,6 @@ public class ConfigManager {
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
 
     // LIVE
-    public static final String FIELD_FFMPEG_PATH = "FFMPEG_PATH";
-    public static final String FIELD_FFPROBE_PATH = "FFPROBE_PATH";
     public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
     public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
@@ -82,8 +80,6 @@ public class ConfigManager {
     private String validationXsdPath = null;
 
     // LIVE
-    private String ffmpegPath = null;
-    private String ffprobePath = null;
     private String preprocessListenIp = null;
     private int preprocessListenPort = 0;
     private String preprocessTargetIp = null;
@@ -208,18 +204,6 @@ public class ConfigManager {
      * @brief LIVE Section 을 로드하는 함수
      */
     private void loadLiveConfig() {
-        this.ffmpegPath = getIniValue(SECTION_LIVE, FIELD_FFMPEG_PATH);
-        if (this.ffmpegPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_FFMPEG_PATH);
-            System.exit(1);
-        }
-
-        this.ffprobePath = getIniValue(SECTION_LIVE, FIELD_FFPROBE_PATH);
-        if (this.ffprobePath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_FFPROBE_PATH);
-            System.exit(1);
-        }
-
         this.preprocessListenIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
         if (this.preprocessListenIp == null) {
             logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);

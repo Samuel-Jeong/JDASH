@@ -182,6 +182,11 @@ public class RemoteCameraService extends Job {
                 } else if (capturedFrame.samples != null) {
                     fFmpegFrameRecorder.record(capturedFrame);
                 }
+
+                /*fFmpegFrameRecorder.record(capturedFrame);
+                if (cameraFrame != null && cameraFrame.isVisible()) {
+                    cameraFrame.showImage(capturedFrame);
+                }*/
             }
             /////////////////////////////////
 
@@ -259,6 +264,8 @@ public class RemoteCameraService extends Job {
 
         fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
+        fFmpegFrameRecorder.setOption("use_template", "1");
+        fFmpegFrameRecorder.setOption("use_timeline", "0");
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
