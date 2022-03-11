@@ -1,6 +1,5 @@
 package dash;
 
-import cam.CameraManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
@@ -28,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
+import stream.LocalStreamService;
 import tool.parser.MPDParser;
 import tool.parser.mpd.MPD;
 import tool.validator.MPDValidator;
@@ -57,7 +57,7 @@ public class DashManager {
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
     private final PreProcessMediaManager preProcessMediaManager;
-    private CameraManager cameraManager = null;
+    private LocalStreamService localStreamService = null;
 
     private final MPDParser mpdParser = new MPDParser();
     private MPDValidator mpdValidator = null;
@@ -132,13 +132,14 @@ public class DashManager {
 
         if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
             if (configManager.isEnableClient()) {
-                cameraManager = new CameraManager(
+                localStreamService = new LocalStreamService(
                         baseEnvironment.getScheduleManager(),
-                        CameraManager.class.getSimpleName(),
+                        LocalStreamService.class.getSimpleName(),
                         0, 0, TimeUnit.MILLISECONDS,
                         1, 1, false
                 );
-                baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, cameraManager);
+                localStreamService.start();
+                baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService);
             }
         }
 
@@ -153,6 +154,10 @@ public class DashManager {
     }
 
     public void stop() {
+        if (localStreamService != null) {
+            localStreamService.stop();
+        }
+
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
         //////////////////////////////////////
@@ -231,8 +236,8 @@ public class DashManager {
         return preProcessMediaManager;
     }
 
-    public CameraManager getCameraManager() {
-        return cameraManager;
+    public LocalStreamService getLocalStreamService() {
+        return localStreamService;
     }
 
     public boolean validate(MPD mpd) {

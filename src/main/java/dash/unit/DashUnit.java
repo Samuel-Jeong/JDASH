@@ -1,6 +1,6 @@
 package dash.unit;
 
-import cam.RemoteCameraService;
+import stream.RemoteStreamService;
 import config.ConfigManager;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class DashUnit {
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
     public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
     private final ScheduleManager scheduleManager = new ScheduleManager();
-    private RemoteCameraService remoteCameraService = null;
+    private RemoteStreamService remoteCameraService = null;
     private OldFileController oldFileController = null;
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -74,9 +74,9 @@ public class DashUnit {
         try {
             //////////////////////////////
             // REMOTE CAMERA SERVICE
-            remoteCameraService = new RemoteCameraService(
+            remoteCameraService = new RemoteStreamService(
                     scheduleManager,
-                    RemoteCameraService.class.getSimpleName() + "_" + id,
+                    RemoteStreamService.class.getSimpleName() + "_" + id,
                     0, 1000, TimeUnit.MILLISECONDS,
                     1, 1, true,
                     id, configManager, uriFileName, curRtmpUri, mpdPath

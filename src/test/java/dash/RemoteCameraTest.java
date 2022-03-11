@@ -1,6 +1,6 @@
 package dash;
 
-import cam.RemoteCameraService;
+import stream.RemoteStreamService;
 import org.junit.Test;
 import service.scheduler.schedule.ScheduleManager;
 
@@ -11,9 +11,9 @@ public class RemoteCameraTest {
     @Test
     public void test() {
         ScheduleManager scheduleManager = new ScheduleManager();
-        RemoteCameraService remoteCameraService = new RemoteCameraService(
+        RemoteStreamService remoteCameraService = new RemoteStreamService(
                 scheduleManager,
-                RemoteCameraService.class.getSimpleName(),
+                RemoteStreamService.class.getSimpleName(),
                 0, 1, TimeUnit.MILLISECONDS,
                 1, 1, false
         );

@@ -1,4 +1,4 @@
-package cam;
+package stream;
 
 import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -16,10 +16,10 @@ import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class RemoteCameraService extends Job {
+public class RemoteStreamService extends Job {
 
     ///////////////////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(RemoteCameraService.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteStreamService.class);
 
     private static final String INIT_SEGMENT_POSTFIX = "_init$RepresentationID$.m4s";
     private static final String MEDIA_SEGMENT_POSTFIX = "_chunk$RepresentationID$_$Number%05d$.m4s";
@@ -57,7 +57,7 @@ public class RemoteCameraService extends Job {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public RemoteCameraService(ScheduleManager scheduleManager,
+    public RemoteStreamService(ScheduleManager scheduleManager,
                                String name,
                                int initialDelay, int interval, TimeUnit timeUnit,
                                int priority, int totalRunCount, boolean isLasted,
@@ -75,7 +75,7 @@ public class RemoteCameraService extends Job {
 
     ///////////////////////////////////////////////////////////////////////////
     // FOR TEST
-    public RemoteCameraService(ScheduleManager scheduleManager,
+    public RemoteStreamService(ScheduleManager scheduleManager,
                                String name,
                                int initialDelay, int interval, TimeUnit timeUnit,
                                int priority, int totalRunCount, boolean isLasted,
@@ -94,7 +94,7 @@ public class RemoteCameraService extends Job {
 
     ///////////////////////////////////////////////////////////////////////////
     // FOR TEST
-    public RemoteCameraService(ScheduleManager scheduleManager,
+    public RemoteStreamService(ScheduleManager scheduleManager,
                                String name,
                                int initialDelay, int interval, TimeUnit timeUnit,
                                int priority, int totalRunCount, boolean isLasted) {
@@ -120,18 +120,17 @@ public class RemoteCameraService extends Job {
             // [INPUT] FFmpegFrameGrabber
             fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
             if (!configManager.isAudioOnly()) {
-
                 fFmpegFrameGrabber.setImageWidth(CAPTURE_WIDTH);
                 fFmpegFrameGrabber.setImageHeight(CAPTURE_HEIGHT);
             }
             fFmpegFrameGrabber.start();
             /////////////////////////////////
         } catch (Exception e) {
-            logger.warn("RemoteCameraService.init.Exception", e);
+            logger.warn("RemoteStreamService.init.Exception", e);
             return false;
         }
 
-        logger.debug("[RemoteCameraService] RTMP_PATH=[{}], DASH_PATH=[{}]", RTMP_PATH, DASH_PATH);
+        logger.debug("[RemoteStreamService] [INIT] RTMP_PATH=[{}], DASH_PATH=[{}]", RTMP_PATH, DASH_PATH);
         return true;
     }
     ///////////////////////////////////////////////////////////////////////////
@@ -139,7 +138,7 @@ public class RemoteCameraService extends Job {
     ///////////////////////////////////////////////////////////////////////////
     @Override
     public void run() {
-        //logger.info("[RemoteCameraService] RUNNING...");
+        //logger.info("[RemoteStreamService] RUNNING...");
 
         FFmpegFrameRecorder audioFrameRecorder = null;
         FFmpegFrameRecorder videoFrameRecorder = null;
@@ -231,7 +230,7 @@ public class RemoteCameraService extends Job {
             /////////////////////////////////
         } catch (Exception e) {
             // ignore
-            //logger.warn("RemoteCameraService.run.Exception", e);
+            //logger.warn("RemoteStreamService.run.Exception", e);
         } finally {
             try {
                 if (videoFrameRecorder != null) {
@@ -248,13 +247,13 @@ public class RemoteCameraService extends Job {
             }
         }
 
-        //logger.info("[RemoteCameraService] STOPPING...");
+        //logger.info("[RemoteStreamService] STOPPING...");
     }
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
     public void stop() {
-        finish();
+        exit = true;
 
         try {
             if (fFmpegFrameGrabber != null) {
@@ -263,7 +262,7 @@ public class RemoteCameraService extends Job {
                 fFmpegFrameGrabber = null;
             }
         } catch (Exception e) {
-            logger.warn("RemoteCameraService.run.finally.Exception", e);
+            logger.warn("RemoteStreamService.run.finally.Exception", e);
         }
 
         if (configManager.isClearDashDataIfSessionClosed()) {
@@ -274,10 +273,6 @@ public class RemoteCameraService extends Job {
                     )
             );
         }
-    }
-
-    public void finish() {
-        exit = true;
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -322,7 +317,8 @@ public class RemoteCameraService extends Job {
         fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("use_template", "1");
         fFmpegFrameRecorder.setOption("use_timeline", "0");
-        fFmpegFrameRecorder.setOption("seg_duration", "5");
+        fFmpegFrameRecorder.setOption("ldash", "1");
+        fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
         //fFmpegFrameRecorder.setOption("adaptation_sets", "id=0,streams=v id=1,streams=a");
     }
 

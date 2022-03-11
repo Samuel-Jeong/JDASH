@@ -1,4 +1,4 @@
-package cam;
+package stream;
 
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
@@ -23,24 +23,13 @@ public class AudioService {
     ////////////////////////////////////////////////////////////////////////////////
     public final static int SAMPLE_RATE = 44100;
     public final static int CHANNEL_NUM = 1;
-    private FFmpegFrameRecorder recorder;
-    private ScheduledThreadPoolExecutor sampleTask;
+    private ScheduledThreadPoolExecutor sampleTask = null;
     private TargetDataLine line;
-    byte[] audioBytes;
+    private byte[] audioBytes;
     private volatile boolean isFinish = false;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public void setRecorderParams(FrameRecorder recorder) {
-        this.recorder = (FFmpegFrameRecorder) recorder;
-        recorder.setAudioOption("crf", "0");
-        recorder.setAudioQuality(0);
-        recorder.setAudioBitrate(192000);
-        recorder.setSampleRate(SAMPLE_RATE);
-        recorder.setAudioChannels(CHANNEL_NUM);
-        recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-    }
-
     public void initSampleService() throws Exception {
         AudioFormat audioFormat = new AudioFormat(
                 SAMPLE_RATE,
@@ -57,50 +46,55 @@ public class AudioService {
 
         final int audioBufferSize = SAMPLE_RATE * CHANNEL_NUM;
         audioBytes = new byte[audioBufferSize];
-        sampleTask = new ScheduledThreadPoolExecutor(1);
+
+        logger.debug("[AudioService] START");
     }
 
     public void releaseOutputResource() {
         isFinish = true;
-        sampleTask.shutdown();
+        if (sampleTask != null) {
+            sampleTask.shutdown();
+        }
         line.stop();
         line.close();
+
+        logger.debug("[AudioService] STOP");
     }
 
-    public void startSampling(double frameRate) {
+    public void startSampling(FFmpegFrameRecorder fFmpegFrameRecorder, double frameRate) {
+        if (fFmpegFrameRecorder == null) {
+            logger.warn("[AudioService] Recorder is not defined. Fail to start sampling");
+            return;
+        }
+
+        sampleTask = new ScheduledThreadPoolExecutor(1);
         sampleTask.scheduleAtFixedRate(() -> {
                     try {
                         if (isFinish) { return; }
-
-                        int nBytesRead = 0;
-                        while (nBytesRead == 0) {
-                            nBytesRead = line.read(audioBytes, 0, line.available());
-                        }
-                        if (nBytesRead < 1) { return; }
-
-                        int nSamplesRead = nBytesRead / 2;
-                        short[] samples = new short[nSamplesRead];
-
-                        ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
-                        ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
-
-                        recorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
+                        record(fFmpegFrameRecorder);
                     } catch (Exception e) {
                         logger.warn("AudioService.startSampling.Exception", e);
                     }
                 },
-                0, 1000 / (long) frameRate, TimeUnit.MILLISECONDS
+                0,
+                1000 / (long) frameRate,
+                TimeUnit.MILLISECONDS
         );
     }
-    ////////////////////////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////////////////////////
-    public boolean isFinish() {
-        return isFinish;
-    }
+    private void record(FFmpegFrameRecorder fFmpegFrameRecorder) throws Exception {
+        int nBytesRead = 0;
+        while (nBytesRead == 0) {
+            nBytesRead = line.read(audioBytes, 0, line.available());
+        }
+        if (nBytesRead < 1) { return; }
 
-    public void setFinish(boolean finish) {
-        isFinish = finish;
+        int nSamplesRead = nBytesRead / 2;
+        short[] samples = new short[nSamplesRead];
+
+        ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
+        ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
+        fFmpegFrameRecorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
     }
     ////////////////////////////////////////////////////////////////////////////////
 

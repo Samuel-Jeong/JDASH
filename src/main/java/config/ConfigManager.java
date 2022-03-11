@@ -44,6 +44,7 @@ public class ConfigManager {
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
+    public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
 
     // LIVE
     public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
@@ -83,6 +84,7 @@ public class ConfigManager {
     private String validationXsdPath = null;
     private long chunkFileDeletionIntervalSeconds = 0;
     private boolean clearDashDataIfSessionClosed = true;
+    private int segmentDuration = 0;
 
     // LIVE
     private boolean audioOnly = false;
@@ -220,6 +222,18 @@ public class ConfigManager {
             System.exit(1);
         } else {
             this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
+        }
+
+        String segmentDurationString = getIniValue(SECTION_MEDIA, FIELD_SEGMENT_DURATION);
+        if (segmentDurationString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_SEGMENT_DURATION);
+            System.exit(1);
+        } else {
+            this.segmentDuration = Integer.parseInt(segmentDurationString);
+            if (this.segmentDuration <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_SEGMENT_DURATION);
+                System.exit(1);
+            }
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
@@ -502,5 +516,9 @@ public class ConfigManager {
 
     public boolean isAudioOnly() {
         return audioOnly;
+    }
+
+    public int getSegmentDuration() {
+        return segmentDuration;
     }
 }
