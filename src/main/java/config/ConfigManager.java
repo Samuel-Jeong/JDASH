@@ -42,8 +42,11 @@ public class ConfigManager {
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
+    public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
+    public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
 
     // LIVE
+    public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
     public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
     public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
@@ -78,8 +81,11 @@ public class ConfigManager {
     private String mediaListPath = null;
     private String cameraPath = null;
     private String validationXsdPath = null;
+    private long chunkFileDeletionIntervalSeconds = 0;
+    private boolean clearDashDataIfSessionClosed = true;
 
     // LIVE
+    private boolean audioOnly = false;
     private String preprocessListenIp = null;
     private int preprocessListenPort = 0;
     private String preprocessTargetIp = null;
@@ -196,6 +202,26 @@ public class ConfigManager {
             System.exit(1);
         }
 
+        String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+        if (chunkFileDeletionIntervalSecondsString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+            System.exit(1);
+        } else {
+            this.chunkFileDeletionIntervalSeconds = Long.parseLong(chunkFileDeletionIntervalSecondsString);
+            if (this.chunkFileDeletionIntervalSeconds <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+                System.exit(1);
+            }
+        }
+
+        String clearDashDataIfSessionClosedString = getIniValue(SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+        if (clearDashDataIfSessionClosedString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+            System.exit(1);
+        } else {
+            this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
+        }
+
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
@@ -204,6 +230,14 @@ public class ConfigManager {
      * @brief LIVE Section 을 로드하는 함수
      */
     private void loadLiveConfig() {
+        String audioOnlyString = getIniValue(SECTION_LIVE, FIELD_AUDIO_ONLY);
+        if (audioOnlyString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_AUDIO_ONLY);
+            System.exit(1);
+        } else {
+            this.audioOnly = Boolean.parseBoolean(audioOnlyString);
+        }
+
         this.preprocessListenIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
         if (this.preprocessListenIp == null) {
             logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
@@ -458,4 +492,15 @@ public class ConfigManager {
         return preprocessInitIdleTime;
     }
 
+    public long getChunkFileDeletionIntervalSeconds() {
+        return chunkFileDeletionIntervalSeconds;
+    }
+
+    public boolean isClearDashDataIfSessionClosed() {
+        return clearDashDataIfSessionClosed;
+    }
+
+    public boolean isAudioOnly() {
+        return audioOnly;
+    }
 }

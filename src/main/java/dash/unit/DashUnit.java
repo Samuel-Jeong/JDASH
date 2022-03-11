@@ -2,6 +2,7 @@ package dash.unit;
 
 import cam.RemoteCameraService;
 import config.ConfigManager;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -11,7 +12,6 @@ import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.time.Duration;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,9 +37,11 @@ public class DashUnit {
     private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
     private boolean isRegistered = false;
 
-    public final String DASH_UNIT_SCHEDULE_KEY;
+    public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
+    public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
     private final ScheduleManager scheduleManager = new ScheduleManager();
     private RemoteCameraService remoteCameraService = null;
+    private OldFileController oldFileController = null;
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ////////////////////////////////////////////////////////////
@@ -49,9 +51,15 @@ public class DashUnit {
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
-        this.DASH_UNIT_SCHEDULE_KEY = "SCHEDULE_" + id;
-        if (scheduleManager.initJob(DASH_UNIT_SCHEDULE_KEY, 1, 1)) {
-            logger.debug("[DashUnit(id={})] Success to init job scheduler", id);
+
+        this.REMOTE_CAMERA_SERVICE_SCHEDULE_KEY = "REMOTE_CAMERA_SERVICE_SCHEDULE_KEY:" + id;
+        if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
+            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
+        }
+
+        this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
+        if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
+            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
         }
     }
     ////////////////////////////////////////////////////////////
@@ -64,17 +72,19 @@ public class DashUnit {
         }
 
         try {
+            //////////////////////////////
+            // REMOTE CAMERA SERVICE
             remoteCameraService = new RemoteCameraService(
                     scheduleManager,
-                    RemoteCameraService.class.getSimpleName(),
+                    RemoteCameraService.class.getSimpleName() + "_" + id,
                     0, 1000, TimeUnit.MILLISECONDS,
-                    1, 1, false,
+                    1, 1, true,
                     id, configManager, uriFileName, curRtmpUri, mpdPath
             );
 
             if (remoteCameraService.init()) {
                 scheduleManager.startJob(
-                        DASH_UNIT_SCHEDULE_KEY,
+                        REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
                         remoteCameraService
                 );
                 isRtmpStreaming.set(true);
@@ -82,18 +92,50 @@ public class DashUnit {
             } else {
                 logger.warn("[DashUnit(id={})] [-RUN FAIL] RtmpStreaming", id);
             }
+            //////////////////////////////
+
+            //////////////////////////////
+            // OLD FILE CONTROLLER
+            String dashPath = outputFilePath;
+            String dashPathExtension = FileUtils.getExtension(dashPath);
+            if (!dashPathExtension.isEmpty()) {
+                dashPath = FileManager.getParentPathFromUri(dashPath);
+                logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
+            }
+
+            oldFileController = new OldFileController(
+                    scheduleManager,
+                    OldFileController.class.getSimpleName() + "_" + id,
+                    0, 1000, TimeUnit.MILLISECONDS,
+                    1, 1, true,
+                    id, dashPath
+            );
+            scheduleManager.startJob(
+                    OLD_FILE_CONTROL_SCHEDULE_KEY,
+                    oldFileController
+            );
+            logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
+            //////////////////////////////
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
         }
     }
 
     public void finishRtmpStreaming() {
-        if (isRtmpStreaming.get() && remoteCameraService != null) {
-            remoteCameraService.stop();
-            scheduleManager.stopJob(DASH_UNIT_SCHEDULE_KEY, remoteCameraService);
-            remoteCameraService = null;
-            logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
-            isRtmpStreaming.set(false);
+        if (isRtmpStreaming.get()) {
+            if (oldFileController != null) {
+                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController);
+                oldFileController = null;
+                logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
+            }
+
+            if (remoteCameraService != null) {
+                scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteCameraService);
+                remoteCameraService.stop();
+                remoteCameraService = null;
+                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
+                isRtmpStreaming.set(false);
+            }
         }
     }
 
@@ -198,6 +240,47 @@ public class DashUnit {
                 ", minBufferTime=" + minBufferTime +
                 ", isLiveStreaming=" + isLiveStreaming +
                 '}';
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    private static class OldFileController extends Job {
+
+        private final String dashUnitId; // DashUnit ID
+        private final String dashPath; // 현재 DASH Streaming 경로
+        private final long limitTime; // 제한 시간
+
+        public OldFileController(ScheduleManager scheduleManager, String name,
+                                 int initialDelay, int interval, TimeUnit timeUnit,
+                                 int priority, int totalRunCount, boolean isLasted,
+                                 String dashUnitId, String dashPath) {
+            super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
+
+            this.dashUnitId = dashUnitId;
+            this.dashPath = dashPath;
+
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+            this.limitTime = configManager.getChunkFileDeletionIntervalSeconds();
+
+            logger.debug("[DashUnit(id={})] OldFileController is initiated. (dashPath={}, timeLimit={})",
+                    dashUnitId, dashPath, limitTime
+            );
+        }
+
+        @Override
+        public void run() {
+            if (dashPath == null) { return; }
+
+            try {
+                FileManager.deleteOldFilesBySecond(
+                        dashPath,
+                        "init",
+                        limitTime
+                );
+            } catch (Exception e) {
+                logger.warn("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
+            }
+        }
     }
     ////////////////////////////////////////////////////////////
 

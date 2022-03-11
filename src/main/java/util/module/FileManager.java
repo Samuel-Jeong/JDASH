@@ -5,8 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class FileManager {
 
@@ -175,6 +179,33 @@ public class FileManager {
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to delete the file. (path={})", path, e);
         }
+    }
+
+    public static void deleteOldFilesBySecond(String rootPath, String exceptFileName, long limitTime) throws IOException {
+        File rootPathFile = new File(rootPath);
+        File[] list = rootPathFile.listFiles();
+        if (list == null || list.length == 0) { return; }
+
+        for (File curFile : list) {
+            if (curFile == null || !curFile.exists() || curFile.isDirectory()) { continue; }
+            if (curFile.getAbsolutePath().contains(exceptFileName)) { continue; }
+
+            long lastModifiedTime = getLastModificationSecondTime(curFile);
+            if (lastModifiedTime >= limitTime) { // 제한 시간 [이상] 경과
+                if (curFile.delete()) {
+                    logger.debug("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
+                            curFile.getAbsolutePath(),
+                            lastModifiedTime, limitTime
+                    );
+                }
+            }
+        }
+    }
+
+    private static long getLastModificationSecondTime(File file) throws IOException {
+        Path attribPath = file.toPath();
+        BasicFileAttributes basicAttr = Files.readAttributes(attribPath, BasicFileAttributes.class);
+        return (System.currentTimeMillis() - basicAttr.lastModifiedTime().to(TimeUnit.MILLISECONDS)) / 1000;
     }
 
 }
