@@ -41,7 +41,7 @@ public class RemoteStreamService extends Job {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 960;
     public static final int CAPTURE_HEIGHT = 540;
-    public static final int GOP_LENGTH_IN_FRAMES = 1;
+    public static final int GOP_LENGTH_IN_FRAMES = 2;
 
     private final String SUBTITLE;
 
@@ -323,10 +323,10 @@ public class RemoteStreamService extends Job {
     }
 
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        /*fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
+        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
+        fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
-        fFmpegFrameRecorder.setVideoOption("crf", "28");*/
-        //fFmpegFrameRecorder.setVideoBitrate(2000000); // default: 400000
+        fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
@@ -337,12 +337,14 @@ public class RemoteStreamService extends Job {
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        fFmpegFrameRecorder.setAudioBitrate(320000); // 192K > default: 64000 (64K)
+        fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
+        fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-        fFmpegFrameRecorder.setAudioOption("crf", "0");
+        fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
-        fFmpegFrameRecorder.setAudioBitrate(192000); // default: 64000
     }
     ///////////////////////////////////////////////////////////////////////////
 

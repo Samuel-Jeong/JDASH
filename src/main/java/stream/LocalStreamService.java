@@ -38,7 +38,7 @@ public class LocalStreamService extends Job {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 960;
     public static final int CAPTURE_HEIGHT = 540;
-    public static final int GOP_LENGTH_IN_FRAMES = 1;
+    public static final int GOP_LENGTH_IN_FRAMES = 2;
     private final String URI;
 
     private final ConfigManager configManager;
@@ -225,14 +225,17 @@ public class LocalStreamService extends Job {
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
         //fFmpegFrameRecorder.setFormat("matroska"); // > H265
         //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioOption("crf", "0");
+        fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
+        fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
+        fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
-        fFmpegFrameRecorder.setAudioBitrate(192000); // default: 64000
+        fFmpegFrameRecorder.setAudioBitrate(320000); // default: 64000
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
