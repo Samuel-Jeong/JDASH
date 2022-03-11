@@ -41,7 +41,7 @@ public class RemoteStreamService extends Job {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 960;
     public static final int CAPTURE_HEIGHT = 540;
-    public static final int GOP_LENGTH_IN_FRAMES = 30;
+    public static final int GOP_LENGTH_IN_FRAMES = 1;
 
     private final String SUBTITLE;
 

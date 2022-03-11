@@ -36,13 +36,12 @@ public class LocalStreamService extends Job {
     protected static final int MIKE_INDEX = 4;
 
     public final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 1280;
-    public static final int CAPTURE_HEIGHT = 720;
-    public static final int GOP_LENGTH_IN_FRAMES = 30;
+    public static final int CAPTURE_WIDTH = 960;
+    public static final int CAPTURE_HEIGHT = 540;
+    public static final int GOP_LENGTH_IN_FRAMES = 1;
     private final String URI;
 
     private final ConfigManager configManager;
-    private final ScheduleManager scheduleManager;
 
     private OpenCVFrameGrabber openCVFrameGrabber = null;
     private final AudioService audioService = new AudioService();
@@ -64,7 +63,6 @@ public class LocalStreamService extends Job {
         super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
 
         configManager = AppInstance.getInstance().getConfigManager();
-        this.scheduleManager = scheduleManager;
 
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
@@ -92,8 +90,6 @@ public class LocalStreamService extends Job {
         exit = true;
 
         try {
-            audioService.releaseOutputResource();
-
             if (openCVFrameGrabber != null) {
                 openCVFrameGrabber.close();
                 openCVFrameGrabber = null;
@@ -171,6 +167,8 @@ public class LocalStreamService extends Job {
             //logger.warn("LocalStreamService.run.Exception", e);
         } finally {
             try {
+                audioService.releaseOutputResource();
+
                 if (videoFrameRecorder != null) {
                     videoFrameRecorder.stop();
                     videoFrameRecorder.release();
