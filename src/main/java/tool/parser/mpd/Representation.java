@@ -19,6 +19,7 @@ import java.util.Objects;
 
         "framePackings",
         "audioChannelConfigurations",
+        "producerReferenceTime",
         "contentProtections",
         "essentialProperties",
         "supplementalProperties",
@@ -28,7 +29,8 @@ import java.util.Objects;
         "segmentBase",
         "segmentList",
         "segmentTemplate",
-        "resync"
+        "resync",
+        "producerReferenceTime"
 })
 public class Representation extends RepresentationBase {
     @JacksonXmlProperty(localName = "BaseURL", namespace = MPD.NAMESPACE)
@@ -49,6 +51,9 @@ public class Representation extends RepresentationBase {
     @JacksonXmlProperty(localName = "SegmentTemplate", namespace = MPD.NAMESPACE)
     private final SegmentTemplate segmentTemplate;
 
+    @JacksonXmlProperty(localName = "ProducerReferenceTime", namespace = MPD.NAMESPACE)
+    private final ProducerReferenceTime producerReferenceTime;
+
     @JacksonXmlProperty(isAttribute = true)
     private final String id;
 
@@ -64,7 +69,7 @@ public class Representation extends RepresentationBase {
     @JacksonXmlProperty(isAttribute = true)
     private final String mediaStreamStructureId;
 
-    private Representation(List<Descriptor> framePackings, List<Descriptor> audioChannelConfigurations, Resync resync, List<Descriptor> contentProtections, List<Descriptor> essentialProperties, List<Descriptor> supplementalProperties, List<EventStream> inbandEventStreams, String profiles, Long width, Long height, Ratio sar, FrameRate frameRate, String audioSamplingRate, String mimeType, String segmentProfiles, String codecs, Double maximumSAPPeriod, Long startWithSAP, Double maxPlayoutRate, Boolean codingDependency, VideoScanType scanType, List<BaseURL> baseURLs, List<SubRepresentation> subRepresentations, SegmentBase segmentBase, SegmentList segmentList, SegmentTemplate segmentTemplate, String id, long bandwidth, Long qualityRanking, String dependencyId, String mediaStreamStructureId) {
+    private Representation(List<Descriptor> framePackings, List<Descriptor> audioChannelConfigurations, Resync resync, List<Descriptor> contentProtections, List<Descriptor> essentialProperties, List<Descriptor> supplementalProperties, List<EventStream> inbandEventStreams, String profiles, Long width, Long height, Ratio sar, FrameRate frameRate, String audioSamplingRate, String mimeType, String segmentProfiles, String codecs, Double maximumSAPPeriod, Long startWithSAP, Double maxPlayoutRate, Boolean codingDependency, VideoScanType scanType, List<BaseURL> baseURLs, List<SubRepresentation> subRepresentations, SegmentBase segmentBase, SegmentList segmentList, SegmentTemplate segmentTemplate, String id, long bandwidth, Long qualityRanking, String dependencyId, String mediaStreamStructureId, ProducerReferenceTime producerReferenceTime) {
         super(framePackings, audioChannelConfigurations, contentProtections, essentialProperties, supplementalProperties, inbandEventStreams, profiles, width, height, sar, frameRate, audioSamplingRate, mimeType, segmentProfiles, codecs, maximumSAPPeriod, startWithSAP, maxPlayoutRate, codingDependency, scanType);
         this.baseURLs = baseURLs;
         this.subRepresentations = subRepresentations;
@@ -77,6 +82,7 @@ public class Representation extends RepresentationBase {
         this.qualityRanking = qualityRanking;
         this.dependencyId = dependencyId;
         this.mediaStreamStructureId = mediaStreamStructureId;
+        this.producerReferenceTime = producerReferenceTime;
     }
 
     @SuppressWarnings("unused")
@@ -92,6 +98,7 @@ public class Representation extends RepresentationBase {
         this.qualityRanking = null;
         this.dependencyId = null;
         this.mediaStreamStructureId = null;
+        this.producerReferenceTime = null;
     }
 
     public List<BaseURL> getBaseURLs() {
@@ -138,6 +145,10 @@ public class Representation extends RepresentationBase {
         return mediaStreamStructureId;
     }
 
+    public ProducerReferenceTime getProducerReferenceTime() {
+        return producerReferenceTime;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -154,29 +165,30 @@ public class Representation extends RepresentationBase {
                 Objects.equals(id, that.id) &&
                 Objects.equals(qualityRanking, that.qualityRanking) &&
                 Objects.equals(dependencyId, that.dependencyId) &&
-                Objects.equals(mediaStreamStructureId, that.mediaStreamStructureId);
+                Objects.equals(mediaStreamStructureId, that.mediaStreamStructureId) &&
+                Objects.equals(producerReferenceTime, that.producerReferenceTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), baseURLs, subRepresentations, resync, segmentBase, segmentList, segmentTemplate, id, bandwidth, qualityRanking, dependencyId, mediaStreamStructureId);
+        return Objects.hash(super.hashCode(), baseURLs, subRepresentations, resync, segmentBase, segmentList, segmentTemplate, id, bandwidth, qualityRanking, dependencyId, mediaStreamStructureId, producerReferenceTime);
     }
 
     @Override
     public String toString() {
         return "Representation{" +
-                "super=" + super.toString() +
-                ", baseURLs=" + baseURLs +
+                "baseURLs=" + baseURLs +
                 ", subRepresentations=" + subRepresentations +
                 ", resync=" + resync +
                 ", segmentBase=" + segmentBase +
                 ", segmentList=" + segmentList +
                 ", segmentTemplate=" + segmentTemplate +
+                ", producerReferenceTime=" + producerReferenceTime +
                 ", id='" + id + '\'' +
                 ", bandwidth=" + bandwidth +
                 ", qualityRanking=" + qualityRanking +
-                ", dependencyId=" + dependencyId +
-                ", mediaStreamStructureId=" + mediaStreamStructureId +
+                ", dependencyId='" + dependencyId + '\'' +
+                ", mediaStreamStructureId='" + mediaStreamStructureId + '\'' +
                 '}';
     }
 
@@ -192,7 +204,8 @@ public class Representation extends RepresentationBase {
                 .withBandwidth(bandwidth)
                 .withQualityRanking(qualityRanking)
                 .withDependencyId(dependencyId)
-                .withMediaStreamStructureId(mediaStreamStructureId));
+                .withMediaStreamStructureId(mediaStreamStructureId))
+                .withProducerReferenceTime(producerReferenceTime);
     }
 
     public static Builder builder() {
@@ -211,6 +224,7 @@ public class Representation extends RepresentationBase {
         private Long qualityRanking;
         private String dependencyId;
         private String mediaStreamStructureId;
+        private ProducerReferenceTime producerReferenceTime;
 
         @Override
         Builder getThis() {
@@ -272,8 +286,13 @@ public class Representation extends RepresentationBase {
             return this;
         }
 
+        public Builder withProducerReferenceTime(ProducerReferenceTime producerReferenceTime) {
+            this.producerReferenceTime = producerReferenceTime;
+            return this;
+        }
+
         public Representation build() {
-            return new Representation(framePackings, audioChannelConfigurations, resync, contentProtections, essentialProperties, supplementalProperties, inbandEventStreams, profiles, width, height, sar, frameRate, audioSamplingRate, mimeType, segmentProfiles, codecs, maximumSAPPeriod, startWithSAP, maxPlayoutRate, codingDependency, scanType, baseURLs, subRepresentations, segmentBase, segmentList, segmentTemplate, id, bandwidth, qualityRanking, dependencyId, mediaStreamStructureId);
+            return new Representation(framePackings, audioChannelConfigurations, resync, contentProtections, essentialProperties, supplementalProperties, inbandEventStreams, profiles, width, height, sar, frameRate, audioSamplingRate, mimeType, segmentProfiles, codecs, maximumSAPPeriod, startWithSAP, maxPlayoutRate, codingDependency, scanType, baseURLs, subRepresentations, segmentBase, segmentList, segmentTemplate, id, bandwidth, qualityRanking, dependencyId, mediaStreamStructureId, producerReferenceTime);
         }
     }
 }

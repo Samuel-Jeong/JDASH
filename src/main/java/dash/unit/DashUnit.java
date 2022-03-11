@@ -38,7 +38,7 @@ public class DashUnit {
     private boolean isRegistered = false;
 
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
-    public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
+    ///public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
     private final ScheduleManager scheduleManager = new ScheduleManager();
     private RemoteStreamService remoteCameraService = null;
     private OldFileController oldFileController = null;
@@ -57,10 +57,10 @@ public class DashUnit {
             logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
         }
 
-        this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
+        /*this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
         if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
             logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
-        }
+        }*/
     }
     ////////////////////////////////////////////////////////////
 
@@ -96,7 +96,7 @@ public class DashUnit {
 
             //////////////////////////////
             // OLD FILE CONTROLLER
-            String dashPath = outputFilePath;
+            /*String dashPath = outputFilePath;
             String dashPathExtension = FileUtils.getExtension(dashPath);
             if (!dashPathExtension.isEmpty()) {
                 dashPath = FileManager.getParentPathFromUri(dashPath);
@@ -114,7 +114,7 @@ public class DashUnit {
                     OLD_FILE_CONTROL_SCHEDULE_KEY,
                     oldFileController
             );
-            logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
+            logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);*/
             //////////////////////////////
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
@@ -123,11 +123,11 @@ public class DashUnit {
 
     public void finishRtmpStreaming() {
         if (isRtmpStreaming.get()) {
-            if (oldFileController != null) {
+            /*if (oldFileController != null) {
                 scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController);
                 oldFileController = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
-            }
+            }*/
 
             if (remoteCameraService != null) {
                 scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteCameraService);

@@ -41,12 +41,13 @@ public class ConfigManager {
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
+
+    // LIVE
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
-
-    // LIVE
+    public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
     public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
     public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
@@ -82,11 +83,12 @@ public class ConfigManager {
     private String mediaListPath = null;
     private String cameraPath = null;
     private String validationXsdPath = null;
+
+    // LIVE
     private long chunkFileDeletionIntervalSeconds = 0;
     private boolean clearDashDataIfSessionClosed = true;
     private int segmentDuration = 0;
-
-    // LIVE
+    private int windowSize = 0;
     private boolean audioOnly = false;
     private String preprocessListenIp = null;
     private int preprocessListenPort = 0;
@@ -204,38 +206,6 @@ public class ConfigManager {
             System.exit(1);
         }
 
-        String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-        if (chunkFileDeletionIntervalSecondsString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-            System.exit(1);
-        } else {
-            this.chunkFileDeletionIntervalSeconds = Long.parseLong(chunkFileDeletionIntervalSecondsString);
-            if (this.chunkFileDeletionIntervalSeconds <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-                System.exit(1);
-            }
-        }
-
-        String clearDashDataIfSessionClosedString = getIniValue(SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
-        if (clearDashDataIfSessionClosedString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
-            System.exit(1);
-        } else {
-            this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
-        }
-
-        String segmentDurationString = getIniValue(SECTION_MEDIA, FIELD_SEGMENT_DURATION);
-        if (segmentDurationString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_SEGMENT_DURATION);
-            System.exit(1);
-        } else {
-            this.segmentDuration = Integer.parseInt(segmentDurationString);
-            if (this.segmentDuration <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_SEGMENT_DURATION);
-                System.exit(1);
-            }
-        }
-
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
@@ -244,6 +214,50 @@ public class ConfigManager {
      * @brief LIVE Section 을 로드하는 함수
      */
     private void loadLiveConfig() {
+        String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+        if (chunkFileDeletionIntervalSecondsString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+            System.exit(1);
+        } else {
+            this.chunkFileDeletionIntervalSeconds = Long.parseLong(chunkFileDeletionIntervalSecondsString);
+            if (this.chunkFileDeletionIntervalSeconds <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+                System.exit(1);
+            }
+        }
+
+        String clearDashDataIfSessionClosedString = getIniValue(SECTION_LIVE, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+        if (clearDashDataIfSessionClosedString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+            System.exit(1);
+        } else {
+            this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
+        }
+
+        String segmentDurationString = getIniValue(SECTION_LIVE, FIELD_SEGMENT_DURATION);
+        if (segmentDurationString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
+            System.exit(1);
+        } else {
+            this.segmentDuration = Integer.parseInt(segmentDurationString);
+            if (this.segmentDuration <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
+                System.exit(1);
+            }
+        }
+
+        String windowSizeSring = getIniValue(SECTION_LIVE, FIELD_WINDOW_SIZE);
+        if (windowSizeSring == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_WINDOW_SIZE);
+            System.exit(1);
+        } else {
+            this.windowSize = Integer.parseInt(windowSizeSring);
+            if (this.windowSize <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_WINDOW_SIZE);
+                System.exit(1);
+            }
+        }
+
         String audioOnlyString = getIniValue(SECTION_LIVE, FIELD_AUDIO_ONLY);
         if (audioOnlyString == null) {
             logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_AUDIO_ONLY);
@@ -520,5 +534,9 @@ public class ConfigManager {
 
     public int getSegmentDuration() {
         return segmentDuration;
+    }
+
+    public int getWindowSize() {
+        return windowSize;
     }
 }

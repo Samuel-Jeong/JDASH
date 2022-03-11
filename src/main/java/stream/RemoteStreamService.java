@@ -41,7 +41,7 @@ public class RemoteStreamService extends Job {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 960;
     public static final int CAPTURE_HEIGHT = 540;
-    public static final int GOP_LENGTH_IN_FRAMES = 2;
+    public static final int GOP_LENGTH_IN_FRAMES = 20;
 
     private final String SUBTITLE;
 
@@ -283,34 +283,34 @@ public class RemoteStreamService extends Job {
 
     private void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         // -map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
-        fFmpegFrameRecorder.setOption("s:0", V_SIZE_1);
+        /*fFmpegFrameRecorder.setOption("map", "0:v:0");
         fFmpegFrameRecorder.setOption("b:v:0", "2M");
-        fFmpegFrameRecorder.setOption("maxrate:0", "2.14M");
+        fFmpegFrameRecorder.setOption("s:v:0", V_SIZE_1);*/
+    /*fFmpegFrameRecorder.setOption("maxrate:0", "2.14M");
         fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");*/
 
         // -map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
-        fFmpegFrameRecorder.setOption("s:1", V_SIZE_2);
+        /*fFmpegFrameRecorder.setOption("map", "0:v:1");
         fFmpegFrameRecorder.setOption("b:v:1", "145K");
-        fFmpegFrameRecorder.setOption("maxrate:1", "155k");
+        fFmpegFrameRecorder.setOption("s:v:1", V_SIZE_2);*/
+   /*fFmpegFrameRecorder.setOption("maxrate:1", "155k");
         fFmpegFrameRecorder.setOption("bufsize:1", "220k");*/
 
         // -map v:0 -s:2 $V_SIZE_3 -b:v:2 50K -maxrate:2 1M -bufsize:2 2M
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
-        fFmpegFrameRecorder.setOption("s:2", V_SIZE_3);
+        /*fFmpegFrameRecorder.setOption("map", "0:v:2");
         fFmpegFrameRecorder.setOption("b:v:2", "50K");
+        fFmpegFrameRecorder.setOption("s:v:2", V_SIZE_3);
         fFmpegFrameRecorder.setOption("maxrate:2", "1M");
         fFmpegFrameRecorder.setOption("bufsize:2", "2M");*/
 
         // -map v:0 -s:3 $V_SIZE_4 -b:v:3 730k -maxrate:3 781k -bufsize:3 1278k
-        /*fFmpegFrameRecorder.setOption("map", "v:0");
-        fFmpegFrameRecorder.setOption("s:3", V_SIZE_4);
+        /*fFmpegFrameRecorder.setOption("map", "0:v:3");
         fFmpegFrameRecorder.setOption("b:v:3", "730k");
+        fFmpegFrameRecorder.setOption("s:v:3", V_SIZE_4);
         fFmpegFrameRecorder.setOption("maxrate:3", "781k");
         fFmpegFrameRecorder.setOption("bufsize:3", "1278k");*/
 
-        //fFmpegFrameRecorder.setOption("map", "0:a");
+        //fFmpegFrameRecorder.setOption("map", "1:a:0");
 
         fFmpegFrameRecorder.setFormat("dash");
         fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
@@ -318,12 +318,28 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setOption("use_template", "1");
         fFmpegFrameRecorder.setOption("use_timeline", "0");
         fFmpegFrameRecorder.setOption("ldash", "1");
+        fFmpegFrameRecorder.setOption("streaming", "1");
+        fFmpegFrameRecorder.setOption("target_latency", "3");
         fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
+
+        fFmpegFrameRecorder.setOption("frag_duration", "1");
+        fFmpegFrameRecorder.setOption("frag_type", "duration");
+        fFmpegFrameRecorder.setOption("utc_timing_url", "https://time.akamai.com/?iso");
         //fFmpegFrameRecorder.setOption("adaptation_sets", "id=0,streams=v id=1,streams=a");
+        /*fFmpegFrameRecorder.setOption("adaptation_sets",
+                "id=0,seg_duration=8,frag_duration=2,streams=0,1 " +
+                "id=1,seg_duration=3,frag_type=none,streams=2"
+        );*/
+        fFmpegFrameRecorder.setOption("sc_threshold", "0");
+        fFmpegFrameRecorder.setOption("format_options", "movflags=cmaf");
+        fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
+        fFmpegFrameRecorder.setOption("window_size", String.valueOf(configManager.getWindowSize()));
+        /*fFmpegFrameRecorder.setOption("export_side_data", "prft");
+        fFmpegFrameRecorder.setOption("write_prft", "1");*/
     }
 
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
+        fFmpegFrameRecorder.setVideoBitrate(5000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
@@ -337,7 +353,7 @@ public class RemoteStreamService extends Job {
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioBitrate(320000); // 192K > default: 64000 (64K)
+        fFmpegFrameRecorder.setAudioBitrate(96000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
