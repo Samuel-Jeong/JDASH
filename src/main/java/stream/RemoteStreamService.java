@@ -66,6 +66,7 @@ public class RemoteStreamService extends Job {
 
         this.dashUnitId = dashUnitId;
         this.configManager = configManager;
+
         URI_FILE_NAME = uriFileName;
         RTMP_PATH = rtmpPath;
         DASH_PATH = dashPath;
@@ -84,6 +85,7 @@ public class RemoteStreamService extends Job {
 
         this.dashUnitId = null;
         this.configManager = configManager;
+
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
         DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + ".mpd");
@@ -102,6 +104,7 @@ public class RemoteStreamService extends Job {
 
         this.dashUnitId = null;
         this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
+
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
         DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + ".mpd");
@@ -319,7 +322,7 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setOption("use_timeline", "0");
         fFmpegFrameRecorder.setOption("ldash", "1");
         fFmpegFrameRecorder.setOption("streaming", "1");
-        fFmpegFrameRecorder.setOption("target_latency", "3");
+        fFmpegFrameRecorder.setOption("target_latency", "2");
         fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
 
         fFmpegFrameRecorder.setOption("frag_duration", "1");
@@ -332,10 +335,10 @@ public class RemoteStreamService extends Job {
         );*/
         fFmpegFrameRecorder.setOption("sc_threshold", "0");
         fFmpegFrameRecorder.setOption("format_options", "movflags=cmaf");
-        fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
+        //fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
         fFmpegFrameRecorder.setOption("window_size", String.valueOf(configManager.getWindowSize()));
-        /*fFmpegFrameRecorder.setOption("export_side_data", "prft");
-        fFmpegFrameRecorder.setOption("write_prft", "1");*/
+        fFmpegFrameRecorder.setOption("export_side_data", "prft");
+        fFmpegFrameRecorder.setOption("write_prft", "1");
     }
 
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
@@ -353,7 +356,7 @@ public class RemoteStreamService extends Job {
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioBitrate(96000); // 192K > default: 64000 (64K)
+        fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);

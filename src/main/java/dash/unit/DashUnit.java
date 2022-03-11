@@ -77,7 +77,7 @@ public class DashUnit {
             remoteCameraService = new RemoteStreamService(
                     scheduleManager,
                     RemoteStreamService.class.getSimpleName() + "_" + id,
-                    0, 1000, TimeUnit.MILLISECONDS,
+                    0, 10, TimeUnit.MILLISECONDS,
                     1, 1, true,
                     id, configManager, uriFileName, curRtmpUri, mpdPath
             );

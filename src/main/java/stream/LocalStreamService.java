@@ -51,7 +51,7 @@ public class LocalStreamService extends Job {
     private boolean exit = false;
 
     private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
-    private final Point point = new Point(15, 65);
+    private final Point point = new Point(15, 45);
     private final Scalar scalar = new Scalar(0, 200, 255, 0);
     ///////////////////////////////////////////////////////////////////////////
 
@@ -120,7 +120,7 @@ public class LocalStreamService extends Job {
             /////////////////////////////////
 
             /////////////////////////////////
-            if (openCVFrameGrabber != null) { // && videoFrameRecorder != null) {
+            if (openCVFrameGrabber != null) {
                 CanvasFrame cameraFrame = new CanvasFrame("[LOCAL] Live stream", CanvasFrame.getDefaultGamma() / openCVFrameGrabber.getGamma());
 
                 Frame capturedFrame;
@@ -134,12 +134,14 @@ public class LocalStreamService extends Job {
                         startTime = System.currentTimeMillis();
                     } else {
                         if (!isPreMediaReqSent) {
-                            if ((System.currentTimeMillis() - startTime) >= configManager.getPreprocessInitIdleTime()) { // 5초 후에 PLAY 전송
+                            if ((System.currentTimeMillis() - startTime) >= configManager.getPreprocessInitIdleTime()) {
                                 sendPreLiveMediaProcessRequest();
                                 isPreMediaReqSent = true;
                             }
                         }
                     }
+
+                    videoFrameRecorder.record(capturedFrame);
 
                     // Check for AV drift
                     long videoTS = 1000 * (System.currentTimeMillis() - startTime);
@@ -157,8 +159,6 @@ public class LocalStreamService extends Job {
                     if (cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
                     }
-
-                    videoFrameRecorder.record(capturedFrame);
                 }
             }
             /////////////////////////////////
@@ -235,7 +235,7 @@ public class LocalStreamService extends Job {
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
-        fFmpegFrameRecorder.setAudioBitrate(96000); // default: 64000
+        fFmpegFrameRecorder.setAudioBitrate(192000); // default: 64000
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
