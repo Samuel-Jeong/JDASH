@@ -69,26 +69,28 @@ public class AudioService {
 
     public void startSampling(double frameRate) {
         sampleTask.scheduleAtFixedRate(() -> {
-            try {
-                if (isFinish) { return; }
+                    try {
+                        if (isFinish) { return; }
 
-                int nBytesRead = 0;
-                while (nBytesRead == 0) {
-                    nBytesRead = line.read(audioBytes, 0, line.available());
-                }
-                if (nBytesRead < 1) { return; }
+                        int nBytesRead = 0;
+                        while (nBytesRead == 0) {
+                            nBytesRead = line.read(audioBytes, 0, line.available());
+                        }
+                        if (nBytesRead < 1) { return; }
 
-                int nSamplesRead = nBytesRead / 2;
-                short[] samples = new short[nSamplesRead];
+                        int nSamplesRead = nBytesRead / 2;
+                        short[] samples = new short[nSamplesRead];
 
-                ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
-                ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
+                        ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
+                        ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
 
-                recorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
-            } catch (Exception e) {
-                logger.warn("AudioService.startSampling.Exception", e);
-            }
-        }, 0, 1000 / (long) frameRate, TimeUnit.MILLISECONDS);
+                        recorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
+                    } catch (Exception e) {
+                        logger.warn("AudioService.startSampling.Exception", e);
+                    }
+                },
+                0, 1000 / (long) frameRate, TimeUnit.MILLISECONDS
+        );
     }
     ////////////////////////////////////////////////////////////////////////////////
 

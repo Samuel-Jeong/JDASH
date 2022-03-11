@@ -122,7 +122,6 @@ public class RemoteCameraService extends Job {
             /////////////////////////////////
             // [INPUT] FFmpegFrameGrabber
             frameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
-            //FrameGrabber frameGrabber = new OpenCVFrameGrabber(RTMP_PATH);
             frameGrabber.setImageWidth(CAPTURE_WIDTH);
             frameGrabber.setImageHeight(CAPTURE_HEIGHT);
             frameGrabber.start();
@@ -156,21 +155,9 @@ public class RemoteCameraService extends Job {
             setAudioOptions(videoFrameRecorder);
             setDashOptions(videoFrameRecorder);
             videoFrameRecorder.start();
-
-            /*audioFrameRecorder = new FFmpegFrameRecorder(
-                    DASH_PATH,
-                    AudioService.CHANNEL_NUM
-            );
-            setAudioOptions(audioFrameRecorder);
-            setDashOptions(audioFrameRecorder);
-            audioFrameRecorder.start();*/
             /////////////////////////////////
 
             /////////////////////////////////
-            // [GRAB FRAME]
-            Mat mat;
-            long curTimeStamp;
-
             while (!exit) {
                 //////////////////////////////////////
                 // GRAB FRAME
@@ -186,32 +173,30 @@ public class RemoteCameraService extends Job {
                     startTime = System.currentTimeMillis();
                 }
 
-                curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
+                long curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
                 if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
                     videoFrameRecorder.setTimestamp(curTimeStamp);
                 }
-                /*if (curTimeStamp > audioFrameRecorder.getTimestamp()) { // Lip-flap correction
-                    audioFrameRecorder.setTimestamp(curTimeStamp);
-                }*/
                 //////////////////////////////////////
 
                 //////////////////////////////////////
-                // TODO : 영상은 정상인데, 음성은 계속 앞에 재생되던 사운드가 Loopback 되는 현상 발생 중
-                //////////////////////////////////////
                 // INTERLEAVED DATA
-                /*if (capturedFrame.image != null && capturedFrame.samples != null) {
+                if (capturedFrame.image != null && capturedFrame.samples != null) {
+                    logger.warn("[INTERLEAVED] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
+
                     videoFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
                     }
-                    logger.debug("[@ INTERLEAVED @] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
-                }*/
+                }
                 //////////////////////////////////////
                 // VIDEO DATA
-                if (capturedFrame.image != null && capturedFrame.image.length > 0 && (capturedFrame.samples == null || capturedFrame.samples.length <= 0)) {
-                    mat = openCVConverter.convertToMat(capturedFrame);
-                    opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                    capturedFrame = openCVConverter.convert(mat);
+                else if (capturedFrame.image != null && capturedFrame.image.length > 0) {
+                    /*Mat mat = openCVConverter.convertToMat(capturedFrame);
+                    if (mat != null) {
+                        opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
+                        capturedFrame = openCVConverter.convert(mat);
+                    }*/
                     videoFrameRecorder.record(capturedFrame);
                     if (cameraFrame != null && cameraFrame.isVisible()) {
                         cameraFrame.showImage(capturedFrame);
@@ -219,9 +204,8 @@ public class RemoteCameraService extends Job {
                 }
                 //////////////////////////////////////
                 // AUDIO DATA
-                else if (capturedFrame.samples != null && capturedFrame.samples.length > 0 && (capturedFrame.image == null || capturedFrame.image.length <= 0)) {
+                else if (capturedFrame.samples != null && capturedFrame.samples.length > 0) {
                     videoFrameRecorder.record(capturedFrame);
-                    //audioFrameRecorder.record(capturedFrame);
                 }
                 /////////////////////////////////////
             }
@@ -235,11 +219,6 @@ public class RemoteCameraService extends Job {
                     videoFrameRecorder.stop();
                     videoFrameRecorder.release();
                 }
-
-                /*if (audioFrameRecorder != null) {
-                    audioFrameRecorder.stop();
-                    audioFrameRecorder.release();
-                }*/
             } catch (Exception e) {
                 // ignore
             }

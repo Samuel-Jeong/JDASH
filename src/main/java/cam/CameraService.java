@@ -68,41 +68,26 @@ public class CameraService {
                 AudioService.CHANNEL_NUM
         );
 
-        fFmpegFrameRecorder.setInterleaved(true);
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setVideoBitrate(2000000);
+
+        fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
         //fFmpegFrameRecorder.setFormat("matroska"); // > H265
         //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
-        fFmpegFrameRecorder.setFormat("flv"); // > H264
+
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE);
 
         audioService.setRecorderParams(fFmpegFrameRecorder);
         audioService.initSampleService();
+
         fFmpegFrameRecorder.start();
         audioService.startSampling(FRAME_RATE);
         ///////////////////////////////////////////////
-
-        ///////////////////
-        // TODO : TEST
-        //ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-        /*RemoteCameraService remoteCameraService = new RemoteCameraService(configManager);
-        remoteCameraService.start();*/
-
-        /*RtmpClient rtmpClient = new RtmpClient(
-                configManager.getCameraPath()
-        );
-        rtmpClient.start();*/
-        ///////////////////
-    }
-
-    public void output(Frame frame) throws Exception {
-        fFmpegFrameRecorder.record(frame);
     }
 
     public void releaseOutputResource() throws Exception {
@@ -110,16 +95,8 @@ public class CameraService {
         fFmpegFrameRecorder.close();
     }
 
-    protected int getInterval() {
-        return (int) (1000 / FRAME_RATE);
-    }
-
-    protected void instanceGrabber() {
-        grabber = new OpenCVFrameGrabber(CAMERA_INDEX);
-    }
-
     protected void initGrabber() throws Exception {
-        instanceGrabber();
+        grabber = new OpenCVFrameGrabber(CAMERA_INDEX);
         grabber.setImageWidth(CAPTURE_WIDTH);
         grabber.setImageHeight(CAPTURE_HEIGHT);
         grabber.start();
@@ -133,15 +110,16 @@ public class CameraService {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date curData = new Date();
 
-            Mat mat;
             Point point = new Point(15, 35);
             Scalar scalar = new Scalar(0, 200, 255, 0);
 
             while ((capturedFrame = grabber.grab()) != null) {
-                mat = openCVConverter.convertToMat(capturedFrame);
-                curData.setTime(System.currentTimeMillis());
-                opencv_imgproc.putText(mat, simpleDateFormat.format(curData), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                capturedFrame = openCVConverter.convert(mat);
+                Mat mat = openCVConverter.convertToMat(capturedFrame);
+                if (mat != null) {
+                    curData.setTime(System.currentTimeMillis());
+                    opencv_imgproc.putText(mat, simpleDateFormat.format(curData), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
+                    capturedFrame = openCVConverter.convert(mat);
+                }
 
                 if (alive && cameraFrame.isVisible()) {
                     cameraFrame.showImage(capturedFrame);
@@ -151,16 +129,15 @@ public class CameraService {
                     startTime = System.currentTimeMillis();
                 } else {
                     if (!isPreMediaReqSent) {
-                        if (System.currentTimeMillis() - startTime >= configManager.getPreprocessInitIdleTime()) { // 5초 후에 PLAY 전송
+                        if ((System.currentTimeMillis() - startTime) >= configManager.getPreprocessInitIdleTime()) { // 5초 후에 PLAY 전송
                             sendPreLiveMediaProcessRequest();
                             isPreMediaReqSent = true;
                         }
                     }
                 }
 
-                long videoTS = 1000 * (System.currentTimeMillis() - startTime);
-
                 // Check for AV drift
+                long videoTS = 1000 * (System.currentTimeMillis() - startTime);
                 if (videoTS > fFmpegFrameRecorder.getTimestamp()) {
                     if (logger.isTraceEnabled()) {
                         logger.trace("Lip-flap correction: [{}] : [{}] -> [{}]",
