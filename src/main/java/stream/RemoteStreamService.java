@@ -383,28 +383,28 @@ public class RemoteStreamService extends Job {
          */
         /**
          * -movflags empty_moov
-             * Write an initial moov atom directly at the start of the file, without describing any samples in it.
-             * Generally, an mdat/moov pair is written at the start of the file, as a normal MOV/MP4 file,
-             * containing only a short portion of the file.
-             * With this option set, there is no initial mdat atom,
-             * and the moov atom only describes the tracks but has a zero duration.
-             * This option is implicitly set when writing ismv (Smooth Streaming) files.
+         * Write an initial moov atom directly at the start of the file, without describing any samples in it.
+         * Generally, an mdat/moov pair is written at the start of the file, as a normal MOV/MP4 file,
+         * containing only a short portion of the file.
+         * With this option set, there is no initial mdat atom,
+         * and the moov atom only describes the tracks but has a zero duration.
+         * This option is implicitly set when writing ismv (Smooth Streaming) files.
          */
         /**
          * -movflags separate_moof
-             * Write a separate moof (movie fragment) atom for each track.
-             * Normally, packets for all tracks are written in a moof atom (which is slightly more efficient),
-             * but with this option set, the muxer writes one moof/mdat pair for each track, making it easier to separate tracks.
-             * This option is implicitly set when writing ismv (Smooth Streaming) files.
+         * Write a separate moof (movie fragment) atom for each track.
+         * Normally, packets for all tracks are written in a moof atom (which is slightly more efficient),
+         * but with this option set, the muxer writes one moof/mdat pair for each track, making it easier to separate tracks.
+         * This option is implicitly set when writing ismv (Smooth Streaming) files.
          */
         /**
          * -movflags default_base_moof
-             * Similarly to the omit_tfhd_offset,
-             * this flag avoids writing the absolute base_data_offset field in tfhd atoms,
-             * but does so by using the new default-base-is-moof flag instead.
-             * This flag is new from 14496-12:2012.
-             * This may make the fragments easier to parse in certain circumstances
-             * (avoiding basing track fragment location calculations on the implicit end of the previous track fragment).
+         * Similarly to the omit_tfhd_offset,
+         * this flag avoids writing the absolute base_data_offset field in tfhd atoms,
+         * but does so by using the new default-base-is-moof flag instead.
+         * This flag is new from 14496-12:2012.
+         * This may make the fragments easier to parse in certain circumstances
+         * (avoiding basing track fragment location calculations on the implicit end of the previous track fragment).
          */
         //fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
 
@@ -428,23 +428,29 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
+
+        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+
+        fFmpegFrameRecorder.setFormat("flv");
+        //fFmpegFrameRecorder.setFormat("matroska");
+
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
         fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
-        //fFmpegFrameRecorder.setFormat("matroska"); // > H265
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
+        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
+
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
         fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
+        fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }

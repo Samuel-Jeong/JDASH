@@ -141,7 +141,7 @@ public class LocalStreamService extends Job {
                 Frame capturedFrame;
 
                 while ((capturedFrame = openCVFrameGrabber.grab()) != null) {
-                    if (exit) { continue; }
+                    if (exit) { break; }
 
                     if (startTime == 0) {
                         startTime = System.currentTimeMillis();
@@ -219,29 +219,55 @@ public class LocalStreamService extends Job {
 
     ////////////////////////////////////////////////////////////////////////////////
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
+
+        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+
+        /**
+         * 1. Flash Video (.flv)
+         * - Owner : Adobe
+         * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
+         * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
+         */
+        fFmpegFrameRecorder.setFormat("flv");
+        /**
+         * 2. Matroska (wp, .mkv/.mka/.mks)
+         * - Owner : CoreCodec
+         * [Video] : H.264, Realvideo, DivX, XviD
+         * [Audio] : AAC, Vorbis, Dolby AC3, MP3
+         */
+        //fFmpegFrameRecorder.setFormat("matroska");
+
+        /**
+         * The range of the CRF scale is 0–51,
+         *      where 0 is lossless (for 8 bit only, for 10 bit use -qp 0),
+         *      23 is the default, and 51 is worst quality possible.
+         * A lower value generally leads to higher quality,
+         *      and a subjectively sane range is 17–28.
+         * Consider 17 or 18 to be visually lossless or nearly so;
+         *      it should look the same or nearly the same as the input but it isn't technically lossless.
+         */
         fFmpegFrameRecorder.setVideoOption("crf", "28");
-        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
-        fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
         fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
-        //fFmpegFrameRecorder.setFormat("matroska"); // > H265
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
+
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
-        fFmpegFrameRecorder.setAudioBitrate(192000); // default: 64000
+        fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
     }
     ////////////////////////////////////////////////////////////////////////////////
 
