@@ -322,22 +322,110 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setOption("use_timeline", "0");
         fFmpegFrameRecorder.setOption("ldash", "1");
         fFmpegFrameRecorder.setOption("streaming", "1");
-        fFmpegFrameRecorder.setOption("target_latency", "2");
+
+        /**
+         * Set an intended target latency in seconds (fractional value can be set) for serving.
+         * Applicable only when streaming and write_prft options are enabled.
+         * This is an informative fields clients can use to measure the latency of the service.
+         */
+        fFmpegFrameRecorder.setOption("target_latency", "3");
+
+        /**
+         * Set the segment length in seconds (fractional value can be set).
+         * The value is treated as average segment duration when use_template is enabled and
+         *      use_timeline is disabled and as minimum segment duration for all the other use cases.
+         */
         fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
 
-        fFmpegFrameRecorder.setOption("frag_duration", "1");
-        fFmpegFrameRecorder.setOption("frag_type", "duration");
+        /**
+         * Set the length in seconds of fragments within segments (fractional value can be set).
+         * Create fragments that are duration microseconds long.
+         */
+        fFmpegFrameRecorder.setOption("frag_duration", "0.2"); //
+        fFmpegFrameRecorder.setOption("frag_type`", "duration"); // Set the type of interval for fragmentation.
+
+        // URL of the page that will return the UTC timestamp in ISO format. Example: "https://time.akamai.com/?iso"
         fFmpegFrameRecorder.setOption("utc_timing_url", "https://time.akamai.com/?iso");
-        //fFmpegFrameRecorder.setOption("adaptation_sets", "id=0,streams=v id=1,streams=a");
-        /*fFmpegFrameRecorder.setOption("adaptation_sets",
-                "id=0,seg_duration=8,frag_duration=2,streams=0,1 " +
-                "id=1,seg_duration=3,frag_type=none,streams=2"
-        );*/
+
+        // Adjusts the sensitivity of x264's scenecut detection. Rarely needs to be adjusted. Recommended default: 40
         fFmpegFrameRecorder.setOption("sc_threshold", "0");
-        fFmpegFrameRecorder.setOption("format_options", "movflags=cmaf");
+
+        /**
+         * x264, by default,
+         *  adaptively decides through a low-resolution lookahead the best number of B-frames to use.
+         *  It is possible to disable this adaptivity; this is not recommended. Recommended default: 1
+         *
+         * 0: Very fast, but not recommended.
+         *      Does not work with pre-scenecut (scenecut must be off to force off b-adapt).
+         * 1: Fast, default mode in x264.
+         *      A good balance between speed and quality.
+         * 2: A much slower but more accurate B-frame decision mode that correctly detects fades and
+         *      generally gives considerably better quality.
+         *      Its speed gets considerably slower at high bframes values, so
+         *      its recommended to keep bframes relatively low (perhaps around 3) when using this option.
+         *      It also may slow down the first pass of x264 when in threaded mode.
+         */
+        fFmpegFrameRecorder.setOption("b_strategy", "0");
+
+        /**
+         * Set container format (mp4/webm) options using a : separated list of key=value parameters.
+         * Values containing : special characters must be escaped.
+         */
+        fFmpegFrameRecorder.setOption("format_options", "movflags=+cmaf");
+
+        /**
+         * moov atom is the special part of the file,
+         *      which defines the timescale, duration, display characteristics of the video,
+         *      as well as subatoms containing information for each track in the video.
+         *      This atom may be located at the end of the file,
+         *      which is why you may get the error when the file was not completely uploaded.
+         *
+         * moov atom is essential for video decoding and without it,
+         *      the uploaded video is unplayable, so it cannot be converted.
+         *      We try our best to make the conversion even in the most hopeless cases,
+         *      but if the file is not readable at all.
+         *      (like missing header or moov atom in video file) - there is nothing we can do at all.
+         */
+        /**
+         * -movflags empty_moov
+             * Write an initial moov atom directly at the start of the file, without describing any samples in it.
+             * Generally, an mdat/moov pair is written at the start of the file, as a normal MOV/MP4 file,
+             * containing only a short portion of the file.
+             * With this option set, there is no initial mdat atom,
+             * and the moov atom only describes the tracks but has a zero duration.
+             * This option is implicitly set when writing ismv (Smooth Streaming) files.
+         */
+        /**
+         * -movflags separate_moof
+             * Write a separate moof (movie fragment) atom for each track.
+             * Normally, packets for all tracks are written in a moof atom (which is slightly more efficient),
+             * but with this option set, the muxer writes one moof/mdat pair for each track, making it easier to separate tracks.
+             * This option is implicitly set when writing ismv (Smooth Streaming) files.
+         */
+        /**
+         * -movflags default_base_moof
+             * Similarly to the omit_tfhd_offset,
+             * this flag avoids writing the absolute base_data_offset field in tfhd atoms,
+             * but does so by using the new default-base-is-moof flag instead.
+             * This flag is new from 14496-12:2012.
+             * This may make the fragments easier to parse in certain circumstances
+             * (avoiding basing track fragment location calculations on the implicit end of the previous track fragment).
+         */
         //fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
+
+        // Set the maximum number of segments kept in the manifest.
         fFmpegFrameRecorder.setOption("window_size", String.valueOf(configManager.getWindowSize()));
+
+        // Bit set of AV_CODEC_EXPORT_DATA_* flags, which affects the kind of metadata exported in frame, packet, or coded stream side data by decoders and encoders.
         fFmpegFrameRecorder.setOption("export_side_data", "prft");
+
+        /**
+         * Write Producer Reference Time elements on supported streams.
+         * This also enables writing prft boxes in the underlying muxer.
+         * Applicable only when the utc_url option is enabled.
+         * It’s set to auto by default,
+         *      in which case the muxer will attempt to enable it only in modes that require it.
+         */
         fFmpegFrameRecorder.setOption("write_prft", "1");
     }
 

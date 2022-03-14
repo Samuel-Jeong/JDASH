@@ -141,13 +141,13 @@ public class LocalStreamService extends Job {
                         }
                     }
 
-                    videoFrameRecorder.record(capturedFrame);
-
                     // Check for AV drift
                     long videoTS = 1000 * (System.currentTimeMillis() - startTime);
                     if (videoTS > videoFrameRecorder.getTimestamp()) {
                         videoFrameRecorder.setTimestamp(videoTS);
                     }
+
+                    videoFrameRecorder.record(capturedFrame);
 
                     Mat mat = openCVConverter.convertToMat(capturedFrame);
                     if (mat != null) {
