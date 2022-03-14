@@ -10,27 +10,29 @@ import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.*;
-import org.bytedeco.opencv.global.opencv_imgproc;
-import org.bytedeco.opencv.opencv_core.Mat;
-import org.bytedeco.opencv.opencv_core.Point;
-import org.bytedeco.opencv.opencv_core.Scalar;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.OpenCVFrameGrabber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
+import util.module.ConcurrentCyclicFIFO;
 import util.module.FileManager;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class LocalStreamService extends Job {
 
     ///////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(LocalStreamService.class);
+
+    private final ScheduleManager scheduleManager;
+    private static final String LOCAL_STREAM_SCHEDULE_KEY = "LOCAL_STREAM_SCHEDULE_KEY";
+    private final ConcurrentCyclicFIFO<Frame> frameQueue = new ConcurrentCyclicFIFO<>();
+    private CameraCanvasController localCameraCanvasController = null;
 
     protected static final int CAMERA_INDEX = 0;
     protected static final int MIKE_INDEX = 4;
@@ -49,10 +51,6 @@ public class LocalStreamService extends Job {
     private static long startTime = 0;
     private boolean isPreMediaReqSent = false;
     private boolean exit = false;
-
-    private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
-    private final Point point = new Point(15, 45);
-    private final Scalar scalar = new Scalar(0, 200, 255, 0);
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
@@ -62,7 +60,8 @@ public class LocalStreamService extends Job {
                               int priority, int totalRunCount, boolean isLasted) {
         super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
 
-        configManager = AppInstance.getInstance().getConfigManager();
+        this.scheduleManager = scheduleManager;
+        this.configManager = AppInstance.getInstance().getConfigManager();
 
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
@@ -78,6 +77,19 @@ public class LocalStreamService extends Job {
             openCVFrameGrabber.setImageWidth(CAPTURE_WIDTH);
             openCVFrameGrabber.setImageHeight(CAPTURE_HEIGHT);
             openCVFrameGrabber.start();
+
+            if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 1)) {
+                logger.debug("[LocalStreamService] Success to init [{}]", LOCAL_STREAM_SCHEDULE_KEY);
+
+                localCameraCanvasController = new CameraCanvasController(
+                        scheduleManager,
+                        CameraCanvasController.class.getSimpleName(),
+                        0, 1, TimeUnit.MILLISECONDS,
+                        1, 1, true,
+                        true, frameQueue, openCVFrameGrabber.getGamma()
+                );
+                scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
+            }
         } catch (Exception e) {
             logger.warn("LocalStreamService.start.Exception", e);
             System.exit(1);
@@ -90,6 +102,11 @@ public class LocalStreamService extends Job {
         exit = true;
 
         try {
+            if (localCameraCanvasController != null) {
+                scheduleManager.stopJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
+                localCameraCanvasController = null;
+            }
+
             if (openCVFrameGrabber != null) {
                 openCVFrameGrabber.close();
                 openCVFrameGrabber = null;
@@ -121,11 +138,7 @@ public class LocalStreamService extends Job {
 
             /////////////////////////////////
             if (openCVFrameGrabber != null) {
-                CanvasFrame cameraFrame = new CanvasFrame("[LOCAL] Live stream", CanvasFrame.getDefaultGamma() / openCVFrameGrabber.getGamma());
-
                 Frame capturedFrame;
-                Date curData = new Date();
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
                 while ((capturedFrame = openCVFrameGrabber.grab()) != null) {
                     if (exit) { continue; }
@@ -148,17 +161,7 @@ public class LocalStreamService extends Job {
                     }
 
                     videoFrameRecorder.record(capturedFrame);
-
-                    Mat mat = openCVConverter.convertToMat(capturedFrame);
-                    if (mat != null) {
-                        curData.setTime(System.currentTimeMillis());
-                        opencv_imgproc.putText(mat, simpleDateFormat.format(curData), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                        capturedFrame = openCVConverter.convert(mat);
-                    }
-
-                    if (cameraFrame.isVisible()) {
-                        cameraFrame.showImage(capturedFrame);
-                    }
+                    if (localCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
                 }
             }
             /////////////////////////////////
@@ -208,7 +211,7 @@ public class LocalStreamService extends Job {
                 );
                 byte[] requestByteData = preLiveMediaProcessRequest.getByteData();
                 target.getNettyChannel().sendData(requestByteData, requestByteData.length);
-                logger.debug("[CameraService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
+                logger.debug("[LocalStreamService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
             }
         }
     }
@@ -219,7 +222,7 @@ public class LocalStreamService extends Job {
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
-        fFmpegFrameRecorder.setVideoBitrate(5000000); // default: 400000
+        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setFormat("flv"); // > H264
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30

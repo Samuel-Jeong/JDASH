@@ -3,15 +3,14 @@ package stream;
 import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.*;
-import org.bytedeco.opencv.global.opencv_imgproc;
-import org.bytedeco.opencv.opencv_core.Mat;
-import org.bytedeco.opencv.opencv_core.Point;
-import org.bytedeco.opencv.opencv_core.Scalar;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
+import util.module.ConcurrentCyclicFIFO;
 import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
@@ -23,6 +22,11 @@ public class RemoteStreamService extends Job {
 
     private static final String INIT_SEGMENT_POSTFIX = "_init$RepresentationID$.m4s";
     private static final String MEDIA_SEGMENT_POSTFIX = "_chunk$RepresentationID$_$Number%05d$.m4s";
+
+    private final ScheduleManager scheduleManager;
+    private static final String REMOTE_STREAM_SCHEDULE_KEY = "REMOTE_STREAM_SCHEDULE_KEY";
+    private final ConcurrentCyclicFIFO<Frame> frameQueue = new ConcurrentCyclicFIFO<>();
+    private CameraCanvasController remoteCameraCanvasController = null;
 
     public static final String V_SIZE_1 = "960x540";
     public static final String V_SIZE_2 = "416x234";
@@ -41,19 +45,14 @@ public class RemoteStreamService extends Job {
     public final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 960;
     public static final int CAPTURE_HEIGHT = 540;
-    public static final int GOP_LENGTH_IN_FRAMES = 20;
+    public static final int GOP_LENGTH_IN_FRAMES = 2;
 
     private final String SUBTITLE;
 
     private static long startTime = 0;
     private boolean exit = false;
 
-    private CanvasFrame cameraFrame = null;
     private FFmpegFrameGrabber fFmpegFrameGrabber = null;
-
-    private final OpenCVFrameConverter.ToIplImage openCVConverter = new OpenCVFrameConverter.ToIplImage();
-    private final Point point = new Point(15, 65);
-    private final Scalar scalar = new Scalar(0, 200, 255, 0);
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
@@ -65,6 +64,7 @@ public class RemoteStreamService extends Job {
         super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
 
         this.dashUnitId = dashUnitId;
+        this.scheduleManager = scheduleManager;
         this.configManager = configManager;
 
         URI_FILE_NAME = uriFileName;
@@ -84,6 +84,7 @@ public class RemoteStreamService extends Job {
         super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
 
         this.dashUnitId = null;
+        this.scheduleManager = scheduleManager;
         this.configManager = configManager;
 
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
@@ -103,6 +104,7 @@ public class RemoteStreamService extends Job {
         super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
 
         this.dashUnitId = null;
+        this.scheduleManager = scheduleManager;
         this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
 
         String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
@@ -114,11 +116,6 @@ public class RemoteStreamService extends Job {
 
     public boolean init() {
         try {
-            cameraFrame = null;
-            if (configManager.isEnableClient()) {
-                cameraFrame = new CanvasFrame("[REMOTE] Live stream", CanvasFrame.getDefaultGamma() / fFmpegFrameGrabber.getGamma());
-            }
-
             /////////////////////////////////
             // [INPUT] FFmpegFrameGrabber
             fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
@@ -128,6 +125,21 @@ public class RemoteStreamService extends Job {
             }
             fFmpegFrameGrabber.start();
             /////////////////////////////////
+
+            if (configManager.isEnableClient() && !configManager.isAudioOnly()) {
+                if (scheduleManager.initJob(REMOTE_STREAM_SCHEDULE_KEY, 1, 1)) {
+                    logger.debug("[RemoteStreamService] Success to init [{}]", REMOTE_STREAM_SCHEDULE_KEY);
+
+                    remoteCameraCanvasController = new CameraCanvasController(
+                            scheduleManager,
+                            CameraCanvasController.class.getSimpleName(),
+                            0, 1, TimeUnit.MILLISECONDS,
+                            1, 1, true,
+                            false, frameQueue, fFmpegFrameGrabber.getGamma()
+                    );
+                    scheduleManager.startJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController);
+                }
+            }
         } catch (Exception e) {
             logger.warn("RemoteStreamService.init.Exception", e);
             return false;
@@ -135,6 +147,34 @@ public class RemoteStreamService extends Job {
 
         logger.debug("[RemoteStreamService] [INIT] RTMP_PATH=[{}], DASH_PATH=[{}]", RTMP_PATH, DASH_PATH);
         return true;
+    }
+
+    public void stop() {
+        exit = true;
+
+        try {
+            if (remoteCameraCanvasController != null) {
+                scheduleManager.stopJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController);
+                remoteCameraCanvasController = null;
+            }
+
+            if (fFmpegFrameGrabber != null) {
+                fFmpegFrameGrabber.stop();
+                fFmpegFrameGrabber.release();
+                fFmpegFrameGrabber = null;
+            }
+        } catch (Exception e) {
+            logger.warn("RemoteStreamService.run.finally.Exception", e);
+        }
+
+        if (configManager.isClearDashDataIfSessionClosed()) {
+            FileManager.deleteFile
+                    (FileManager.concatFilePath(
+                                    configManager.getMediaBasePath(),
+                                    configManager.getCameraPath()
+                            )
+                    );
+        }
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -203,23 +243,13 @@ public class RemoteStreamService extends Job {
                     if (capturedFrame.image != null && capturedFrame.samples != null) {
                         //logger.warn("[INTERLEAVED] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
                         videoFrameRecorder.record(capturedFrame);
-                        if (cameraFrame != null && cameraFrame.isVisible()) {
-                            cameraFrame.showImage(capturedFrame);
-                        }
+                        if (remoteCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
                     }
                     //////////////////////////////////////
                     // VIDEO DATA
                     else if (capturedFrame.image != null && capturedFrame.image.length > 0) {
-                        Mat mat = openCVConverter.convertToMat(capturedFrame);
-                        if (mat != null) {
-                            opencv_imgproc.putText(mat, SUBTITLE, point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
-                            capturedFrame = openCVConverter.convert(mat);
-                        }
-
                         videoFrameRecorder.record(capturedFrame);
-                        if (cameraFrame != null && cameraFrame.isVisible()) {
-                            cameraFrame.showImage(capturedFrame);
-                        }
+                        if (remoteCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
                     }
                     //////////////////////////////////////
                     // AUDIO DATA
@@ -255,65 +285,30 @@ public class RemoteStreamService extends Job {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public void stop() {
-        exit = true;
-
-        try {
-            if (fFmpegFrameGrabber != null) {
-                fFmpegFrameGrabber.stop();
-                fFmpegFrameGrabber.release();
-                fFmpegFrameGrabber = null;
-            }
-        } catch (Exception e) {
-            logger.warn("RemoteStreamService.run.finally.Exception", e);
-        }
-
-        if (configManager.isClearDashDataIfSessionClosed()) {
-            FileManager.deleteFile
-                    (FileManager.concatFilePath(
-                            configManager.getMediaBasePath(),
-                            configManager.getCameraPath()
-                    )
-            );
-        }
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
     public String getDashUnitId() {
         return dashUnitId;
     }
 
     private void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        // -map v:0 -s:0 $V_SIZE_1 -b:v:0 2M -maxrate:0 2.14M -bufsize:0 3.5M
-        /*fFmpegFrameRecorder.setOption("map", "0:v:0");
-        fFmpegFrameRecorder.setOption("b:v:0", "2M");
-        fFmpegFrameRecorder.setOption("s:v:0", V_SIZE_1);*/
-    /*fFmpegFrameRecorder.setOption("maxrate:0", "2.14M");
-        fFmpegFrameRecorder.setOption("bufsize:0", "3.5M");*/
+        if (!configManager.isAudioOnly()) {
+            fFmpegFrameRecorder.setOption("-map", "0");
+            fFmpegFrameRecorder.setOption("-map", "0");
+            fFmpegFrameRecorder.setOption("-map", "0");
 
-        // -map v:0 -s:1 $V_SIZE_2 -b:v:1 145k -maxrate:1 155k -bufsize:1 220k
-        /*fFmpegFrameRecorder.setOption("map", "0:v:1");
-        fFmpegFrameRecorder.setOption("b:v:1", "145K");
-        fFmpegFrameRecorder.setOption("s:v:1", V_SIZE_2);*/
-   /*fFmpegFrameRecorder.setOption("maxrate:1", "155k");
-        fFmpegFrameRecorder.setOption("bufsize:1", "220k");*/
+            fFmpegFrameRecorder.setOption("b:v:0", "800k");
+            fFmpegFrameRecorder.setOption("s:v:0", V_SIZE_5);
+            fFmpegFrameRecorder.setOption("profile:v:0", "main");
 
-        // -map v:0 -s:2 $V_SIZE_3 -b:v:2 50K -maxrate:2 1M -bufsize:2 2M
-        /*fFmpegFrameRecorder.setOption("map", "0:v:2");
-        fFmpegFrameRecorder.setOption("b:v:2", "50K");
-        fFmpegFrameRecorder.setOption("s:v:2", V_SIZE_3);
-        fFmpegFrameRecorder.setOption("maxrate:2", "1M");
-        fFmpegFrameRecorder.setOption("bufsize:2", "2M");*/
+            fFmpegFrameRecorder.setOption("b:v:1", "500k");
+            fFmpegFrameRecorder.setOption("s:v:1", V_SIZE_3);
+            fFmpegFrameRecorder.setOption("profile:v:1", "main");
 
-        // -map v:0 -s:3 $V_SIZE_4 -b:v:3 730k -maxrate:3 781k -bufsize:3 1278k
-        /*fFmpegFrameRecorder.setOption("map", "0:v:3");
-        fFmpegFrameRecorder.setOption("b:v:3", "730k");
-        fFmpegFrameRecorder.setOption("s:v:3", V_SIZE_4);
-        fFmpegFrameRecorder.setOption("maxrate:3", "781k");
-        fFmpegFrameRecorder.setOption("bufsize:3", "1278k");*/
+            fFmpegFrameRecorder.setOption("b:v:2", "300k");
+            fFmpegFrameRecorder.setOption("s:v:2", V_SIZE_2);
+            fFmpegFrameRecorder.setOption("profile:v:2", "baseline");
 
-        //fFmpegFrameRecorder.setOption("map", "1:a:0");
+            fFmpegFrameRecorder.setOption("bf", "1");
+        }
 
         fFmpegFrameRecorder.setFormat("dash");
         fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
@@ -337,12 +332,12 @@ public class RemoteStreamService extends Job {
          */
         fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
 
+        fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
         /**
          * Set the length in seconds of fragments within segments (fractional value can be set).
          * Create fragments that are duration microseconds long.
          */
-        fFmpegFrameRecorder.setOption("frag_duration", "0.2"); //
-        fFmpegFrameRecorder.setOption("frag_type`", "duration"); // Set the type of interval for fragmentation.
+        fFmpegFrameRecorder.setOption("frag_duration", "0.2");
 
         // URL of the page that will return the UTC timestamp in ISO format. Example: "https://time.akamai.com/?iso"
         fFmpegFrameRecorder.setOption("utc_timing_url", "https://time.akamai.com/?iso");
@@ -430,7 +425,7 @@ public class RemoteStreamService extends Job {
     }
 
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setVideoBitrate(5000000); // 2000K > default: 400000 (400K)
+        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
         fFmpegFrameRecorder.setVideoOption("crf", "28");
