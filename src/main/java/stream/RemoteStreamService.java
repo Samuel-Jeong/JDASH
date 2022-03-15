@@ -43,8 +43,8 @@ public class RemoteStreamService extends Job {
     private final String RTMP_PATH;
     private final String DASH_PATH;
     public final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 960;
-    public static final int CAPTURE_HEIGHT = 540;
+    public static final int CAPTURE_WIDTH = 640;
+    public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 2;
 
     private final String SUBTITLE;
@@ -433,8 +433,8 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
         //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
-        fFmpegFrameRecorder.setFormat("flv");
-        //fFmpegFrameRecorder.setFormat("matroska");
+        //fFmpegFrameRecorder.setFormat("flv");
+        fFmpegFrameRecorder.setFormat("matroska");
 
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
@@ -443,8 +443,8 @@ public class RemoteStreamService extends Job {
     }
 
     private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
+        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
 
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
@@ -452,6 +452,7 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setAudioQuality(0);
         fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
+        //fFmpegFrameRecorder.setSampleRate(48000); // FOR AC3
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }
     ///////////////////////////////////////////////////////////////////////////

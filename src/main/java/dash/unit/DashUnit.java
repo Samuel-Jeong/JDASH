@@ -40,7 +40,7 @@ public class DashUnit {
     ///public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
     private final ScheduleManager scheduleManager = new ScheduleManager();
     private RemoteStreamService remoteCameraService = null;
-    private OldFileController oldFileController = null;
+    //private OldFileController oldFileController = null;
 
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ////////////////////////////////////////////////////////////

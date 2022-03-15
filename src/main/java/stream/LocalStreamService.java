@@ -38,8 +38,8 @@ public class LocalStreamService extends Job {
     protected static final int MIKE_INDEX = 4;
 
     public final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 960;
-    public static final int CAPTURE_HEIGHT = 540;
+    public static final int CAPTURE_WIDTH = 640;
+    public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 20;
     private final String URI;
 
@@ -237,7 +237,7 @@ public class LocalStreamService extends Job {
         /**
          * 2. Matroska (wp, .mkv/.mka/.mks)
          * - Owner : CoreCodec
-         * [Video] : H.264, Realvideo, DivX, XviD
+         * [Video] : H.264, Realvideo, DivX, XviD, HEVC
          * [Audio] : AAC, Vorbis, Dolby AC3, MP3
          */
         //fFmpegFrameRecorder.setFormat("matroska");
@@ -267,6 +267,7 @@ public class LocalStreamService extends Job {
         fFmpegFrameRecorder.setAudioQuality(0);
         fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
         fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
+        //fFmpegFrameRecorder.setSampleRate(48000); // FOR AC3
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }
     ////////////////////////////////////////////////////////////////////////////////
