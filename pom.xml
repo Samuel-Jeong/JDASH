@@ -255,12 +255,6 @@
                                 <source>
                                     <location>${project.basedir}/out/artifacts/JDASH_jar/</location>
                                 </source>
-                                <!--<source>
-                                    <location>${project.basedir}/target/JDASH-1.0.0.jar/</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/lib/</location>
-                                </source>-->
                             </sources>
                         </mapping>
 
@@ -305,16 +299,6 @@
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/video_list.txt</location>
-                                </source>
-                            </sources>
-                        </mapping>
-
-                        <mapping>
-                            <directory>/home/uangel/udash/script/</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>${project.basedir}/src/main/resources/script/rtmp_streaming.sh</location>
                                 </source>
                             </sources>
                         </mapping>
