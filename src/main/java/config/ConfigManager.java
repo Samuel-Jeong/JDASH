@@ -43,6 +43,7 @@ public class ConfigManager {
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
 
     // LIVE
+    public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
@@ -85,9 +86,10 @@ public class ConfigManager {
     private String validationXsdPath = null;
 
     // LIVE
+    private boolean enableGui = false;
     private long chunkFileDeletionIntervalSeconds = 0;
     private boolean clearDashDataIfSessionClosed = true;
-    private int segmentDuration = 0;
+    private double segmentDuration = 0.0d;
     private int windowSize = 0;
     private boolean audioOnly = false;
     private String preprocessListenIp = null;
@@ -214,6 +216,14 @@ public class ConfigManager {
      * @brief LIVE Section 을 로드하는 함수
      */
     private void loadLiveConfig() {
+        String enableGuiString = getIniValue(SECTION_LIVE, FIELD_ENABLE_GUI);
+        if (enableGuiString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_ENABLE_GUI);
+            System.exit(1);
+        } else {
+            this.enableGui = Boolean.parseBoolean(enableGuiString);
+        }
+
         String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
         if (chunkFileDeletionIntervalSecondsString == null) {
             logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
@@ -239,7 +249,7 @@ public class ConfigManager {
             logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
             System.exit(1);
         } else {
-            this.segmentDuration = Integer.parseInt(segmentDurationString);
+            this.segmentDuration = Double.parseDouble(segmentDurationString);
             if (this.segmentDuration <= 0) {
                 logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
                 System.exit(1);
@@ -532,11 +542,15 @@ public class ConfigManager {
         return audioOnly;
     }
 
-    public int getSegmentDuration() {
+    public Double getSegmentDuration() {
         return segmentDuration;
     }
 
     public int getWindowSize() {
         return windowSize;
+    }
+
+    public boolean isEnableGui() {
+        return enableGui;
     }
 }

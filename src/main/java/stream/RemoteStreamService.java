@@ -126,7 +126,7 @@ public class RemoteStreamService extends Job {
             fFmpegFrameGrabber.start();
             /////////////////////////////////
 
-            if (configManager.isEnableClient() && !configManager.isAudioOnly()) {
+            if (configManager.isEnableClient() && configManager.isEnableGui() && !configManager.isAudioOnly()) {
                 if (scheduleManager.initJob(REMOTE_STREAM_SCHEDULE_KEY, 1, 1)) {
                     logger.debug("[RemoteStreamService] Success to init [{}]", REMOTE_STREAM_SCHEDULE_KEY);
 

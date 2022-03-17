@@ -78,17 +78,19 @@ public class LocalStreamService extends Job {
             openCVFrameGrabber.setImageHeight(CAPTURE_HEIGHT);
             openCVFrameGrabber.start();
 
-            if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 1)) {
-                logger.debug("[LocalStreamService] Success to init [{}]", LOCAL_STREAM_SCHEDULE_KEY);
+            if (configManager.isEnableGui()) {
+                if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 1)) {
+                    logger.debug("[LocalStreamService] Success to init [{}]", LOCAL_STREAM_SCHEDULE_KEY);
 
-                localCameraCanvasController = new CameraCanvasController(
-                        scheduleManager,
-                        CameraCanvasController.class.getSimpleName(),
-                        0, 1, TimeUnit.MILLISECONDS,
-                        1, 1, true,
-                        true, frameQueue, openCVFrameGrabber.getGamma()
-                );
-                scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
+                    localCameraCanvasController = new CameraCanvasController(
+                            scheduleManager,
+                            CameraCanvasController.class.getSimpleName(),
+                            0, 1, TimeUnit.MILLISECONDS,
+                            1, 1, true,
+                            true, frameQueue, openCVFrameGrabber.getGamma()
+                    );
+                    scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
+                }
             }
         } catch (Exception e) {
             logger.warn("LocalStreamService.start.Exception", e);
