@@ -4,10 +4,8 @@
 
 @ REFERENCE
 1) Make MPD & Segments
-+ REF : org.bytedeco.javacv (LIVE, dynamic)
++ REF : org.bytedeco.javacv (static, dynamic)
 (https://github.com/bytedeco/javacv)
-+ REF : python-ffmpeg-video-streaming (VOD, static)
-(https://pypi.org/project/python-ffmpeg-video-streaming/#quickstart)
 
 2) MPD class object & Validatation of MPD file
 + REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
@@ -16,9 +14,6 @@
 3) Camera
 + REF : org.bytedeco.javacv
 (https://github.com/bytedeco/javacv)
-
-4) Media platform
-+ REF : FFmpegFrameGrabber, FFmpegFrameRecorder
 
 ~~~
 
