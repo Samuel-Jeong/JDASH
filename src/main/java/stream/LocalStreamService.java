@@ -71,7 +71,7 @@ public class LocalStreamService extends Job {
     ///////////////////////////////////////////////////////////////////////////
     public void start() {
         try {
-            audioService.initSampleService();
+            audioService.initSampleService(scheduleManager);
 
             openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
             openCVFrameGrabber.setImageWidth(CAPTURE_WIDTH);
@@ -133,7 +133,7 @@ public class LocalStreamService extends Job {
             setVideoOptions(videoFrameRecorder);
             setAudioOptions(videoFrameRecorder);
             videoFrameRecorder.start();
-            audioService.startSampling(videoFrameRecorder, FRAME_RATE);
+            audioService.startSampling(videoFrameRecorder);
             /////////////////////////////////
 
             /////////////////////////////////
@@ -245,7 +245,7 @@ public class LocalStreamService extends Job {
         /**
          * The range of the CRF scale is 0–51,
          *      where 0 is lossless (for 8 bit only, for 10 bit use -qp 0),
-         *      23 is the default, and 51 is worst quality possible.
+         *      23 is the default, and 5matroska1 is worst quality possible.
          * A lower value generally leads to higher quality,
          *      and a subjectively sane range is 17–28.
          * Consider 17 or 18 to be visually lossless or nearly so;
