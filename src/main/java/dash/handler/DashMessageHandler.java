@@ -56,7 +56,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         }
 
         String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
-        if (uriFileNameWithExtension.contains(".")) {
+        if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(".mp4")) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. (uri={})", this.uri, uri);
@@ -67,125 +67,129 @@ public class DashMessageHandler implements HttpMessageHandler {
 
         ///////////////////////////
         // GENERATE MPD FROM MP4 BY GPAC
+        String mp4Path; // Absolute path
         String mpdPath = null; // Absolute path
         try {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
             if (uriFileNameWithExtension.contains(".")) {
                 if (uri.endsWith(".mp4")) {
+                    mp4Path = uri;
                     mpdPath = uri.replace(".mp4", ".mpd");
-                    File mpdFile = new File(mpdPath);
-                    if (!mpdFile.exists()) {
-                        ///////////////////////////
-                        FFmpegFrameRecorder audioFrameRecorder = null;
-                        FFmpegFrameRecorder videoFrameRecorder = null;
-                        try {
-                            ///////////////////////////
-                            FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(uri);
-                            if (!configManager.isAudioOnly()) {
-                                fFmpegFrameGrabber.setImageWidth(RemoteStreamService.CAPTURE_WIDTH);
-                                fFmpegFrameGrabber.setImageHeight(RemoteStreamService.CAPTURE_HEIGHT);
-                            }
-                            fFmpegFrameGrabber.start();
-                            ///////////////////////////
-
-                            /////////////////////////////////
-                            // [OUTPUT] FFmpegFrameRecorder
-                            if (configManager.isAudioOnly()) {
-                                audioFrameRecorder = new FFmpegFrameRecorder(
-                                        mpdPath,
-                                        AudioService.CHANNEL_NUM
-                                );
-                                RemoteStreamService.setAudioOptions(audioFrameRecorder);
-                                RemoteStreamService.setDashOptions(audioFrameRecorder,
-                                        uriFileName,
-                                        configManager.isAudioOnly(),
-                                        configManager.getSegmentDuration(), 0
-                                );
-                                audioFrameRecorder.start();
-                            } else {
-                                videoFrameRecorder = new FFmpegFrameRecorder(
-                                        mpdPath,
-                                        RemoteStreamService.CAPTURE_WIDTH, RemoteStreamService.CAPTURE_HEIGHT,
-                                        AudioService.CHANNEL_NUM
-                                );
-                                RemoteStreamService.setVideoOptions(videoFrameRecorder);
-                                RemoteStreamService.setAudioOptions(videoFrameRecorder);
-                                RemoteStreamService.setDashOptions(videoFrameRecorder,
-                                        uriFileName,
-                                        configManager.isAudioOnly(),
-                                        configManager.getSegmentDuration(), 0
-                                );
-                                videoFrameRecorder.start();
-                            }
-                            /////////////////////////////////
-
-                            /////////////////////////////////
-                            long startTime = 0;
-                            Frame capturedFrame;
-                            while (true) {
-                                //////////////////////////////////////
-                                if (configManager.isAudioOnly()) {
-                                    capturedFrame = fFmpegFrameGrabber.grabSamples();
-                                } else {
-                                    capturedFrame = fFmpegFrameGrabber.grab();
-                                }
-                                if(capturedFrame == null){ break; }
-                                //////////////////////////////////////
-
-                                //////////////////////////////////////
-                                if (configManager.isAudioOnly() && audioFrameRecorder != null) {
-                                    // AUDIO DATA ONLY
-                                    if (capturedFrame.samples != null && capturedFrame.samples.length > 0) {
-                                        audioFrameRecorder.record(capturedFrame);
-                                    }
-                                } else if (videoFrameRecorder != null) {
-                                    //////////////////////////////////////
-                                    // Check for AV drift
-                                    if (startTime == 0) { startTime = System.currentTimeMillis(); }
-                                    long curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
-                                    if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
-                                        videoFrameRecorder.setTimestamp(curTimeStamp);
-                                    }
-
-                                    videoFrameRecorder.record(capturedFrame);
-                                    //////////////////////////////////////
-                                }
-                                /////////////////////////////////////
-                            }
-                            /////////////////////////////////
-                        } catch (Exception e) {
-                            // ignore
-                            //logger.warn("RemoteStreamService.run.Exception", e);
-                        } finally {
-                            try {
-                                if (videoFrameRecorder != null) {
-                                    videoFrameRecorder.stop();
-                                    videoFrameRecorder.release();
-                                }
-
-                                if (audioFrameRecorder != null) {
-                                    audioFrameRecorder.stop();
-                                    audioFrameRecorder.release();
-                                }
-                            } catch (Exception e) {
-                                // ignore
-                            }
-                        }
-
-                        mpdFile = new File(mpdPath);
-                        if (!mpdFile.exists()) {
-                            logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                            return null;
-                        }
-                    } else {
-                        logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
-                    }
                 } else if (uri.endsWith(".mpd")) {
+                    mp4Path = uri.replace(".mpd", ".mp4");
                     mpdPath = uri;
                 } else {
                     logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                     return null;
+                }
+
+                File mpdFile = new File(mpdPath);
+                if (!mpdFile.exists()) {
+                    ///////////////////////////
+                    FFmpegFrameRecorder audioFrameRecorder = null;
+                    FFmpegFrameRecorder videoFrameRecorder = null;
+                    try {
+                        ///////////////////////////
+                        FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);
+                        if (!configManager.isAudioOnly()) {
+                            fFmpegFrameGrabber.setImageWidth(RemoteStreamService.CAPTURE_WIDTH);
+                            fFmpegFrameGrabber.setImageHeight(RemoteStreamService.CAPTURE_HEIGHT);
+                        }
+                        fFmpegFrameGrabber.start();
+                        ///////////////////////////
+
+                        /////////////////////////////////
+                        // [OUTPUT] FFmpegFrameRecorder
+                        if (configManager.isAudioOnly()) {
+                            audioFrameRecorder = new FFmpegFrameRecorder(
+                                    mpdPath,
+                                    AudioService.CHANNEL_NUM
+                            );
+                            RemoteStreamService.setAudioOptions(audioFrameRecorder);
+                            RemoteStreamService.setDashOptions(audioFrameRecorder,
+                                    uriFileName,
+                                    configManager.isAudioOnly(),
+                                    configManager.getSegmentDuration(), 0
+                            );
+                            audioFrameRecorder.start();
+                        } else {
+                            videoFrameRecorder = new FFmpegFrameRecorder(
+                                    mpdPath,
+                                    RemoteStreamService.CAPTURE_WIDTH, RemoteStreamService.CAPTURE_HEIGHT,
+                                    AudioService.CHANNEL_NUM
+                            );
+                            RemoteStreamService.setVideoOptions(videoFrameRecorder);
+                            RemoteStreamService.setAudioOptions(videoFrameRecorder);
+                            RemoteStreamService.setDashOptions(videoFrameRecorder,
+                                    uriFileName,
+                                    configManager.isAudioOnly(),
+                                    configManager.getSegmentDuration(), 0
+                            );
+                            videoFrameRecorder.start();
+                        }
+                        /////////////////////////////////
+
+                        /////////////////////////////////
+                        long startTime = 0;
+                        Frame capturedFrame;
+                        while (true) {
+                            //////////////////////////////////////
+                            if (configManager.isAudioOnly()) {
+                                capturedFrame = fFmpegFrameGrabber.grabSamples();
+                            } else {
+                                capturedFrame = fFmpegFrameGrabber.grab();
+                            }
+                            if(capturedFrame == null){ break; }
+                            //////////////////////////////////////
+
+                            //////////////////////////////////////
+                            if (configManager.isAudioOnly() && audioFrameRecorder != null) {
+                                // AUDIO DATA ONLY
+                                if (capturedFrame.samples != null && capturedFrame.samples.length > 0) {
+                                    audioFrameRecorder.record(capturedFrame);
+                                }
+                            } else if (videoFrameRecorder != null) {
+                                //////////////////////////////////////
+                                // Check for AV drift
+                                if (startTime == 0) { startTime = System.currentTimeMillis(); }
+                                long curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
+                                if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
+                                    videoFrameRecorder.setTimestamp(curTimeStamp);
+                                }
+
+                                videoFrameRecorder.record(capturedFrame);
+                                //////////////////////////////////////
+                            }
+                            /////////////////////////////////////
+                        }
+                        /////////////////////////////////
+                    } catch (Exception e) {
+                        // ignore
+                        //logger.warn("RemoteStreamService.run.Exception", e);
+                    } finally {
+                        try {
+                            if (videoFrameRecorder != null) {
+                                videoFrameRecorder.stop();
+                                videoFrameRecorder.release();
+                            }
+
+                            if (audioFrameRecorder != null) {
+                                audioFrameRecorder.stop();
+                                audioFrameRecorder.release();
+                            }
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+
+                    mpdFile = new File(mpdPath);
+                    if (!mpdFile.exists()) {
+                        logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+                        return null;
+                    }
+                } else {
+                    logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
                 }
             } else {
                 mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");

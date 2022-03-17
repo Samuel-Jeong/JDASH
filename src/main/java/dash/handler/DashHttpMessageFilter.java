@@ -75,12 +75,12 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", uri);
             return;
         }
-        logger.debug("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
+        logger.trace("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
 
         InetSocketAddress remoteAddress = (InetSocketAddress) channelHandlerContext.channel().remoteAddress();
         String filePathWithoutExtensionFromUri = FileManager.getFilePathWithoutExtensionFromUri(originUri);
         String dashUnitKey = remoteAddress.getAddress().getHostAddress() + ":" + filePathWithoutExtensionFromUri;
-        logger.debug("[DashHttpMessageFilter] dashUnitKey: [{}]", dashUnitKey);
+        logger.trace("[DashHttpMessageFilter] dashUnitKey: [{}]", dashUnitKey);
 
         for (Map.Entry<String, DashUnit> entry : dashManager.getCloneDashMap().entrySet()) {
             if (entry == null) { continue; }
@@ -91,7 +91,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             String curDashUnitUriFileName = FileManager.getFileNameFromUri(curDashUnit.getInputFilePath());
             if (curDashUnitUriFileName == null) { continue; }
             else {
-                logger.debug("[DashHttpMessageFilter] requestedUriFileName:[{}], curDashUnitUriFileName: [{}]", uriFileName, curDashUnitUriFileName);
+                logger.trace("[DashHttpMessageFilter] requestedUriFileName:[{}], curDashUnitUriFileName: [{}]", uriFileName, curDashUnitUriFileName);
             }
 
             if (uriFileName.equals(curDashUnitUriFileName)) {
@@ -141,7 +141,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             }
         }
         ///////////////////////////
-        
+
         try {
             ///////////////////////////
             // PROCESS URI
