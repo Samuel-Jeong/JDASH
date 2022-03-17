@@ -3,9 +3,13 @@ package media;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
+import dash.unit.DashUnit;
+import dash.unit.StreamType;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import util.module.FileManager;
 
 import java.util.ArrayList;
@@ -39,13 +43,43 @@ public class MediaManager {
         ////////////////////////////////
         // 2) APPLY BASE PATH IN FRONT OF THE RAW FILE PATH
         if (uriList != null) {
+            // CLEAR ALL STATIC DASH UNIT
+            ServiceManager.getInstance().getDashManager().deleteDashUnitsByType(StreamType.STATIC);
+
             List<String> newUriList = new ArrayList<>();
             for (String rawUri : uriList) {
                 if (rawUri == null || rawUri.isEmpty()) {
                     continue;
                 }
 
-                newUriList.add(FileManager.concatFilePath(mediaBasePath, rawUri.trim()));
+                rawUri = rawUri.trim();
+                String fullPath = FileManager.concatFilePath(mediaBasePath, rawUri);
+                newUriList.add(fullPath);
+
+                // ADD STATIC DASH UNIT
+                String dashPathExtension = FileUtils.getExtension(rawUri);
+                if (dashPathExtension.length() != 0) {
+                    if (!rawUri.endsWith(".mp4") && !rawUri.endsWith(".mpd")) { continue; }
+
+                    logger.debug("@@@ rawUri: {}", rawUri);
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashManager().addDashUnit(
+                            StreamType.STATIC,
+                             AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
+                                     FileManager.getFilePathWithoutExtensionFromUri(fullPath),
+                            null
+                    );
+
+                    if (dashUnit != null) {
+                        dashUnit.setInputFilePath(fullPath);
+
+                        String mpdPath = fullPath;
+                        if (mpdPath.endsWith(".mp4")) {
+                            mpdPath = mpdPath.replace(".mp4", ".mpd");
+                        }
+                        dashUnit.setOutputFilePath(mpdPath);
+                        dashUnit.setLiveStreaming(false);
+                    }
+                }
             }
             uriList = newUriList;
         }

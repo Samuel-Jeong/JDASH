@@ -11,6 +11,7 @@ import dash.dynamic.message.base.MessageHeader;
 import dash.dynamic.message.base.MessageType;
 import dash.dynamic.message.base.ResponseType;
 import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -81,7 +82,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
-                DashUnit dashUnit = dashManager.addDashUnit(dashUnitId, null);
+                DashUnit dashUnit = dashManager.addDashUnit(StreamType.DYNAMIC, dashUnitId, null);
 
                 PreLiveMediaProcessResponse preProcessResponse;
                 if (dashUnit == null) {

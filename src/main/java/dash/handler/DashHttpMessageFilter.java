@@ -88,11 +88,6 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             DashUnit curDashUnit = entry.getValue();
             if (curDashUnit == null) { continue; }
 
-            /*if (!curDashUnit.getId().contains(uriFileName)) { continue; }
-            else {
-                logger.debug("[DashHttpMessageFilter] curDashUnitKey: [{}]", dashUnitKey);
-            }*/
-
             String curDashUnitUriFileName = FileManager.getFileNameFromUri(curDashUnit.getInputFilePath());
             if (curDashUnitUriFileName == null) { continue; }
             else {
@@ -115,7 +110,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use jdash.) : {}", uri);
+            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
             return;
         }
 

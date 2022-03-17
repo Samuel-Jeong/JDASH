@@ -39,10 +39,10 @@ public class RemoteStreamService extends Job {
 
     private final String dashUnitId;
 
-    private final String URI_FILE_NAME;
+    private static String URI_FILE_NAME = null;
     private final String RTMP_PATH;
     private final String DASH_PATH;
-    public final double FRAME_RATE = 30;
+    public static final double FRAME_RATE = 30;
     public static final int CAPTURE_WIDTH = 640;
     public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 2;
@@ -194,7 +194,11 @@ public class RemoteStreamService extends Job {
                         AudioService.CHANNEL_NUM
                 );
                 setAudioOptions(audioFrameRecorder);
-                setDashOptions(audioFrameRecorder);
+                setDashOptions(audioFrameRecorder,
+                        URI_FILE_NAME,
+                        configManager.isAudioOnly(),
+                        configManager.getSegmentDuration(), configManager.getWindowSize()
+                );
                 audioFrameRecorder.start();
             } else {
                 videoFrameRecorder = new FFmpegFrameRecorder(
@@ -204,7 +208,11 @@ public class RemoteStreamService extends Job {
                 );
                 setVideoOptions(videoFrameRecorder);
                 setAudioOptions(videoFrameRecorder);
-                setDashOptions(videoFrameRecorder);
+                setDashOptions(videoFrameRecorder,
+                        URI_FILE_NAME,
+                        configManager.isAudioOnly(),
+                        configManager.getSegmentDuration(), configManager.getWindowSize()
+                );
                 videoFrameRecorder.start();
             }
             /////////////////////////////////
@@ -289,8 +297,12 @@ public class RemoteStreamService extends Job {
         return dashUnitId;
     }
 
-    private void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        if (!configManager.isAudioOnly()) {
+    public static void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder,
+                                      String uriFileName,
+                                      boolean isAudioOnly, double segmentDuration, int windowSize) {
+        if (fFmpegFrameRecorder == null) { return; }
+
+        if (!isAudioOnly) {
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
@@ -311,8 +323,8 @@ public class RemoteStreamService extends Job {
         }
 
         fFmpegFrameRecorder.setFormat("dash");
-        fFmpegFrameRecorder.setOption("init_seg_name", URI_FILE_NAME + INIT_SEGMENT_POSTFIX);
-        fFmpegFrameRecorder.setOption("media_seg_name", URI_FILE_NAME + MEDIA_SEGMENT_POSTFIX);
+        fFmpegFrameRecorder.setOption("init_seg_name", uriFileName + INIT_SEGMENT_POSTFIX);
+        fFmpegFrameRecorder.setOption("media_seg_name", uriFileName + MEDIA_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("use_template", "1");
         fFmpegFrameRecorder.setOption("use_timeline", "0");
         fFmpegFrameRecorder.setOption("ldash", "1");
@@ -330,7 +342,9 @@ public class RemoteStreamService extends Job {
          * The value is treated as average segment duration when use_template is enabled and
          *      use_timeline is disabled and as minimum segment duration for all the other use cases.
          */
-        fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(configManager.getSegmentDuration()));
+        if (segmentDuration > 0) {
+            fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(segmentDuration));
+        }
 
         fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
         /**
@@ -409,7 +423,9 @@ public class RemoteStreamService extends Job {
         //fFmpegFrameRecorder.setOption("movflags", "+empty_moov+separate_moof+default_base_moof");
 
         // Set the maximum number of segments kept in the manifest.
-        fFmpegFrameRecorder.setOption("window_size", String.valueOf(configManager.getWindowSize()));
+        if (windowSize > 0) {
+            fFmpegFrameRecorder.setOption("window_size", String.valueOf(windowSize));
+        }
 
         // Bit set of AV_CODEC_EXPORT_DATA_* flags, which affects the kind of metadata exported in frame, packet, or coded stream side data by decoders and encoders.
         fFmpegFrameRecorder.setOption("export_side_data", "prft");
@@ -424,7 +440,9 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setOption("write_prft", "1");
     }
 
-    private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+    public static void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        if (fFmpegFrameRecorder == null) { return; }
+
         fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
@@ -442,7 +460,9 @@ public class RemoteStreamService extends Job {
         fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
     }
 
-    private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+    public static void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        if (fFmpegFrameRecorder == null) { return; }
+
         //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
 

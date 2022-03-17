@@ -11,6 +11,7 @@ import dash.dynamic.message.base.MessageType;
 import dash.handler.DashMessageHandler;
 import dash.handler.HttpMessageManager;
 import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.netty.buffer.ByteBuf;
@@ -74,7 +75,7 @@ public class DashManager {
 
         ///////////////////////////
         // 현재 실행한 프로그램의 DashUnit 정의 > 그냥 ID 만 가진 껍데기 UNIT
-        this.myDashUnit = new DashUnit(configManager.getId(), null);
+        this.myDashUnit = new DashUnit(null, configManager.getId(), null);
         ///////////////////////////
 
         ///////////////////////////
@@ -263,13 +264,13 @@ public class DashManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit addDashUnit(String dashUnitId, MPD mpd) {
+    public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd) {
         if (getDashUnit(dashUnitId) != null) { return null; }
 
         try {
             dashUnitMapLock.lock();
 
-            DashUnit dashUnit = new DashUnit(dashUnitId, mpd);
+            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
             logger.debug("[DashHttpMessageFilter] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;
@@ -320,6 +321,17 @@ public class DashManager {
         try {
             dashUnitMapLock.lock();
             dashUnitMap.entrySet().removeIf(Objects::nonNull);
+        } catch (Exception e) {
+            logger.warn("Fail to close all dash units.", e);
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+    }
+
+    public void deleteDashUnitsByType(StreamType type) {
+        try {
+            dashUnitMapLock.lock();
+            dashUnitMap.entrySet().removeIf(entry -> entry.getValue().getType() == type);
         } catch (Exception e) {
             logger.warn("Fail to close all dash units.", e);
         } finally {

@@ -26,7 +26,6 @@ public class ConfigManager {
     public static final String SECTION_LIVE = "LIVE"; // LIVE Section 이름
     public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
-    public static final String SECTION_SCRIPT = "SCRIPT"; // SCRIPT Section 이름
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -66,9 +65,6 @@ public class ConfigManager {
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
     public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
-
-    // SCRIPT
-    public static final String FIELD_SCRIPT_PATH = "PATH";
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -108,9 +104,6 @@ public class ConfigManager {
     // RTMP
     private String rtmpPublishIp = null;
     private int rtmpPublishPort = 0;
-
-    // SCRIPT
-    private String scriptPath = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -135,7 +128,6 @@ public class ConfigManager {
             loadLiveConfig();
             loadNetworkConfig();
             loadRtmpConfig();
-            loadScriptConfig();
 
             logger.info("Load config [{}]", configPath);
         } catch (IOException e) {
@@ -391,20 +383,6 @@ public class ConfigManager {
         logger.debug("Load [{}] config...(OK)", SECTION_RTMP);
     }
 
-    /**
-     * @fn private void loadScriptConfig()
-     * @brief SCRIPT Section 을 로드하는 함수
-     */
-    private void loadScriptConfig() {
-        this.scriptPath = getIniValue(SECTION_SCRIPT, FIELD_SCRIPT_PATH);
-        if (this.scriptPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SCRIPT, FIELD_SCRIPT_PATH);
-            System.exit(1);
-        }
-
-        logger.debug("Load [{}] config...(OK)", SECTION_SCRIPT);
-    }
-
     ////////////////////////////////////////////////////////////////////////////////
 
     /**
@@ -488,10 +466,6 @@ public class ConfigManager {
 
     public int getHttpListenPort() {
         return httpListenPort;
-    }
-
-    public String getScriptPath() {
-        return scriptPath;
     }
 
     public String getCameraPath() {

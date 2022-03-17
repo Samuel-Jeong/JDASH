@@ -223,7 +223,7 @@ public class LocalStreamService extends Job {
     private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
-        fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
+        fFmpegFrameRecorder.setVideoOption("preset", "slow");
 
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
         fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);

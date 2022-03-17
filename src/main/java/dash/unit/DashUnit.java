@@ -19,6 +19,7 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
+    private final StreamType type;
     private final long initiationTime;
     private final String id;
 
@@ -46,7 +47,8 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit(String id, MPD mpd) {
+    public DashUnit(StreamType type, String id, MPD mpd) {
+        this.type = type;
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
@@ -155,6 +157,10 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
+    public StreamType getType() {
+        return type;
+    }
+
     public long getInitiationTime() {
         return initiationTime;
     }
@@ -230,7 +236,8 @@ public class DashUnit {
     @Override
     public String toString() {
         return "DashUnit{" +
-                "initiationTime=" + initiationTime +
+                "type=" + type.name() +
+                ", initiationTime=" + initiationTime +
                 ", id='" + id + '\'' +
                 ", inputFilePath='" + inputFilePath + '\'' +
                 ", outputFilePath='" + outputFilePath + '\'' +
