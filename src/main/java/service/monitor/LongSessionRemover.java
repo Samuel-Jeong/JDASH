@@ -2,6 +2,7 @@ package service.monitor;
 
 import dash.DashManager;
 import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -40,6 +41,8 @@ public class LongSessionRemover extends Job {
                 if (dashUnit == null) {
                     continue;
                 }
+
+                if (!dashUnit.getType().equals(StreamType.DYNAMIC)) { continue; }
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
