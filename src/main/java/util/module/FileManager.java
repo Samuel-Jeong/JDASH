@@ -16,6 +16,20 @@ public class FileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(FileManager.class);
 
+    public static boolean isExist(String fileName) {
+        if (fileName == null) { return false; }
+
+        File file = new File(fileName);
+        return file.exists();
+    }
+
+    public static boolean mkdirs(String fileName) {
+        if (fileName == null) { return false; }
+
+        File file = new File(fileName);
+        return file.mkdirs();
+    }
+
     public static boolean writeBytes(File file, byte[] data, boolean isAppend) {
         if (file == null || data == null || data.length == 0) { return false; }
 
@@ -61,6 +75,28 @@ public class FileManager {
         }
     }
 
+    public static boolean writeString(String fileName, String data, boolean isAppend) {
+        if (fileName == null) { return false; }
+
+        BufferedWriter bufferedWriter = null;
+        try {
+            bufferedWriter = new BufferedWriter(new FileWriter(fileName, isAppend));
+            bufferedWriter.write(data);
+            return true;
+        } catch (Exception e) {
+            logger.warn("[FileManager] Fail to write the file. (fileName={})", fileName, e);
+            return false;
+        } finally {
+            try {
+                if (bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            } catch (Exception e) {
+                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName, e);
+            }
+        }
+    }
+
     public static byte[] readAllBytes(String fileName) {
         if (fileName == null) { return null; }
 
@@ -69,7 +105,7 @@ public class FileManager {
             bufferedInputStream = new BufferedInputStream(new FileInputStream(fileName));
             return bufferedInputStream.readAllBytes();
         } catch (Exception e) {
-            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName, e);
+            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
             return null;
         } finally {
             try {

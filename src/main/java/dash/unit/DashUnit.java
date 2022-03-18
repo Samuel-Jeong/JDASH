@@ -1,6 +1,7 @@
 package dash.unit;
 
 import config.ConfigManager;
+import dash.client.DashClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -19,9 +20,12 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
+    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
     private final StreamType type;
     private final long initiationTime;
     private final String id;
+    private final long expires;
 
     transient private MPD mpd;
 
@@ -43,15 +47,16 @@ public class DashUnit {
     private RemoteStreamService remoteCameraService = null;
     //private OldFileController oldFileController = null;
 
-    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    private DashClient dashClient = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit(StreamType type, String id, MPD mpd) {
+    public DashUnit(StreamType type, String id, MPD mpd, long expires) {
         this.type = type;
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
         this.mpd = mpd;
+        this.expires = expires;
 
         this.REMOTE_CAMERA_SERVICE_SCHEDULE_KEY = "REMOTE_CAMERA_SERVICE_SCHEDULE_KEY:" + id;
         if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
@@ -233,6 +238,10 @@ public class DashUnit {
         isRegistered = registered;
     }
 
+    public long getExpires() {
+        return expires;
+    }
+
     @Override
     public String toString() {
         return "DashUnit{" +
@@ -287,6 +296,16 @@ public class DashUnit {
                 logger.warn("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
             }
         }
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public DashClient getDashClient() {
+        return dashClient;
+    }
+
+    public void setDashClient(DashClient dashClient) {
+        this.dashClient = dashClient;
     }
     ////////////////////////////////////////////////////////////
 

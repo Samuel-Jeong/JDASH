@@ -43,6 +43,7 @@ public class LongSessionRemover extends Job {
                 }
 
                 if (!dashUnit.getType().equals(StreamType.DYNAMIC)) { continue; }
+                if (dashUnit.getExpires() > 0) { continue; }
 
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {

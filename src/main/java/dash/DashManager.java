@@ -3,13 +3,13 @@ package dash;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
-import dash.dynamic.PreProcessMediaManager;
-import dash.dynamic.message.EndLiveMediaProcessRequest;
-import dash.dynamic.message.PreLiveMediaProcessRequest;
-import dash.dynamic.message.base.MessageHeader;
-import dash.dynamic.message.base.MessageType;
-import dash.handler.DashMessageHandler;
-import dash.handler.HttpMessageManager;
+import dash.server.dynamic.PreProcessMediaManager;
+import dash.server.dynamic.message.EndLiveMediaProcessRequest;
+import dash.server.dynamic.message.PreLiveMediaProcessRequest;
+import dash.server.dynamic.message.base.MessageHeader;
+import dash.server.dynamic.message.base.MessageType;
+import dash.server.handler.DashMessageHandler;
+import dash.server.handler.HttpMessageManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import instance.BaseEnvironment;
@@ -75,7 +75,7 @@ public class DashManager {
 
         ///////////////////////////
         // 현재 실행한 프로그램의 DashUnit 정의 > 그냥 ID 만 가진 껍데기 UNIT
-        this.myDashUnit = new DashUnit(null, configManager.getId(), null);
+        this.myDashUnit = new DashUnit(null, configManager.getId(), null, 0);
         ///////////////////////////
 
         ///////////////////////////
@@ -264,13 +264,13 @@ public class DashManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd) {
+    public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd, long expires) {
         if (getDashUnit(dashUnitId) != null) { return null; }
 
         try {
             dashUnitMapLock.lock();
 
-            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd);
+            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd, expires);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
             logger.debug("[DashHttpMessageFilter] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;

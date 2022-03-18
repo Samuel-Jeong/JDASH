@@ -61,12 +61,11 @@ public class MediaManager {
                 if (dashPathExtension.length() != 0) {
                     if (!rawUri.endsWith(".mp4") && !rawUri.endsWith(".mpd")) { continue; }
 
-                    logger.debug("@@@ rawUri: {}", rawUri);
                     DashUnit dashUnit = ServiceManager.getInstance().getDashManager().addDashUnit(
                             StreamType.STATIC,
                              AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
                                      FileManager.getFilePathWithoutExtensionFromUri(fullPath),
-                            null
+                            null, 0
                     );
 
                     if (dashUnit != null) {

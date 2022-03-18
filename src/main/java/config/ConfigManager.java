@@ -61,6 +61,8 @@ public class ConfigManager {
     public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
+    public static final String FIELD_HTTP_TARGET_IP = "HTTP_TARGET_IP";
+    public static final String FIELD_HTTP_TARGET_PORT = "HTTP_TARGET_PORT";
 
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
@@ -100,6 +102,8 @@ public class ConfigManager {
     private int recvBufSize = 0;
     private String httpListenIp = null;
     private int httpListenPort = 0;
+    private String httpTargetIp = null;
+    private int httpTargetPort = 0;
 
     // RTMP
     private String rtmpPublishIp = null;
@@ -354,6 +358,24 @@ public class ConfigManager {
             }
         }
 
+        this.httpTargetIp = getIniValue(SECTION_NETWORK, FIELD_HTTP_TARGET_IP);
+        if (this.httpTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_IP);
+            System.exit(1);
+        }
+
+        String httpTargetPortString = getIniValue(SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
+        if (httpTargetPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.httpTargetPort = Integer.parseInt(httpTargetPortString);
+            if (this.httpTargetPort <= 0 || this.httpTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
         logger.debug("Load [{}] config...(OK)", SECTION_NETWORK);
     }
 
@@ -466,6 +488,14 @@ public class ConfigManager {
 
     public int getHttpListenPort() {
         return httpListenPort;
+    }
+
+    public String getHttpTargetIp() {
+        return httpTargetIp;
+    }
+
+    public int getHttpTargetPort() {
+        return httpTargetPort;
     }
 
     public String getCameraPath() {

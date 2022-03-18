@@ -2,10 +2,10 @@ package stream;
 
 import config.ConfigManager;
 import dash.DashManager;
-import dash.dynamic.PreProcessMediaManager;
-import dash.dynamic.message.PreLiveMediaProcessRequest;
-import dash.dynamic.message.base.MessageHeader;
-import dash.dynamic.message.base.MessageType;
+import dash.server.dynamic.PreProcessMediaManager;
+import dash.server.dynamic.message.PreLiveMediaProcessRequest;
+import dash.server.dynamic.message.base.MessageHeader;
+import dash.server.dynamic.message.base.MessageType;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -209,7 +209,7 @@ public class LocalStreamService extends Job {
                         configManager.getPreprocessListenIp(),
                         configManager.getCameraPath().length(),
                         configManager.getCameraPath(),
-                        1800
+                        0
                 );
                 byte[] requestByteData = preLiveMediaProcessRequest.getByteData();
                 target.getNettyChannel().sendData(requestByteData, requestByteData.length);
