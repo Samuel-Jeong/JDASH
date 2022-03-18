@@ -7,6 +7,7 @@ import instance.DebugLevel;
 import org.junit.Test;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
+import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +33,9 @@ public class DashClientTest {
         String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources";
         DashClient dashClient = new DashClient(
                 "TEST_1", baseEnvironment,
-                "http://192.168.7.33:5858/test/outdoor_market_ambiance_Dolby.mpd",
+                "http://" + configManager.getHttpTargetIp() +
+                        ":" + configManager.getHttpTargetPort() +
+                        "/test/outdoor_market_ambiance_Dolby.mpd",
                 targetBasePath
         );
         dashClient.start();

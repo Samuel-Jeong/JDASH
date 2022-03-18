@@ -36,7 +36,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             logger.warn("[DashHttpClientHandler] DashClient is null. Fail to recv the message.");
             return;
         } else if (dashClient.isStopped()) {
-            logger.warn("[DashHttpClientHandler] DashClient is already stopped. Fail to recv the message.");
+            //logger.warn("[DashHttpClientHandler] DashClient is already stopped. Fail to recv the message.");
             return;
         }
 

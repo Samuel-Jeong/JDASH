@@ -153,6 +153,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
                 dashManager.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
+                if (!FileManager.isExist(uri)) {
+                    dashManager.writeNotFound(channelHandlerContext, request);
+                    return;
+                }
+
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
                 logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
                 dashManager.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
