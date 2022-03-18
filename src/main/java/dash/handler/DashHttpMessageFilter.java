@@ -17,6 +17,7 @@ import service.AppInstance;
 import service.ServiceManager;
 import util.module.FileManager;
 
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
     ////////////////////////////////////////////////////////////
     @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
+    protected void messageReceived(ChannelHandlerContext channelHandlerContext, Object o) {
         if (!(o instanceof FullHttpRequest)) {
             return;
         }
@@ -63,6 +64,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
         uri = uri.trim();
         String originUri = uri;
+        if (originUri.contains("bad-request")) { return; }
         logger.debug("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, request);
         ///////////////////////////
 
@@ -96,21 +98,21 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
             if (uriFileName.equals(curDashUnitUriFileName)) {
                 dashUnit = curDashUnit;
-                logger.debug("[DashHttpMessageFilter] RE-DEMANDED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
+                logger.trace("[DashHttpMessageFilter] RE-DEMANDED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
                 break;
             }
 
             if (uriFileName.contains(curDashUnitUriFileName)) {
                 dashUnit = curDashUnit;
                 isRegistered = true;
-                logger.debug("[DashHttpMessageFilter] MATCHED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
+                logger.trace("[DashHttpMessageFilter] MATCHED! [{}] <> [{}] (dashUnitId={})", uriFileName, curDashUnitUriFileName, dashUnit.getId());
                 uriFileName = curDashUnitUriFileName;
                 break;
             }
         }
 
         if (dashUnit == null) {
-            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
+            logger.trace("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
             return;
         }
 

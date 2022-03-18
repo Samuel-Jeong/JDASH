@@ -48,7 +48,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         // CHECK URI
         String result = null;
         String uri = request.getRequest().uri();
-        logger.debug("[DashMessageHandler(uri={})] URI: [{}]", this.uri, uri);
+        //logger.debug("[DashMessageHandler(uri={})] URI: [{}]", this.uri, uri);
 
         if (!this.uri.equals(uri)) {
             logger.warn("[DashMessageHandler(uri={})] URI is not equal with handler's uri. (uri={})", this.uri, uri);
@@ -188,9 +188,9 @@ public class DashMessageHandler implements HttpMessageHandler {
                         logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                         return null;
                     }
-                } else {
+                } /*else {
                     logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
-                }
+                }*/
             } else {
                 mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
             }
@@ -219,7 +219,7 @@ public class DashMessageHandler implements HttpMessageHandler {
             dashUnit.setMpd(mpd);
             dashUnit.setMinBufferTime(mpd.getMinBufferTime());
             dashUnit.setDuration(mpd.getMediaPresentationDuration());
-            logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
+            //logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
