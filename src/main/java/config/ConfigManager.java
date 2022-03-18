@@ -33,18 +33,19 @@ public class ConfigManager {
     // COMMON
     public static final String FIELD_ID = "ID";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
-    public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
+    public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
+    public static final String FIELD_STREAMING = "STREAMING";
 
     // MEDIA
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
+    public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
+    public static final String FIELD_ENABLE_PRELOAD_WITH_DASH = "ENABLE_PRELOAD_WITH_DASH";
 
     // LIVE
     public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
-    public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
-    public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
     public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
@@ -74,18 +75,19 @@ public class ConfigManager {
     // COMMON
     private String id = null;
     private String serviceName = null;
-    private boolean enableClient = false;
     private long localSessionLimitTime = 0; // ms
+    private boolean enableClient = false;
+    private String streaming = null;
 
     // MEDIA
     private String mediaBasePath = null;
     private String mediaListPath = null;
     private String cameraPath = null;
     private String validationXsdPath = null;
+    private boolean enablePreloadWithDash = false;
 
     // LIVE
     private boolean enableGui = false;
-    private long chunkFileDeletionIntervalSeconds = 0;
     private boolean clearDashDataIfSessionClosed = true;
     private double segmentDuration = 0.0d;
     private int windowSize = 0;
@@ -158,6 +160,12 @@ public class ConfigManager {
             System.exit(1);
         }
 
+        this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
+        if (this.localSessionLimitTime < 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
+            System.exit(1);
+        }
+
         String enableClientString = getIniValue(SECTION_COMMON, FIELD_ENABLE_CLIENT);
         if (enableClientString == null) {
             logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ENABLE_CLIENT);
@@ -166,9 +174,9 @@ public class ConfigManager {
             this.enableClient = Boolean.parseBoolean(enableClientString);
         }
 
-        this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
-        if (this.localSessionLimitTime < 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
+        this.streaming = getIniValue(SECTION_COMMON, FIELD_STREAMING);
+        if (streaming == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_STREAMING);
             System.exit(1);
         }
 
@@ -204,6 +212,14 @@ public class ConfigManager {
             System.exit(1);
         }
 
+        String enablePreloadWithDashString = getIniValue(SECTION_MEDIA, FIELD_ENABLE_PRELOAD_WITH_DASH);
+        if (enablePreloadWithDashString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_ENABLE_PRELOAD_WITH_DASH);
+            System.exit(1);
+        } else {
+            this.enablePreloadWithDash = Boolean.parseBoolean(enablePreloadWithDashString);
+        }
+
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
@@ -218,18 +234,6 @@ public class ConfigManager {
             System.exit(1);
         } else {
             this.enableGui = Boolean.parseBoolean(enableGuiString);
-        }
-
-        String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-        if (chunkFileDeletionIntervalSecondsString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-            System.exit(1);
-        } else {
-            this.chunkFileDeletionIntervalSeconds = Long.parseLong(chunkFileDeletionIntervalSecondsString);
-            if (this.chunkFileDeletionIntervalSeconds <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-                System.exit(1);
-            }
         }
 
         String clearDashDataIfSessionClosedString = getIniValue(SECTION_LIVE, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
@@ -454,24 +458,16 @@ public class ConfigManager {
         return serviceName;
     }
 
-    public boolean isEnableClient() {
-        return enableClient;
-    }
-
     public long getLocalSessionLimitTime() {
         return localSessionLimitTime;
     }
 
-    public int getThreadCount() {
-        return threadCount;
+    public boolean isEnableClient() {
+        return enableClient;
     }
 
-    public int getSendBufSize() {
-        return sendBufSize;
-    }
-
-    public int getRecvBufSize() {
-        return recvBufSize;
+    public String getStreaming() {
+        return streaming;
     }
 
     public String getMediaBasePath() {
@@ -482,36 +478,32 @@ public class ConfigManager {
         return mediaListPath;
     }
 
-    public String getHttpListenIp() {
-        return httpListenIp;
-    }
-
-    public int getHttpListenPort() {
-        return httpListenPort;
-    }
-
-    public String getHttpTargetIp() {
-        return httpTargetIp;
-    }
-
-    public int getHttpTargetPort() {
-        return httpTargetPort;
-    }
-
     public String getCameraPath() {
         return cameraPath;
     }
 
-    public String getRtmpPublishIp() {
-        return rtmpPublishIp;
-    }
-
-    public int getRtmpPublishPort() {
-        return rtmpPublishPort;
-    }
-
     public String getValidationXsdPath() {
         return validationXsdPath;
+    }
+
+    public boolean isEnableGui() {
+        return enableGui;
+    }
+
+    public boolean isClearDashDataIfSessionClosed() {
+        return clearDashDataIfSessionClosed;
+    }
+
+    public double getSegmentDuration() {
+        return segmentDuration;
+    }
+
+    public int getWindowSize() {
+        return windowSize;
+    }
+
+    public boolean isAudioOnly() {
+        return audioOnly;
     }
 
     public String getPreprocessListenIp() {
@@ -534,27 +526,43 @@ public class ConfigManager {
         return preprocessInitIdleTime;
     }
 
-    public long getChunkFileDeletionIntervalSeconds() {
-        return chunkFileDeletionIntervalSeconds;
+    public int getThreadCount() {
+        return threadCount;
     }
 
-    public boolean isClearDashDataIfSessionClosed() {
-        return clearDashDataIfSessionClosed;
+    public int getSendBufSize() {
+        return sendBufSize;
     }
 
-    public boolean isAudioOnly() {
-        return audioOnly;
+    public int getRecvBufSize() {
+        return recvBufSize;
     }
 
-    public Double getSegmentDuration() {
-        return segmentDuration;
+    public String getHttpListenIp() {
+        return httpListenIp;
     }
 
-    public int getWindowSize() {
-        return windowSize;
+    public int getHttpListenPort() {
+        return httpListenPort;
     }
 
-    public boolean isEnableGui() {
-        return enableGui;
+    public String getHttpTargetIp() {
+        return httpTargetIp;
+    }
+
+    public int getHttpTargetPort() {
+        return httpTargetPort;
+    }
+
+    public String getRtmpPublishIp() {
+        return rtmpPublishIp;
+    }
+
+    public int getRtmpPublishPort() {
+        return rtmpPublishPort;
+    }
+
+    public boolean isEnablePreloadWithDash() {
+        return enablePreloadWithDash;
     }
 }

@@ -14,9 +14,13 @@ import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
+import java.util.concurrent.TimeUnit;
+
 public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private static final Logger logger = LoggerFactory.getLogger(DashHttpClientHandler.class);
+
+    private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final DashClient dashClient;
 
@@ -108,6 +112,13 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         dashClient.incAndGetAudioSegmentSeqNum();
                         String curMediaSegmentName = dashClient.getMediaSegmentName();
                         logger.debug("[+] MediaSegment is changed. ([{}] > [{}])", prevMediaSegmentName, curMediaSegmentName);
+
+                        // SegmentDuration 만큼(micro-sec) sleep
+                        try {
+                            timeUnit.sleep(dashClient.getAudioSegmentDuration());
+                        } catch (Exception e) {
+                            //logger.warn("");
+                        }
 
                         dashClient.sendHttpGetRequest(
                                 FileManager.concatFilePath(

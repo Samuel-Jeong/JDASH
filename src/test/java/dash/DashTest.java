@@ -50,7 +50,7 @@ public class DashTest {
     }
 
     public static MPD parseMpdTest(DashManager dashManager) {
-        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_example4.xml");
+        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_examples/mpd_example4.xml");
     }
 
 }

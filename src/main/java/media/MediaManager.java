@@ -3,6 +3,7 @@ package media;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
+import dash.client.DashClient;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import org.apache.commons.io.FileUtils;
@@ -43,6 +44,8 @@ public class MediaManager {
         ////////////////////////////////
         // 2) APPLY BASE PATH IN FRONT OF THE RAW FILE PATH
         if (fileLines != null) {
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
             // CLEAR ALL STATIC DASH UNIT
             ServiceManager.getInstance().getDashManager().deleteDashUnitsByType(StreamType.STATIC);
             mediaInfoList.clear();
@@ -101,7 +104,21 @@ public class MediaManager {
                             mpdPath = mpdPath.replace(".mp4", ".mpd");
                         }
                         dashUnit.setOutputFilePath(mpdPath);
-                        dashUnit.setLiveStreaming(false);
+
+                        if (configManager.isEnablePreloadWithDash()) {
+                            // GET STATIC MEDIA SOURCE from remote dash server
+                            String httpPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
+                            httpPath = FileManager.concatFilePath(httpPath, uri);
+                            DashClient dashClient = new DashClient(
+                                    dashUnit.getId(),
+                                    ServiceManager.getInstance().getDashManager().getBaseEnvironment(),
+                                    httpPath,
+                                    FileManager.getParentPathFromUri(mpdPath)
+                            );
+                            dashClient.start();
+                            dashClient.sendHttpGetRequest(httpPath);
+                            dashUnit.setDashClient(dashClient);
+                        }
                     }
                 }
 

@@ -5,7 +5,7 @@ import dash.client.DashClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.scheduler.job.Job;
+import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import stream.RemoteStreamService;
 import tool.parser.mpd.MPD;
@@ -36,16 +36,13 @@ public class DashUnit {
     private Duration duration = null;
     private Duration minBufferTime= null;
 
-    private boolean isLiveStreaming = false;
-
-    private final AtomicBoolean isRtmpStreaming = new AtomicBoolean(false);
+    private final AtomicBoolean isLiveStreaming = new AtomicBoolean(false);
     private boolean isRegistered = false;
 
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
-    ///public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
-    private final ScheduleManager scheduleManager = new ScheduleManager();
-    private RemoteStreamService remoteCameraService = null;
-    //private OldFileController oldFileController = null;
+
+    transient private final ScheduleManager scheduleManager = new ScheduleManager();
+    transient private RemoteStreamService remoteCameraService = null;
 
     private DashClient dashClient = null;
     ////////////////////////////////////////////////////////////
@@ -62,86 +59,67 @@ public class DashUnit {
         if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
             logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
         }
-
-        /*this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
-        if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
-            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
-        }*/
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void runRtmpStreaming(String uriFileName, String curRtmpUri, String mpdPath) {
-        if (isRtmpStreaming.get()) {
-            logger.warn("[DashUnit(id={})] runRtmpStreaming is already running...", id);
+    public void runLiveStreaming(String uriFileName, String sourceUri, String mpdPath) {
+        if (isLiveStreaming.get()) {
+            logger.warn("[DashUnit(id={})] runLiveStreaming is already running...", id);
             return;
         }
 
         try {
             //////////////////////////////
-            // REMOTE CAMERA SERVICE
-            remoteCameraService = new RemoteStreamService(
-                    scheduleManager,
-                    RemoteStreamService.class.getSimpleName() + "_" + id,
-                    0, 10, TimeUnit.MILLISECONDS,
-                    1, 1, true,
-                    id, configManager, uriFileName, curRtmpUri, mpdPath
-            );
-
-            if (remoteCameraService.init()) {
-                scheduleManager.startJob(
-                        REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
-                        remoteCameraService
+            if (configManager.getStreaming().equals("rtmp")) {
+                // REMOTE CAMERA SERVICE with RTMP
+                remoteCameraService = new RemoteStreamService(
+                        scheduleManager,
+                        RemoteStreamService.class.getSimpleName() + "_" + id,
+                        0, 10, TimeUnit.MILLISECONDS,
+                        1, 1, true,
+                        id, configManager, uriFileName, sourceUri, mpdPath
                 );
-                isRtmpStreaming.set(true);
-                logger.debug("[DashUnit(id={})] [+RUN] RtmpStreaming", id);
-            } else {
-                logger.warn("[DashUnit(id={})] [-RUN FAIL] RtmpStreaming", id);
-            }
-            //////////////////////////////
 
-            //////////////////////////////
-            // OLD FILE CONTROLLER
-            /*String dashPath = outputFilePath;
-            String dashPathExtension = FileUtils.getExtension(dashPath);
-            if (!dashPathExtension.isEmpty()) {
-                dashPath = FileManager.getParentPathFromUri(dashPath);
-                logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
+                if (remoteCameraService.init()) {
+                    scheduleManager.startJob(
+                            REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
+                            remoteCameraService
+                    );
+                    isLiveStreaming.set(true);
+                    logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
+                } else {
+                    logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
+                }
+            } else if (configManager.getStreaming().equals("dash")) {
+                dashClient = new DashClient(
+                        id,
+                        ServiceManager.getInstance().getDashManager().getBaseEnvironment(),
+                        sourceUri,
+                        FileManager.getParentPathFromUri(mpdPath)
+                );
+                dashClient.start();
+                logger.debug("[DashUnit(id={})] [+RUN] Dash client streaming", id);
             }
-
-            oldFileController = new OldFileController(
-                    scheduleManager,
-                    OldFileController.class.getSimpleName() + "_" + id,
-                    0, 1000, TimeUnit.MILLISECONDS,
-                    1, 1, true,
-                    id, dashPath
-            );
-            scheduleManager.startJob(
-                    OLD_FILE_CONTROL_SCHEDULE_KEY,
-                    oldFileController
-            );
-            logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);*/
             //////////////////////////////
         } catch (Exception e) {
-            logger.debug("[DashUnit(id={})] runRtmpStreaming.Exception", id, e);
+            logger.debug("[DashUnit(id={})] runLiveStreaming.Exception", id, e);
         }
     }
 
-    public void finishRtmpStreaming() {
-        if (isRtmpStreaming.get()) {
-            /*if (oldFileController != null) {
-                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController);
-                oldFileController = null;
-                logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
-            }*/
-
+    public void finishLiveStreaming() {
+        if (isLiveStreaming.get()) {
             if (remoteCameraService != null) {
                 scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteCameraService);
                 remoteCameraService.stop();
                 remoteCameraService = null;
-                logger.debug("[DashUnit(id={})] [-FINISH] RtmpStreaming", id);
-                isRtmpStreaming.set(false);
+                logger.debug("[DashUnit(id={})] [-FINISH] Rtmp client streaming", id);
+            } else if (dashClient != null) {
+                dashClient.stop();
+                dashClient = null;
+                logger.debug("[DashUnit(id={})] [-FINISH] Dash client streaming", id);
             }
+            isLiveStreaming.set(false);
         }
     }
 
@@ -223,11 +201,7 @@ public class DashUnit {
     }
 
     public boolean isLiveStreaming() {
-        return isLiveStreaming;
-    }
-
-    public void setLiveStreaming(boolean liveStreaming) {
-        isLiveStreaming = liveStreaming;
+        return isLiveStreaming.get();
     }
 
     public boolean isRegistered() {
@@ -253,49 +227,8 @@ public class DashUnit {
                 ", curSegmentName='" + curSegmentName + '\'' +
                 ", duration=" + duration +
                 ", minBufferTime=" + minBufferTime +
-                ", isLiveStreaming=" + isLiveStreaming +
+                ", isLiveStreaming=" + isLiveStreaming.get() +
                 '}';
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private static class OldFileController extends Job {
-
-        private final String dashUnitId; // DashUnit ID
-        private final String dashPath; // 현재 DASH Streaming 경로
-        private final long limitTime; // 제한 시간
-
-        public OldFileController(ScheduleManager scheduleManager, String name,
-                                 int initialDelay, int interval, TimeUnit timeUnit,
-                                 int priority, int totalRunCount, boolean isLasted,
-                                 String dashUnitId, String dashPath) {
-            super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
-
-            this.dashUnitId = dashUnitId;
-            this.dashPath = dashPath;
-
-            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-            this.limitTime = configManager.getChunkFileDeletionIntervalSeconds();
-
-            logger.debug("[DashUnit(id={})] OldFileController is initiated. (dashPath={}, timeLimit={})",
-                    dashUnitId, dashPath, limitTime
-            );
-        }
-
-        @Override
-        public void run() {
-            if (dashPath == null) { return; }
-
-            try {
-                FileManager.deleteOldFilesBySecond(
-                        dashPath,
-                        "init",
-                        limitTime
-                );
-            } catch (Exception e) {
-                logger.warn("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
-            }
-        }
     }
     ////////////////////////////////////////////////////////////
 

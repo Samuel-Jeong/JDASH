@@ -90,26 +90,32 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 }
 
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-                String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                String curRtmpUri = FileManager.concatFilePath(networkPath, uri);
+
+                String networkPath = "";
+                if (configManager.getStreaming().equals("rtmp")) {
+                    networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+                } else if (configManager.getStreaming().equals("dash")) {
+                    networkPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
+                }
+
+                String sourceUri = FileManager.concatFilePath(networkPath, uri);
                 String mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
                 File mpdPathFile = new File(mpdPath);
                 if (!mpdPathFile.exists()) {
                     if (mpdPathFile.mkdirs()) {
-                        logger.debug("[DashMessageHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
+                        logger.debug("[DashMessageHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
                     }
                 }
 
                 String uriFileName = FileManager.getFileNameFromUri(uri);
                 mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
-                logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, curRtmpUri);
+                logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
 
-                dashUnit.setInputFilePath(curRtmpUri);
+                dashUnit.setInputFilePath(sourceUri);
                 dashUnit.setOutputFilePath(mpdPath);
-                dashUnit.setLiveStreaming(true);
 
                 ///////////////////////////
-                dashUnit.runRtmpStreaming(uriFileName, curRtmpUri, mpdPath);
+                dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath);
                 ///////////////////////////
 
                 logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, preProcessRequest);

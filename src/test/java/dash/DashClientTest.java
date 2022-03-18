@@ -30,7 +30,7 @@ public class DashClientTest {
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
-        String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources";
+        String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/outdoor_market_ambiance_Dolby";
         DashClient dashClient = new DashClient(
                 "TEST_1", baseEnvironment,
                 "http://" + configManager.getHttpTargetIp() +

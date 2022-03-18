@@ -65,7 +65,7 @@ public class DashClient {
         this.srcPath = srcPath;
         this.srcBasePath = FileManager.getParentPathFromUri(srcPath);
         this.uriFileName = FileManager.getFileNameFromUri(srcPath);
-        this.targetBasePath = FileManager.concatFilePath(targetBasePath, uriFileName);
+        this.targetBasePath = targetBasePath;
         this.targetMpdPath = FileManager.concatFilePath(this.targetBasePath, uriFileName + ".mpd");
 
         this.dashHttpMessageSender = new DashHttpMessageSender(baseEnvironment, false); // SSL 아직 미지원
@@ -98,11 +98,11 @@ public class DashClient {
 
         //////////////////////////////
         // SETTING : TARGET PATH
-        if (FileManager.isExist(targetBasePath)) {
-            FileManager.deleteFile(targetBasePath);
+        if (!FileManager.isExist(targetBasePath)) {
+            //FileManager.deleteFile(targetBasePath);
+            FileManager.mkdirs(targetBasePath);
+            makeMpd("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         }
-        FileManager.mkdirs(targetBasePath);
-        makeMpd("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         //////////////////////////////
     }
 
@@ -302,7 +302,30 @@ public class DashClient {
     }
 
     public Long getDurationOfTemplate(Representation representation) {
-        return representation.getSegmentTemplate().getDuration();
+        return representation.getSegmentTemplate().getDuration(); // micro-sec
+    }
+
+    public Long getTimeScale(Representation representation) {
+        return representation.getSegmentTemplate().getTimescale(); // micro-sec
+    }
+
+    public long getAudioSegmentDuration() {
+        List<Representation> representations = getRepresentations(DashClient.CONTENT_AUDIO_TYPE);
+        Representation audioRepresentation = representations.get(0);
+        if (audioRepresentation != null) {
+            // GET from SegmentTemplate
+            Long duration = getDurationOfTemplate(audioRepresentation);
+            if (duration == null) {
+                // GET from SegmentTimeline
+                duration = audioRepresentation.getSegmentTemplate()
+                        .getSegmentTimeline()
+                        .get((int) getAudioSegmentDuration())
+                        .getD(); // micro-sec
+            }
+            return duration;
+        } else {
+            return 0;
+        }
     }
 
     public List<Representation> getRepresentations(String contentType) {

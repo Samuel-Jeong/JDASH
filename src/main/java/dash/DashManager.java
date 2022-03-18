@@ -290,7 +290,7 @@ public class DashManager {
         try {
             dashUnitMapLock.lock();
 
-            dashUnit.finishRtmpStreaming();
+            dashUnit.finishLiveStreaming();
             logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
 
             dashUnitMap.remove(dashUnitId);
