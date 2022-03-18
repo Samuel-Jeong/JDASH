@@ -55,8 +55,13 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             dashManager.send100Continue(channelHandlerContext);
         }
 
-        final HttpMethod method = request.method();
-        String uri = request.uri(); // [/Seoul.mp4] or [/Seoul_chunk_1_00001.m4s] or [aws/20210209/Seoul.mp4]
+        /**
+         * [live/test]
+         * [vod/test_chunk_1_00001.m4s]
+         * [vod/test.mp4]
+         * [vod/test.mpd]
+         */
+        String uri = request.uri();
         if (uri == null) {
             logger.warn("[DashHttpMessageFilter] URI is not defined.");
             return;
@@ -134,7 +139,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         // ROUTING IF NOT REGISTERED
         HttpMessageRoute uriRoute = null;
         if (!isRegistered) {
-            uriRoute = uriRouteTable.findUriRoute(method, uri);
+            uriRoute = uriRouteTable.findUriRoute(request.method(), uri);
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI (from the route table) : {}", uri);
                 dashManager.writeNotFound(channelHandlerContext, request);

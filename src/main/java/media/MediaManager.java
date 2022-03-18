@@ -22,7 +22,7 @@ public class MediaManager {
 
     private final String mediaBasePath;
     private final String mediaListFilePath;
-    private List<String> uriList = null;
+    private final List<MediaInfo> mediaInfoList = new ArrayList<>();
 
     ////////////////////////////////////////////////////////////
     public MediaManager(String mediaListFilePath) {
@@ -37,32 +37,57 @@ public class MediaManager {
     public boolean loadUriList() {
         ////////////////////////////////
         // 1) GET RAW FILE LIST
-        uriList = FileManager.readAllLines(mediaListFilePath);
+        List<String> fileLines = FileManager.readAllLines(mediaListFilePath);
         ////////////////////////////////
 
         ////////////////////////////////
         // 2) APPLY BASE PATH IN FRONT OF THE RAW FILE PATH
-        if (uriList != null) {
+        if (fileLines != null) {
             // CLEAR ALL STATIC DASH UNIT
             ServiceManager.getInstance().getDashManager().deleteDashUnitsByType(StreamType.STATIC);
+            mediaInfoList.clear();
 
-            List<String> newUriList = new ArrayList<>();
-            for (String rawUri : uriList) {
+            int mediaInfoListIndex = 0;
+            for (String rawUri : fileLines) {
                 if (rawUri == null || rawUri.isEmpty()) {
                     continue;
                 }
 
                 rawUri = rawUri.trim();
-                String fullPath = FileManager.concatFilePath(mediaBasePath, rawUri);
-                newUriList.add(fullPath);
+                // 앞에 '#' 이 있으면 주석으로 처리
+                if (rawUri.startsWith("#")) { continue; }
+
+                // ex) D,live/jamesj
+                String[] elements = rawUri.split(",");
+                if (elements.length != 2) { continue; }
+
+                /**
+                 * Stream Type
+                 * S: Static stream
+                 * D: Dynamic stream
+                 */
+                String streamTypeStr = elements[0];
+                StreamType streamType = StreamType.NONE;
+                if (streamTypeStr.equals("S")) {
+                    streamType = StreamType.STATIC;
+                } else if (streamTypeStr.equals("D")) {
+                    streamType = StreamType.DYNAMIC;
+                }
+
+                String uri = elements[1];
+                String fullPath = FileManager.concatFilePath(mediaBasePath, uri);
+
+                // ADD MediaInfo
+                addMediaInfo(mediaInfoListIndex, streamType, fullPath);
 
                 // ADD STATIC DASH UNIT
-                String dashPathExtension = FileUtils.getExtension(rawUri);
+                String dashPathExtension = FileUtils.getExtension(uri);
                 if (dashPathExtension.length() != 0) {
-                    if (!rawUri.endsWith(".mp4") && !rawUri.endsWith(".mpd")) { continue; }
+                    if (!streamType.equals(StreamType.STATIC)) { continue; }
+                    if (!uri.endsWith(".mp4") && !uri.endsWith(".mpd")) { continue; }
 
                     DashUnit dashUnit = ServiceManager.getInstance().getDashManager().addDashUnit(
-                            StreamType.STATIC,
+                            streamType,
                              AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
                                      FileManager.getFilePathWithoutExtensionFromUri(fullPath),
                             null, 0
@@ -79,29 +104,36 @@ public class MediaManager {
                         dashUnit.setLiveStreaming(false);
                     }
                 }
+
+                mediaInfoListIndex++;
             }
-            uriList = newUriList;
         }
         ////////////////////////////////
 
-        return uriList != null && !uriList.isEmpty();
+        return !mediaInfoList.isEmpty();
     }
 
-    public void addUri(int index, String uri) {
+    public void addMediaInfo(int index, StreamType streamType, String uri) {
         if (index < 0 || uri == null) {
             logger.warn("[MediaManager] Fail to add the uri. (index={}, uri={})", index, uri);
             return;
         }
 
-        uriList.add(index, uri);
+        mediaInfoList.add(
+                index,
+                new MediaInfo(
+                        streamType,
+                        uri
+                )
+        );
     }
 
-    public String getUri(int index) {
-        return uriList.get(index);
+    public MediaInfo getMediaInfo(int index) {
+        return mediaInfoList.get(index);
     }
 
-    public List<String> getUriList() {
-        return uriList;
+    public List<MediaInfo> getMediaInfoList() {
+        return mediaInfoList;
     }
     ////////////////////////////////////////////////////////////
 

@@ -19,6 +19,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import media.MediaInfo;
 import media.MediaManager;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
@@ -199,10 +200,10 @@ public class DashManager {
         try {
             if (mediaManager.loadUriList()) {
                 httpMessageManager.clear();
-                for (String uri : mediaManager.getUriList()) {
+                for (MediaInfo mediaInfo : mediaManager.getMediaInfoList()) {
                     httpMessageManager.get(
-                            uri,
-                            new DashMessageHandler(uri)
+                            mediaInfo.getUri(),
+                            new DashMessageHandler(mediaInfo.getUri())
                     );
                 }
 

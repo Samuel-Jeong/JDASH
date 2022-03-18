@@ -48,8 +48,6 @@ public class DashMessageHandler implements HttpMessageHandler {
         // CHECK URI
         String result = null;
         String uri = request.getRequest().uri();
-        //logger.debug("[DashMessageHandler(uri={})] URI: [{}]", this.uri, uri);
-
         if (!this.uri.equals(uri)) {
             logger.warn("[DashMessageHandler(uri={})] URI is not equal with handler's uri. (uri={})", this.uri, uri);
             return null;
@@ -59,7 +57,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(".mp4")) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
-                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. (uri={})", this.uri, uri);
+                logger.warn("[DashMessageHandler(uri={})] Fail to find the mp4 file. (uri={})", this.uri, uri);
                 return null;
             }
         }
