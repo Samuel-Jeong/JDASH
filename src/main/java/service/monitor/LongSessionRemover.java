@@ -1,6 +1,6 @@
 package service.monitor;
 
-import dash.DashManager;
+import dash.server.DashServer;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import org.slf4j.Logger;
@@ -28,9 +28,9 @@ public class LongSessionRemover extends Job {
 
     @Override
     public void run() {
-        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        DashServer dashServer = ServiceManager.getInstance().getDashServer();
 
-        HashMap<String, DashUnit> dashUnitMap = dashManager.getCloneDashMap();
+        HashMap<String, DashUnit> dashUnitMap = dashServer.getCloneDashMap();
         if (!dashUnitMap.isEmpty()) {
             for (Map.Entry<String, DashUnit> entry : dashUnitMap.entrySet()) {
                 if (entry == null) {
@@ -48,7 +48,7 @@ public class LongSessionRemover extends Job {
                 long curTime = System.currentTimeMillis();
                 if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
                     dashUnit.clearMpdPath();
-                    dashManager.deleteDashUnit(dashUnit.getId());
+                    dashServer.deleteDashUnit(dashUnit.getId());
                     logger.warn("({}) REMOVED LONG DASH UNIT(DashUnit=\n{})", getName(), dashUnit);
                 }
             }

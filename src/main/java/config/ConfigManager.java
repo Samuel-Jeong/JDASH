@@ -22,9 +22,10 @@ public class ConfigManager {
     ////////////////////////////////////////////////////////////
     // Section String
     public static final String SECTION_COMMON = "COMMON"; // COMMON Section 이름
+    public static final String SECTION_SERVER = "SERVER"; // SERVER Section 이름
+    public static final String SECTION_CLIENT = "CLIENT"; // CLIENT Section 이름
     public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
-    public static final String SECTION_LIVE = "LIVE"; // LIVE Section 이름
-    public static final String SECTION_NETWORK = "NETWORK"; // NETWORK Section 이름
+    public static final String SECTION_MPD = "MPD"; // MPD Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
     ////////////////////////////////////////////////////////////
 
@@ -35,35 +36,40 @@ public class ConfigManager {
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
     public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
+    public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
+    public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
+    public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
+
+    // SERVER
     public static final String FIELD_STREAMING = "STREAMING";
+    public static final String FIELD_ENABLE_PRELOAD_WITH_DASH = "ENABLE_PRELOAD_WITH_DASH";
+    public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
+    public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
+    public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
+    public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
+
+    // CLIENT
+    public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
+    public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
+    public static final String FIELD_HTTP_TARGET_IP = "HTTP_TARGET_IP";
+    public static final String FIELD_HTTP_TARGET_PORT = "HTTP_TARGET_PORT";
+    public static final String FIELD_PREPROCESS_INIT_IDLE_TIME = "PREPROCESS_INIT_IDLE_TIME";
+    public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
+    public static final String FIELD_PREPROCESS_TARGET_PORT = "PREPROCESS_TARGET_PORT";
 
     // MEDIA
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
-    public static final String FIELD_CAMERA_PATH = "CAMERA_PATH";
-    public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
-    public static final String FIELD_ENABLE_PRELOAD_WITH_DASH = "ENABLE_PRELOAD_WITH_DASH";
-
-    // LIVE
-    public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
+    public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
+
+    // MPD
+    public static final String FIELD_ENABLE_VALIDATION = "ENABLE_VALIDATION";
+    public static final String FIELD_REPRESENTATION_ID_FORMAT = "REPRESENTATION_ID_FORMAT";
+    public static final String FIELD_CHUNK_NUMBER_FORMAT = "CHUNK_NUMBER_FORMAT";
+    public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
     public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
-    public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
-    public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
-    public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
-    public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
-    public static final String FIELD_PREPROCESS_TARGET_PORT = "PREPROCESS_TARGET_PORT";
-    public static final String FIELD_PREPROCESS_INIT_IDLE_TIME = "PREPROCESS_INIT_IDLE_TIME";
-
-    // NETWORK
-    public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
-    public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
-    public static final String FIELD_RECV_BUF_SIZE = "RECV_BUF_SIZE";
-    public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
-    public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
-    public static final String FIELD_HTTP_TARGET_IP = "HTTP_TARGET_IP";
-    public static final String FIELD_HTTP_TARGET_PORT = "HTTP_TARGET_PORT";
 
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
@@ -77,35 +83,40 @@ public class ConfigManager {
     private String serviceName = null;
     private long localSessionLimitTime = 0; // ms
     private boolean enableClient = false;
+    private int threadCount = 0;
+    private int sendBufSize = 0;
+    private int recvBufSize = 0;
+
+    // SERVER
     private String streaming = null;
+    private boolean enablePreloadWithDash = false;
+    private String httpListenIp = null;
+    private int httpListenPort = 0;
+    private String preprocessListenIp = null;
+    private int preprocessListenPort = 0;
+
+    // CLIENT
+    private boolean enableGui = false;
+    private String cameraPath = null;
+    private long preprocessInitIdleTime = 0; // ms
+    private String preprocessTargetIp = null;
+    private int preprocessTargetPort = 0;
+    private String httpTargetIp = null;
+    private int httpTargetPort = 0;
 
     // MEDIA
     private String mediaBasePath = null;
     private String mediaListPath = null;
-    private String cameraPath = null;
-    private String validationXsdPath = null;
-    private boolean enablePreloadWithDash = false;
-
-    // LIVE
-    private boolean enableGui = false;
     private boolean clearDashDataIfSessionClosed = true;
+    private boolean audioOnly = false;
+
+    // MPD
+    private boolean enableValidation = false;
+    private String representationIdFormat = null;
+    private String chunkNumberFormat = null;
+    private String validationXsdPath = null;
     private double segmentDuration = 0.0d;
     private int windowSize = 0;
-    private boolean audioOnly = false;
-    private String preprocessListenIp = null;
-    private int preprocessListenPort = 0;
-    private String preprocessTargetIp = null;
-    private int preprocessTargetPort = 0;
-    private long preprocessInitIdleTime = 0; // ms
-
-    // NETWORK
-    private int threadCount = 0;
-    private int sendBufSize = 0;
-    private int recvBufSize = 0;
-    private String httpListenIp = null;
-    private int httpListenPort = 0;
-    private String httpTargetIp = null;
-    private int httpTargetPort = 0;
 
     // RTMP
     private String rtmpPublishIp = null;
@@ -130,9 +141,10 @@ public class ConfigManager {
             this.ini = new Ini(iniFile);
 
             loadCommonConfig();
+            loadServerConfig();
+            loadClientConfig();
             loadMediaConfig();
-            loadLiveConfig();
-            loadNetworkConfig();
+            loadMpdConfig();
             loadRtmpConfig();
 
             logger.info("Load config [{}]", configPath);
@@ -174,13 +186,143 @@ public class ConfigManager {
             this.enableClient = Boolean.parseBoolean(enableClientString);
         }
 
-        this.streaming = getIniValue(SECTION_COMMON, FIELD_STREAMING);
-        if (streaming == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_STREAMING);
+        this.threadCount = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_THREAD_COUNT));
+        if (this.threadCount <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_THREAD_COUNT, threadCount);
+            System.exit(1);
+        }
+
+        this.sendBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_SEND_BUF_SIZE));
+        if (this.sendBufSize <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_SEND_BUF_SIZE, sendBufSize);
+            System.exit(1);
+        }
+
+        this.recvBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_RECV_BUF_SIZE));
+        if (this.recvBufSize <= 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_RECV_BUF_SIZE, recvBufSize);
             System.exit(1);
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_COMMON);
+    }
+
+    /**
+     * @fn private void loadServerConfig()
+     * @brief SERVER Section 을 로드하는 함수
+     */
+    private void loadServerConfig() {
+        this.streaming = getIniValue(SECTION_SERVER, FIELD_STREAMING);
+        if (streaming == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_STREAMING);
+            System.exit(1);
+        }
+
+        String enablePreloadWithDashString = getIniValue(SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
+        if (enablePreloadWithDashString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
+            System.exit(1);
+        } else {
+            this.enablePreloadWithDash = Boolean.parseBoolean(enablePreloadWithDashString);
+        }
+
+        this.httpListenIp = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_IP);
+        if (this.httpListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String httpListenPortString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+        if (httpListenPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.httpListenPort = Integer.parseInt(httpListenPortString);
+            if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.preprocessListenIp = getIniValue(SECTION_SERVER, FIELD_PREPROCESS_LISTEN_IP);
+        if (this.preprocessListenIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_LISTEN_IP);
+            System.exit(1);
+        }
+
+        String preprocessListenPort = getIniValue(SECTION_SERVER, FIELD_PREPROCESS_LISTEN_PORT);
+        if (preprocessListenPort == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_LISTEN_PORT);
+            System.exit(1);
+        } else {
+            this.preprocessListenPort = Integer.parseInt(preprocessListenPort);
+            if (this.preprocessListenPort <= 0 || this.preprocessListenPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+    }
+
+    /**
+     * @fn private void loadClientConfig()
+     * @brief CLIENT Section 을 로드하는 함수
+     */
+    private void loadClientConfig() {
+        this.cameraPath = getIniValue(SECTION_CLIENT, FIELD_CAMERA_PATH);
+        if (cameraPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_CAMERA_PATH);
+            System.exit(1);
+        }
+
+        String enableGuiString = getIniValue(SECTION_CLIENT, FIELD_ENABLE_GUI);
+        if (enableGuiString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_ENABLE_GUI);
+            System.exit(1);
+        } else {
+            this.enableGui = Boolean.parseBoolean(enableGuiString);
+        }
+
+        this.httpTargetIp = getIniValue(SECTION_CLIENT, FIELD_HTTP_TARGET_IP);
+        if (this.httpTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_IP);
+            System.exit(1);
+        }
+
+        String httpTargetPortString = getIniValue(SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
+        if (httpTargetPortString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.httpTargetPort = Integer.parseInt(httpTargetPortString);
+            if (this.httpTargetPort <= 0 || this.httpTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        this.preprocessInitIdleTime = Long.parseLong(getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME));
+        if (this.preprocessInitIdleTime < 0) {
+            logger.error("Fail to load [{}-{}]. ({})", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME, preprocessInitIdleTime);
+            System.exit(1);
+        }
+
+        this.preprocessTargetIp = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
+        if (this.preprocessTargetIp == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
+            System.exit(1);
+        }
+
+        String preprocessTargetPort = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+        if (preprocessTargetPort == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+            System.exit(1);
+        } else {
+            this.preprocessTargetPort = Integer.parseInt(preprocessTargetPort);
+            if (this.preprocessTargetPort <= 0 || this.preprocessTargetPort > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+                System.exit(1);
+            }
+        }
     }
 
     /**
@@ -200,187 +342,79 @@ public class ConfigManager {
             System.exit(1);
         }
 
-        this.cameraPath = getIniValue(SECTION_MEDIA, FIELD_CAMERA_PATH);
-        if (cameraPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CAMERA_PATH);
-            System.exit(1);
-        }
-
-        this.validationXsdPath = getIniValue(SECTION_MEDIA, FIELD_VALIDATION_XSD_PATH);
-        if (validationXsdPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_VALIDATION_XSD_PATH);
-            System.exit(1);
-        }
-
-        String enablePreloadWithDashString = getIniValue(SECTION_MEDIA, FIELD_ENABLE_PRELOAD_WITH_DASH);
-        if (enablePreloadWithDashString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_ENABLE_PRELOAD_WITH_DASH);
+        String clearDashDataIfSessionClosedString = getIniValue(SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+        if (clearDashDataIfSessionClosedString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
             System.exit(1);
         } else {
-            this.enablePreloadWithDash = Boolean.parseBoolean(enablePreloadWithDashString);
+            this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
+        }
+
+        String audioOnlyString = getIniValue(SECTION_MEDIA, FIELD_AUDIO_ONLY);
+        if (audioOnlyString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_AUDIO_ONLY);
+            System.exit(1);
+        } else {
+            this.audioOnly = Boolean.parseBoolean(audioOnlyString);
         }
 
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
     /**
-     * @fn private void loadLiveConfig()
-     * @brief LIVE Section 을 로드하는 함수
+     * @fn private void loadMpdConfig()
+     * @brief MPD Section 을 로드하는 함수
      */
-    private void loadLiveConfig() {
-        String enableGuiString = getIniValue(SECTION_LIVE, FIELD_ENABLE_GUI);
-        if (enableGuiString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_ENABLE_GUI);
+    private void loadMpdConfig() {
+        String enableValidationString = getIniValue(SECTION_MPD, FIELD_ENABLE_VALIDATION);
+        if (enableValidationString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_ENABLE_VALIDATION);
             System.exit(1);
         } else {
-            this.enableGui = Boolean.parseBoolean(enableGuiString);
+            this.enableValidation = Boolean.parseBoolean(enableValidationString);
         }
 
-        String clearDashDataIfSessionClosedString = getIniValue(SECTION_LIVE, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
-        if (clearDashDataIfSessionClosedString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+        this.representationIdFormat = getIniValue(SECTION_MPD, FIELD_REPRESENTATION_ID_FORMAT);
+        if (representationIdFormat == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_REPRESENTATION_ID_FORMAT);
             System.exit(1);
-        } else {
-            this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
         }
 
-        String segmentDurationString = getIniValue(SECTION_LIVE, FIELD_SEGMENT_DURATION);
+        this.chunkNumberFormat = getIniValue(SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
+        if (chunkNumberFormat == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
+            System.exit(1);
+        }
+
+        this.validationXsdPath = getIniValue(SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
+        if (validationXsdPath == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
+            System.exit(1);
+        }
+
+        String segmentDurationString = getIniValue(SECTION_MPD, FIELD_SEGMENT_DURATION);
         if (segmentDurationString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION);
             System.exit(1);
         } else {
             this.segmentDuration = Double.parseDouble(segmentDurationString);
             if (this.segmentDuration <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_SEGMENT_DURATION);
+                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION);
                 System.exit(1);
             }
         }
 
-        String windowSizeSring = getIniValue(SECTION_LIVE, FIELD_WINDOW_SIZE);
+        String windowSizeSring = getIniValue(SECTION_MPD, FIELD_WINDOW_SIZE);
         if (windowSizeSring == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_WINDOW_SIZE);
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
             System.exit(1);
         } else {
             this.windowSize = Integer.parseInt(windowSizeSring);
             if (this.windowSize <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_WINDOW_SIZE);
+                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
                 System.exit(1);
             }
         }
-
-        String audioOnlyString = getIniValue(SECTION_LIVE, FIELD_AUDIO_ONLY);
-        if (audioOnlyString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_AUDIO_ONLY);
-            System.exit(1);
-        } else {
-            this.audioOnly = Boolean.parseBoolean(audioOnlyString);
-        }
-
-        this.preprocessListenIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
-        if (this.preprocessListenIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_IP);
-            System.exit(1);
-        }
-
-        String preprocessListenPort = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_LISTEN_PORT);
-        if (preprocessListenPort == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_LISTEN_PORT);
-            System.exit(1);
-        } else {
-            this.preprocessListenPort = Integer.parseInt(preprocessListenPort);
-            if (this.preprocessListenPort <= 0 || this.preprocessListenPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
-                System.exit(1);
-            }
-        }
-
-        this.preprocessTargetIp = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_TARGET_IP);
-        if (this.preprocessTargetIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_IP);
-            System.exit(1);
-        }
-
-        String preprocessTargetPort = getIniValue(SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
-        if (preprocessTargetPort == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
-            System.exit(1);
-        } else {
-            this.preprocessTargetPort = Integer.parseInt(preprocessTargetPort);
-            if (this.preprocessTargetPort <= 0 || this.preprocessTargetPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_LIVE, FIELD_PREPROCESS_TARGET_PORT);
-                System.exit(1);
-            }
-        }
-
-        this.preprocessInitIdleTime = Long.parseLong(getIniValue(SECTION_LIVE, FIELD_PREPROCESS_INIT_IDLE_TIME));
-        if (this.preprocessInitIdleTime < 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_LIVE, FIELD_PREPROCESS_INIT_IDLE_TIME, preprocessInitIdleTime);
-            System.exit(1);
-        }
-
-        logger.debug("Load [{}] config...(OK)", SECTION_LIVE);
-    }
-
-    /**
-     * @fn private void loadNetworkConfig()
-     * @brief NETWORK Section 을 로드하는 함수
-     */
-    private void loadNetworkConfig() {
-        this.threadCount = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_THREAD_COUNT));
-        if (this.threadCount <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_THREAD_COUNT, threadCount);
-            System.exit(1);
-        }
-
-        this.sendBufSize = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_SEND_BUF_SIZE));
-        if (this.sendBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_SEND_BUF_SIZE, sendBufSize);
-            System.exit(1);
-        }
-
-        this.recvBufSize = Integer.parseInt(getIniValue(SECTION_NETWORK, FIELD_RECV_BUF_SIZE));
-        if (this.recvBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_NETWORK, FIELD_RECV_BUF_SIZE, recvBufSize);
-            System.exit(1);
-        }
-
-        this.httpListenIp = getIniValue(SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
-        if (this.httpListenIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_IP);
-            System.exit(1);
-        }
-
-        String httpListenPortString = getIniValue(SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
-        if (httpListenPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
-            System.exit(1);
-        } else {
-            this.httpListenPort = Integer.parseInt(httpListenPortString);
-            if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_LISTEN_PORT);
-                System.exit(1);
-            }
-        }
-
-        this.httpTargetIp = getIniValue(SECTION_NETWORK, FIELD_HTTP_TARGET_IP);
-        if (this.httpTargetIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_IP);
-            System.exit(1);
-        }
-
-        String httpTargetPortString = getIniValue(SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
-        if (httpTargetPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
-            System.exit(1);
-        } else {
-            this.httpTargetPort = Integer.parseInt(httpTargetPortString);
-            if (this.httpTargetPort <= 0 || this.httpTargetPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_NETWORK, FIELD_HTTP_TARGET_PORT);
-                System.exit(1);
-            }
-        }
-
-        logger.debug("Load [{}] config...(OK)", SECTION_NETWORK);
     }
 
     /**
@@ -564,5 +598,17 @@ public class ConfigManager {
 
     public boolean isEnablePreloadWithDash() {
         return enablePreloadWithDash;
+    }
+
+    public String getRepresentationIdFormat() {
+        return representationIdFormat;
+    }
+
+    public String getChunkNumberFormat() {
+        return chunkNumberFormat;
+    }
+
+    public boolean isEnableValidation() {
+        return enableValidation;
     }
 }

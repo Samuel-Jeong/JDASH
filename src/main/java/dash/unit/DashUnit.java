@@ -2,16 +2,15 @@ package dash.unit;
 
 import config.ConfigManager;
 import dash.client.DashClient;
+import dash.mpd.parser.mpd.MPD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import stream.RemoteStreamService;
-import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,9 +31,6 @@ public class DashUnit {
     private String inputFilePath = null;
     private String outputFilePath = null;
     private String curSegmentName = null;
-
-    private Duration duration = null;
-    private Duration minBufferTime= null;
 
     private final AtomicBoolean isLiveStreaming = new AtomicBoolean(false);
     private boolean isRegistered = false;
@@ -94,7 +90,7 @@ public class DashUnit {
             } else if (configManager.getStreaming().equals("dash")) {
                 dashClient = new DashClient(
                         id,
-                        ServiceManager.getInstance().getDashManager().getBaseEnvironment(),
+                        ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                         sourceUri,
                         FileManager.getParentPathFromUri(mpdPath)
                 );
@@ -176,22 +172,6 @@ public class DashUnit {
         this.outputFilePath = outputFilePath;
     }
 
-    public Duration getDuration() {
-        return duration;
-    }
-
-    public void setDuration(Duration duration) {
-        this.duration = duration;
-    }
-
-    public Duration getMinBufferTime() {
-        return minBufferTime;
-    }
-
-    public void setMinBufferTime(Duration minBufferTime) {
-        this.minBufferTime = minBufferTime;
-    }
-
     public String getCurSegmentName() {
         return curSegmentName;
     }
@@ -225,8 +205,6 @@ public class DashUnit {
                 ", inputFilePath='" + inputFilePath + '\'' +
                 ", outputFilePath='" + outputFilePath + '\'' +
                 ", curSegmentName='" + curSegmentName + '\'' +
-                ", duration=" + duration +
-                ", minBufferTime=" + minBufferTime +
                 ", isLiveStreaming=" + isLiveStreaming.get() +
                 '}';
     }

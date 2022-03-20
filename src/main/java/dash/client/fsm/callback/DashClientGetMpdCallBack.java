@@ -1,9 +1,11 @@
 package dash.client.fsm.callback;
 
 import dash.client.DashClient;
+import dash.mpd.MpdManager;
+import dash.mpd.parser.mpd.Representation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tool.parser.mpd.Representation;
+import service.AppInstance;
 import util.fsm.StateManager;
 import util.fsm.event.base.CallBack;
 import util.fsm.unit.StateUnit;
@@ -28,13 +30,19 @@ public class DashClientGetMpdCallBack extends CallBack {
         DashClient dashClient = (DashClient) stateUnit.getData();
         if (dashClient == null) { return null; }
 
-        dashClient.parseMpd();
+        if (!dashClient.getMpdManager().parseMpd(dashClient.getTargetMpdPath())) {
+            logger.warn("[DashClientMpdDoneCallBack] Fail to parse the mpd. (dashClient={})", dashClient);
+            return null;
+        }
 
-        List<Representation> representations = dashClient.getRepresentations(DashClient.CONTENT_AUDIO_TYPE);
+        List<Representation> representations = dashClient.getMpdManager().getRepresentations(MpdManager.CONTENT_AUDIO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
-            String initSegmentName = dashClient.getRawInitializationSegmentName(representations.get(0));
-            initSegmentName = initSegmentName.replace(DashClient.REPRESENTATION_ID_POSTFIX, 0 + "");
+            String initSegmentName = dashClient.getMpdManager().getRawInitializationSegmentName(representations.get(0));
+            initSegmentName = initSegmentName.replace(
+                    AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
+                    0 + ""
+            );
             String targetAudioInitSegPath = FileManager.concatFilePath(
                     dashClient.getTargetBasePath(),
                     // outdoor_market_ambiance_Dolby_init0.m4s

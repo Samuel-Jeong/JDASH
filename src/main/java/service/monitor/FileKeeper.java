@@ -94,7 +94,7 @@ public class FileKeeper extends Job {
                         continue;
                     }
 
-                    ServiceManager.getInstance().getDashManager().loadMediaUriList();
+                    ServiceManager.getInstance().getDashServer().loadMediaUriList();
                 }
             }
             //////////////////////////////

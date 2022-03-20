@@ -9,6 +9,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
@@ -40,7 +41,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             logger.warn("[DashHttpClientHandler] DashClient is null. Fail to recv the message.");
             return;
         } else if (dashClient.isStopped()) {
-            //logger.warn("[DashHttpClientHandler] DashClient is already stopped. Fail to recv the message.");
+            //logger.warn("[DashHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
             return;
         }
 
@@ -48,29 +49,31 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
         if (httpObject instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) httpObject;
 
-            logger.debug("> STATUS: {}", response.status());
-            //logger.debug("> VERSION: {}", response.protocolVersion());
-
             if (!response.status().equals(HttpResponseStatus.OK)) {
-                logger.warn("[-] !!! RECV NOT OK. DashClient will be stopped. (status={})", response.status());
+                logger.trace("[DashHttpClientHandler({})] [-] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
                 dashClient.stop();
                 channelHandlerContext.close();
                 return;
             }
 
-            /*if (!response.headers().isEmpty()) {
-                for (CharSequence name: response.headers().names()) {
-                    for (CharSequence value: response.headers().getAll(name)) {
-                        logger.debug("> HEADER: {} = {}", name, value);
+            if (logger.isTraceEnabled()) {
+                logger.trace("[DashHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), response.status());
+                logger.trace("> VERSION: {}", response.protocolVersion());
+
+                if (!response.headers().isEmpty()) {
+                    for (CharSequence name : response.headers().names()) {
+                        for (CharSequence value : response.headers().getAll(name)) {
+                            logger.trace("[DashHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
+                        }
                     }
                 }
-            }*/
 
-            /*if (HttpHeaderUtil.isTransferEncodingChunked(response)) {
-                logger.debug("> CHUNKED CONTENT {");
-            } else {
-                logger.debug("> CONTENT {");
-            }*/
+                if (HttpHeaderUtil.isTransferEncodingChunked(response)) {
+                    logger.trace("[DashHttpClientHandler({})] > CHUNKED CONTENT {", dashClient.getDashUnitId());
+                } else {
+                    logger.trace("[DashHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
+                }
+            }
         }
 
         // CONTENT
@@ -84,21 +87,28 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             String curState = stateUnit.getCurState();
             switch (curState) {
                 case DashClientState.IDLE:
-                    dashClient.makeMpd(contentString);
+                    dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), contentString);
                     break;
                 case DashClientState.MPD_DONE:
-                    dashClient.makeInitSegment(dashClient.getTargetAudioInitSegPath(), contentString);
+                    if (AppInstance.getInstance().getConfigManager().isEnableValidation()
+                            && dashClient.getMpdManager().validate()) {
+                        logger.debug("[DashHttpClientHandler({})] Success to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
+                    } else {
+                        logger.warn("[DashHttpClientHandler({})] Fail to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
+                    }
+
+                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), contentString);
                     break;
                 case DashClientState.INIT_SEG_DONE:
                     String targetAudioMediaSegPath = FileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
-                            dashClient.getMediaSegmentName()
+                            dashClient.getMpdManager().getMediaSegmentName()
                     );
-                    dashClient.makeMediaSegment(targetAudioMediaSegPath, contentString);;
+                    dashClient.getMpdManager().makeMediaSegment(targetAudioMediaSegPath, contentString);;
                     break;
             }
 
-            //logger.debug(contentString);
+            logger.trace("[DashHttpClientHandler({})] {}", dashClient.getDashUnitId(), contentString);
             if (content instanceof LastHttpContent) {
                 switch (curState) {
                     case DashClientState.IDLE:
@@ -108,16 +118,19 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         stateHandler.fire(DashClientEvent.GET_INIT_SEG, stateUnit);
                         break;
                     case DashClientState.INIT_SEG_DONE:
-                        String prevMediaSegmentName = dashClient.getMediaSegmentName();
-                        dashClient.incAndGetAudioSegmentSeqNum();
-                        String curMediaSegmentName = dashClient.getMediaSegmentName();
-                        logger.debug("[+] MediaSegment is changed. ([{}] > [{}])", prevMediaSegmentName, curMediaSegmentName);
+                        String prevMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
+                        dashClient.getMpdManager().incAndGetAudioSegmentSeqNum();
+                        String curMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
+                        logger.debug("[DashHttpClientHandler({})] [+] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        try {
-                            timeUnit.sleep(dashClient.getAudioSegmentDuration());
-                        } catch (Exception e) {
-                            //logger.warn("");
+                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration();
+                        if (segmentDuration > 0) {
+                            try {
+                                timeUnit.sleep(segmentDuration);
+                            } catch (Exception e) {
+                                //logger.warn("");
+                            }
                         }
 
                         dashClient.sendHttpGetRequest(
@@ -129,7 +142,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         break;
                 }
 
-                //logger.debug("} END OF CONTENT <");
+                logger.trace("[DashHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
             }
         }
     }

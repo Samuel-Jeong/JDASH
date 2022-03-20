@@ -1,6 +1,6 @@
 package service;
 
-import dash.DashManager;
+import dash.server.DashServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
@@ -29,7 +29,7 @@ public class ServiceManager {
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
     public static final int DELAY = 1000;
 
-    private final DashManager dashManager = new DashManager();
+    private final DashServer dashServer = new DashServer();
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
     private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "dash_server.lock"));
@@ -49,8 +49,8 @@ public class ServiceManager {
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    public DashManager getDashManager() {
-        return dashManager;
+    public DashServer getDashServer() {
+        return dashServer;
     }
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -96,7 +96,7 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // INITIATE DASH MANAGER
-        dashManager.start();
+        dashServer.start();
         ////////////////////////////////////////
 
         logger.debug("| All services are opened.");
@@ -106,7 +106,7 @@ public class ServiceManager {
     public void stop () {
         ////////////////////////////////////////
         // FINISH DASH MANAGER
-        dashManager.stop();
+        dashServer.stop();
         ////////////////////////////////////////
 
         ////////////////////////////////////////

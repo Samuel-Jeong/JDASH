@@ -24,6 +24,7 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageSender.class);
 
+    private final String dashUnitId;
     private String host = null;
     private SslContext sslContext = null;
 
@@ -34,7 +35,8 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashHttpMessageSender(BaseEnvironment baseEnvironment, boolean isSsl) {
+    public DashHttpMessageSender(String dashUnitId, BaseEnvironment baseEnvironment, boolean isSsl) {
+        this.dashUnitId = dashUnitId;
         configManager = AppInstance.getInstance().getConfigManager();
 
         socketManager = new SocketManager(
@@ -58,7 +60,7 @@ public class DashHttpMessageSender {
             try {
                 sslContext = SslContext.newClientContext();
             } catch (Exception e) {
-                logger.warn("[DashHttpMessageSender] Fail to set the ssl context.", e);
+                logger.warn("[DashHttpMessageSender({})] Fail to set the ssl context.", dashUnitId, e);
             }
         }
 
@@ -130,11 +132,11 @@ public class DashHttpMessageSender {
 
             // 아직 https 지원하지 않음
             if (!"http".equalsIgnoreCase(scheme)) { // && !"https".equalsIgnoreCase(scheme)) {
-                logger.warn("[DashHttpMessageSender] Only HTTP(S) is supported.");
+                logger.warn("[DashHttpMessageSender({})] Only HTTP(S) is supported.", dashUnitId);
                 return null;
             }
         } catch (Exception e) {
-            logger.warn("[DashHttpMessageSender] URI Parsing error", e);
+            logger.warn("[DashHttpMessageSender({})] URI Parsing error", dashUnitId, e);
             return null;
         }
 

@@ -28,7 +28,7 @@ public class DashClientGetInitSegCallBack extends CallBack {
         dashClient.sendHttpGetRequest(
                 FileManager.concatFilePath(
                         dashClient.getSrcBasePath(),
-                        dashClient.getMediaSegmentName()
+                        dashClient.getMpdManager().getMediaSegmentName()
                 )
         );
         ////////////////////////////

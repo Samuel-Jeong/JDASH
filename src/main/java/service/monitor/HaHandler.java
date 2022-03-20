@@ -38,7 +38,7 @@ public class HaHandler extends Job {
 
         logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | DashUnitCount=[{}]",
                 cpuUsageStr, memoryUsageStr, Thread.activeCount(),
-                ServiceManager.getInstance().getDashManager().getDashUnitMapSize()
+                ServiceManager.getInstance().getDashServer().getDashUnitMapSize()
         );
     }
 

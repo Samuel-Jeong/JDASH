@@ -1,7 +1,7 @@
 package dash.server.dynamic.handler;
 
 import config.ConfigManager;
-import dash.DashManager;
+import dash.server.DashServer;
 import dash.server.dynamic.PreProcessMediaManager;
 import dash.server.dynamic.message.EndLiveMediaProcessRequest;
 import dash.server.dynamic.message.EndLiveMediaProcessResponse;
@@ -37,8 +37,8 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
         try {
-            DashManager dashManager = ServiceManager.getInstance().getDashManager();
-            PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+            DashServer dashServer = ServiceManager.getInstance().getDashServer();
+            PreProcessMediaManager preProcessMediaManager = dashServer.getPreProcessMediaManager();
 
             GroupSocket groupSocket = preProcessMediaManager.getLocalGroupSocket();
             if (groupSocket == null) {
@@ -82,11 +82,11 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
-                DashUnit dashUnit = dashManager.addDashUnit(StreamType.DYNAMIC, dashUnitId, null, expires);
+                DashUnit dashUnit = dashServer.addDashUnit(StreamType.DYNAMIC, dashUnitId, null, expires);
 
                 PreLiveMediaProcessResponse preProcessResponse;
                 if (dashUnit == null) {
-                    dashUnit = dashManager.getDashUnit(dashUnitId);
+                    dashUnit = dashServer.getDashUnitById(dashUnitId);
                 }
 
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -124,7 +124,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                         new MessageHeader(
                                 PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
                                 MessageType.PREPROCESS_RES,
-                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
                                 System.currentTimeMillis(),
                                 PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
                         ),
@@ -141,7 +141,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
-                DashUnit dashUnit = dashManager.getDashUnit(dashUnitId);
+                DashUnit dashUnit = dashServer.getDashUnitById(dashUnitId);
 
                 EndLiveMediaProcessResponse endLiveMediaProcessResponse;
                 if (dashUnit == null) {
@@ -151,7 +151,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             new MessageHeader(
                                     PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
                                     MessageType.ENDPROCESS_RES,
-                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
                                     PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_NOT_FOUND.length()
                             ),
@@ -161,7 +161,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     );
                 } else {
                     ///////////////////////////
-                    dashManager.deleteDashUnit(dashUnitId);
+                    dashServer.deleteDashUnit(dashUnitId);
                     ///////////////////////////
 
                     logger.debug("[ProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, endLiveMediaProcessRequest);
@@ -170,7 +170,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             new MessageHeader(
                                     PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
                                     MessageType.ENDPROCESS_RES,
-                                    dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
                                     PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
                             ),

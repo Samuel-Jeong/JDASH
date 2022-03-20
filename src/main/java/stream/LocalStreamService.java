@@ -1,7 +1,7 @@
 package stream;
 
 import config.ConfigManager;
-import dash.DashManager;
+import dash.server.DashServer;
 import dash.server.dynamic.PreProcessMediaManager;
 import dash.server.dynamic.message.PreLiveMediaProcessRequest;
 import dash.server.dynamic.message.base.MessageHeader;
@@ -189,8 +189,8 @@ public class LocalStreamService extends Job {
 
     ////////////////////////////////////////////////////////////////////////////////
     private void sendPreLiveMediaProcessRequest () {
-        DashManager dashManager = ServiceManager.getInstance().getDashManager();
-        PreProcessMediaManager preProcessMediaManager = dashManager.getPreProcessMediaManager();
+        DashServer dashServer = ServiceManager.getInstance().getDashServer();
+        PreProcessMediaManager preProcessMediaManager = dashServer.getPreProcessMediaManager();
         GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
         if (listenSocket != null) {
             DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
@@ -201,7 +201,7 @@ public class LocalStreamService extends Job {
                         new MessageHeader(
                                 PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
                                 MessageType.PREPROCESS_REQ,
-                                dashManager.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
                                 System.currentTimeMillis(),
                                 PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
                         ),

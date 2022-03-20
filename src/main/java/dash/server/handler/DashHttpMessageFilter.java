@@ -1,6 +1,6 @@
 package dash.server.handler;
 
-import dash.DashManager;
+import dash.server.DashServer;
 import dash.server.handler.definition.HttpMessageRoute;
 import dash.server.handler.definition.HttpMessageRouteTable;
 import dash.server.handler.definition.HttpRequest;
@@ -9,7 +9,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderUtil;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +26,15 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
     //private final String serviceName;
 
-    private final DashManager dashManager;
+    private final DashServer dashServer;
     private final String basePath;
     private final HttpMessageRouteTable uriRouteTable;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageFilter(HttpMessageRouteTable routeTable) {
-        dashManager = ServiceManager.getInstance().getDashManager();
-        //this.serviceName = dashManager.getServiceName();
+        dashServer = ServiceManager.getInstance().getDashServer();
+        //this.serviceName = dashServer.getServiceName();
         this.uriRouteTable = routeTable;
         this.basePath = AppInstance.getInstance().getConfigManager().getMediaBasePath();
     }
@@ -52,7 +51,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         // GET URI
         final FullHttpRequest request = (FullHttpRequest) o;
         if (HttpHeaderUtil.is100ContinueExpected(request)) {
-            dashManager.send100Continue(channelHandlerContext);
+            dashServer.send100Continue(channelHandlerContext);
         }
 
         /**
@@ -88,7 +87,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         String dashUnitKey = remoteAddress.getAddress().getHostAddress() + ":" + filePathWithoutExtensionFromUri;
         logger.trace("[DashHttpMessageFilter] dashUnitKey: [{}]", dashUnitKey);
 
-        for (Map.Entry<String, DashUnit> entry : dashManager.getCloneDashMap().entrySet()) {
+        for (Map.Entry<String, DashUnit> entry : dashServer.getCloneDashMap().entrySet()) {
             if (entry == null) { continue; }
 
             DashUnit curDashUnit = entry.getValue();
@@ -142,7 +141,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             uriRoute = uriRouteTable.findUriRoute(request.method(), uri);
             if (uriRoute == null) {
                 logger.warn("[DashHttpMessageFilter] NOT FOUND URI (from the route table) : {}", uri);
-                dashManager.writeNotFound(channelHandlerContext, request);
+                dashServer.writeNotFound(channelHandlerContext, request);
                 return;
             }
         }
@@ -156,22 +155,22 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri, uriFileName, channelHandlerContext, dashUnit);
                 String content = obj == null ? "" : obj.toString();
 
-                dashManager.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+                dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
                 if (!FileManager.isExist(uri)) {
-                    dashManager.writeNotFound(channelHandlerContext, request);
+                    dashServer.writeNotFound(channelHandlerContext, request);
                     return;
                 }
 
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
                 logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                dashManager.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
+                dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
                 //FileManager.deleteFile(uri);
             }
             ///////////////////////////
         } catch (final Exception e) {
             logger.warn("DashHttpHandler.messageReceived.Exception", e);
-            dashManager.writeInternalServerError(channelHandlerContext, request);
+            dashServer.writeInternalServerError(channelHandlerContext, request);
         }
     }
     ////////////////////////////////////////////////////////////

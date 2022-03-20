@@ -1,13 +1,13 @@
 package dash;
 
+import config.ConfigManager;
+import dash.server.DashServer;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tool.parser.mpd.MPD;
-
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import dash.mpd.parser.mpd.MPD;
+import service.AppInstance;
 
 public class DashTest {
 
@@ -15,10 +15,17 @@ public class DashTest {
 
     @Test
     public void test() {
+        ////////////////////////////////////////////////////////////
+        String configPath = "/Users/jamesj/GIT_PROJECTS/udash/src/main/resources/config/user_conf.ini";
+        ConfigManager configManager = new ConfigManager(configPath);
+        AppInstance appInstance = AppInstance.getInstance();
+        appInstance.setConfigManager(configManager);
+        appInstance.setConfigPath(configPath);
+        ////////////////////////////////////////////////////////////
+
         /////////////////////////////////////////////
         // 1) MPD PARSING TEST
-        /*MPD mpd = parseMpdTest(dashManager);
-        Assert.assertNotNull(mpd);*/
+        Assert.assertTrue(parseMpdTest(new DashServer()));
         /////////////////////////////////////////////
 
         /////////////////////////////////////////////
@@ -49,8 +56,12 @@ public class DashTest {
         /////////////////////////////////////////////
     }
 
-    public static MPD parseMpdTest(DashManager dashManager) {
-        return dashManager.parseMpd("/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_examples/mpd_example4.xml");
+    public static boolean parseMpdTest(DashServer dashServer) {
+        return dashServer
+                .getMpdManager()
+                .parseMpd(
+                        "/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_examples/mpd_example4.xml"
+                );
     }
 
 }

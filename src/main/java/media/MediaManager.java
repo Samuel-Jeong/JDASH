@@ -47,7 +47,7 @@ public class MediaManager {
             ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
             // CLEAR ALL STATIC DASH UNIT
-            ServiceManager.getInstance().getDashManager().deleteDashUnitsByType(StreamType.STATIC);
+            ServiceManager.getInstance().getDashServer().deleteDashUnitsByType(StreamType.STATIC);
             mediaInfoList.clear();
 
             int mediaInfoListIndex = 0;
@@ -89,7 +89,7 @@ public class MediaManager {
                     if (!streamType.equals(StreamType.STATIC)) { continue; }
                     if (!uri.endsWith(".mp4") && !uri.endsWith(".mpd")) { continue; }
 
-                    DashUnit dashUnit = ServiceManager.getInstance().getDashManager().addDashUnit(
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
                             streamType,
                              AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
                                      FileManager.getFilePathWithoutExtensionFromUri(fullPath),
@@ -105,13 +105,13 @@ public class MediaManager {
                         }
                         dashUnit.setOutputFilePath(mpdPath);
 
-                        if (configManager.isEnablePreloadWithDash()) {
+                        if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
                             // GET STATIC MEDIA SOURCE from remote dash server
                             String httpPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                             httpPath = FileManager.concatFilePath(httpPath, uri);
                             DashClient dashClient = new DashClient(
                                     dashUnit.getId(),
-                                    ServiceManager.getInstance().getDashManager().getBaseEnvironment(),
+                                    ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                                     httpPath,
                                     FileManager.getParentPathFromUri(mpdPath)
                             );

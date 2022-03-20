@@ -1,7 +1,7 @@
 package dash.server.handler;
 
 import config.ConfigManager;
-import dash.DashManager;
+import dash.server.DashServer;
 import dash.server.handler.definition.HttpMessageHandler;
 import dash.server.handler.definition.HttpRequest;
 import dash.server.handler.definition.HttpResponse;
@@ -16,7 +16,6 @@ import service.AppInstance;
 import service.ServiceManager;
 import stream.AudioService;
 import stream.RemoteStreamService;
-import tool.parser.mpd.MPD;
 import util.module.FileManager;
 
 import java.io.File;
@@ -39,7 +38,7 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     @Override
     public Object handle(HttpRequest request, HttpResponse response, String originUri, String uriFileName, ChannelHandlerContext ctx, DashUnit dashUnit) {
-        DashManager dashManager = ServiceManager.getInstance().getDashManager();
+        DashServer dashServer = ServiceManager.getInstance().getDashServer();
         if (request == null || uriFileName == null || ctx == null) {
             return null;
         }
@@ -195,29 +194,20 @@ public class DashMessageHandler implements HttpMessageHandler {
 
             ///////////////////////////
             // GET MPD
-            MPD mpd = dashManager.parseMpd(mpdPath);
-            if (mpd == null) {
-                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
+            if (!dashServer.getMpdManager().parseMpd(mpdPath)) {
+                logger.warn("[DashMessageHandler(uri={})] Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                 return null;
             }
 
             // VALIDATE MPD
-            /*if (dashManager.validate(mpd)) {
+            if (configManager.isEnableValidation() && dashServer.getMpdManager().validate()) {
                 logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
             } else {
                 logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
                 return null;
-            }*/
+            }
 
-            result = dashManager.getMpdParser().writeAsString(mpd);
-            ///////////////////////////
-
-            ///////////////////////////
-            // SAVE META DATA OF MEDIA
-            dashUnit.setMpd(mpd);
-            dashUnit.setMinBufferTime(mpd.getMinBufferTime());
-            dashUnit.setDuration(mpd.getMediaPresentationDuration());
-            //logger.debug("[DashMessageHandler(uri={})] MODIFIED DashUnit[{}]: \n{}", this.uri, dashUnit.getId(), dashUnit);
+            result = dashServer.getMpdManager().writeAsString();
             ///////////////////////////
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
