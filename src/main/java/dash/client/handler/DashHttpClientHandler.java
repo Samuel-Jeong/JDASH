@@ -90,11 +90,12 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                     dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), contentString);
                     break;
                 case DashClientState.MPD_DONE:
-                    if (AppInstance.getInstance().getConfigManager().isEnableValidation()
-                            && dashClient.getMpdManager().validate()) {
-                        logger.debug("[DashHttpClientHandler({})] Success to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
-                    } else {
-                        logger.warn("[DashHttpClientHandler({})] Fail to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
+                    if (AppInstance.getInstance().getConfigManager().isEnableValidation()) {
+                        if (dashClient.getMpdManager().validate()) {
+                            logger.debug("[DashHttpClientHandler({})] Success to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
+                        } else {
+                            logger.warn("[DashHttpClientHandler({})] Fail to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
+                        }
                     }
 
                     dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), contentString);

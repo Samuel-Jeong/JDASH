@@ -200,11 +200,13 @@ public class DashMessageHandler implements HttpMessageHandler {
             }
 
             // VALIDATE MPD
-            if (configManager.isEnableValidation() && dashServer.getMpdManager().validate()) {
-                logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
-            } else {
-                logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
-                return null;
+            if (configManager.isEnableValidation()) {
+                if (dashServer.getMpdManager().validate()) {
+                    logger.debug("[DashMessageHandler(uri={})] Success to validate the mpd.", this.uri);
+                } else {
+                    logger.warn("[DashMessageHandler(uri={})] Fail to validate the mpd.", this.uri);
+                    return null;
+                }
             }
 
             result = dashServer.getMpdManager().writeAsString();
