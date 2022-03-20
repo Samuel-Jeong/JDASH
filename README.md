@@ -1,19 +1,35 @@
-# MPEG DASH Server
+# MPEG DASH Program
 ~~~
-비디오 라이브 스트리밍 서버
+비디오(+오디오) 라이브 스트리밍 서버 & 클라이언트
 
-@ REFERENCE
-1) Make MPD & Segments
-+ REF : org.bytedeco.javacv (static, dynamic)
-(https://github.com/bytedeco/javacv)
+1. 상기 프로그램은, 
+    1) DASH 서버로서 다른 DASH 클라이언트로부터 요청을 받아 처리할 수 있고, 
+    2) DASH 클라이언트로서 다른 DASH 서버에 요청을 보내서 미디어 스트림을 가져올 수 있다.
+    3) 서버와 클라이언트 기능은 서로 구분되어 동작하지 않고, 상호 운용된다.
 
-2) MPD class object & Validatation of MPD file
-+ REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
-(https://github.com/carlanton/mpd-tools)
+2. DASH 서버로 동작할 때, 
+    1) 미디어 스트림을 가져올 때 현재는 [RTMP, DASH] 방식을 사용 가능
+    2) DASH 방식을 사용하여 static media stream 을 미리 가져오기 가능 (DASH 클라이언트로 동작)
+        > dynamic media stream 은 rtmp 서버에 publish 했다는 가정에 하에, 
+          published media stream 을 사용자가 요청하기 전에 미리 가져오도록 구현되어있음
+          (RTMP 클라이언트로 동작)
 
-3) Camera
-+ REF : org.bytedeco.javacv
-(https://github.com/bytedeco/javacv)
+3. DASH 클라이언트로 동작할 때, 
+    1) 미디어 스트림 송출할 때는 (publishing), 비디오와 오디오 모두 송출 필요 > 사용하는 Open API 에서 오디오만 송출되지 않음
+    2) 미디어 스트림 수신할 때는 (playing), 비디오 또는 오디오 수신 > 오디오만 따로 수신 가능
+
+4 REFERENCE
+  1) Make MPD & Segments
+    + REF : org.bytedeco.javacv (static, dynamic)
+            (https://github.com/bytedeco/javacv)
+
+  2) MPD class object & Validatation of MPD file
+    + REF : carlanton/mpd-tools (io.linstrom:mpd-parser)
+            (https://github.com/carlanton/mpd-tools)
+
+  3) Camera
+    + REF : org.bytedeco.javacv
+            (https://github.com/bytedeco/javacv)
 
 ~~~
 
