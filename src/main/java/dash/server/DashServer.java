@@ -74,8 +74,8 @@ public class DashServer {
         baseEnvironment = new BaseEnvironment(
                 new ScheduleManager(),
                 new ResourceManager(
-                        configManager.getHttpListenPort() + 2,
-                        configManager.getHttpListenPort() + 10000
+                        configManager.getHttpListenPort() + configManager.getHttpListenPortBeginOffset(),
+                        configManager.getHttpListenPort() + configManager.getHttpListenPortEndOffset()
                 ),
                 DebugLevel.DEBUG
         );

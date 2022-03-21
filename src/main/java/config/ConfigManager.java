@@ -45,6 +45,8 @@ public class ConfigManager {
     public static final String FIELD_ENABLE_PRELOAD_WITH_DASH = "ENABLE_PRELOAD_WITH_DASH";
     public static final String FIELD_HTTP_LISTEN_IP = "HTTP_LISTEN_IP";
     public static final String FIELD_HTTP_LISTEN_PORT = "HTTP_LISTEN_PORT";
+    public static final String FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET = "HTTP_LISTEN_PORT_BEGIN_OFFSET";
+    public static final String FIELD_HTTP_LISTEN_PORT_END_OFFSET = "HTTP_LISTEN_PORT_END_OFFSET";
     public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
 
@@ -93,6 +95,8 @@ public class ConfigManager {
     private boolean enablePreloadWithDash = false;
     private String httpListenIp = null;
     private int httpListenPort = 0;
+    private int httpListenPortBeginOffset = 0;
+    private int httpListenPortEndOffset = 0;
     private String preprocessListenIp = null;
     private int preprocessListenPort = 0;
 
@@ -242,6 +246,31 @@ public class ConfigManager {
             this.httpListenPort = Integer.parseInt(httpListenPortString);
             if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
                 logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+                System.exit(1);
+            }
+        }
+
+        String httpListenPortBeginOffsetString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
+        if (httpListenPortBeginOffsetString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
+            System.exit(1);
+        } else {
+            this.httpListenPortBeginOffset = Integer.parseInt(httpListenPortBeginOffsetString);
+            if (this.httpListenPortBeginOffset <= 0 || this.httpListenPort + this.httpListenPortBeginOffset > 65535) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
+                System.exit(1);
+            }
+        }
+
+        String httpListenPortEndOffsetString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
+        if (httpListenPortEndOffsetString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
+            System.exit(1);
+        } else {
+            this.httpListenPortEndOffset = Integer.parseInt(httpListenPortEndOffsetString);
+            if (this.httpListenPortEndOffset <= 0 || this.httpListenPort + this.httpListenPortEndOffset > 65535
+                    || this.httpListenPortBeginOffset >= this.httpListenPortEndOffset) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
                 System.exit(1);
             }
         }
@@ -628,5 +657,13 @@ public class ConfigManager {
 
     public int getChunkFileDeletionIntervalSeconds() {
         return chunkFileDeletionIntervalSeconds;
+    }
+
+    public int getHttpListenPortBeginOffset() {
+        return httpListenPortBeginOffset;
+    }
+
+    public int getHttpListenPortEndOffset() {
+        return httpListenPortEndOffset;
     }
 }
