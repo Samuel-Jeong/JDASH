@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.io.File;
@@ -82,7 +83,12 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
-                DashUnit dashUnit = dashServer.addDashUnit(StreamType.DYNAMIC, dashUnitId, null, expires);
+                DashUnit dashUnit = dashServer.addDashUnit(
+                        StreamType.DYNAMIC,
+                        dashUnitId,
+                        null,
+                        expires
+                );
 
                 PreLiveMediaProcessResponse preProcessResponse;
                 if (dashUnit == null) {
@@ -92,9 +98,9 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
                 String networkPath = "";
-                if (configManager.getStreaming().equals("rtmp")) {
+                if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
                     networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                } else if (configManager.getStreaming().equals("dash")) {
+                } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                     networkPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                 }
 
@@ -186,9 +192,9 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
             if (responseByteData != null) {
                 destinationRecord.getNettyChannel().sendData(responseByteData, responseByteData.length);
-            } else {
-                logger.warn("[ProcessServerChannelHandler] Fail to response. (header={})", messageHeader);
             }
+
+            logger.warn("[ProcessServerChannelHandler] RECV : \n{}", messageHeader);
         } catch (Exception e) {
             logger.warn("ProcessServerChannelHandler.channelRead0.Exception", e);
         }

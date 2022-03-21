@@ -13,6 +13,7 @@ import service.AppInstance;
 import service.ServiceManager;
 import util.module.FileManager;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,7 +114,10 @@ public class MediaManager {
                                     dashUnit.getId(),
                                     ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                                     httpPath,
-                                    FileManager.getParentPathFromUri(mpdPath)
+                                    FileManager.concatFilePath(
+                                            FileManager.getParentPathFromUri(mpdPath),
+                                            FileManager.getFileNameFromUri(mpdPath)
+                                    )
                             );
                             dashClient.start();
                             dashClient.sendHttpGetRequest(httpPath);

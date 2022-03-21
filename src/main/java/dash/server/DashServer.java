@@ -31,7 +31,9 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
+import service.system.ResourceManager;
 import stream.LocalStreamService;
+import util.module.FileManager;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -47,8 +49,6 @@ public class DashServer {
     private static final Logger logger = LoggerFactory.getLogger(DashServer.class);
 
     public static final String DASH_SCHEDULE_JOB = "DASH";
-
-    private final DashUnit myDashUnit;
 
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
@@ -70,15 +70,13 @@ public class DashServer {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
         ///////////////////////////
-        // 현재 실행한 프로그램의 DashUnit 정의 > 그냥 ID 만 가진 껍데기 UNIT
-        this.myDashUnit = new DashUnit(null, configManager.getId(), null, 0);
-        ///////////////////////////
-
-        ///////////////////////////
         // 인스턴스 생성
         baseEnvironment = new BaseEnvironment(
                 new ScheduleManager(),
-                null,
+                new ResourceManager(
+                        configManager.getHttpListenPort() + 2,
+                        configManager.getHttpListenPort() + 10000
+                ),
                 DebugLevel.DEBUG
         );
         ///////////////////////////
@@ -109,7 +107,26 @@ public class DashServer {
 
         ///////////////////////////
         // MpdManager 생성
-        this.mpdManager = new MpdManager(myDashUnit.getId());
+        String dashUnitId = configManager.getHttpListenIp()
+                + ":" + configManager.getCameraPath();
+        DashUnit localDashUnit = addDashUnit(
+                StreamType.DYNAMIC,
+                dashUnitId,
+                null,
+                0
+        );
+
+        localDashUnit.setInputFilePath(
+                FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
+        );
+
+        String uri = FileManager.getFileNameFromUri(configManager.getCameraPath());
+        uri = FileManager.concatFilePath(configManager.getCameraPath(), uri + ".mpd");
+        localDashUnit.setOutputFilePath(
+                FileManager.concatFilePath(configManager.getMediaBasePath(), uri)
+        );
+
+        this.mpdManager = new MpdManager(localDashUnit.getId());
         ///////////////////////////
 
         ///////////////////////////
@@ -120,7 +137,9 @@ public class DashServer {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void start() {
+    public boolean start() {
+        boolean result = true;
+
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         baseEnvironment.start();
 
@@ -140,18 +159,20 @@ public class DashServer {
                         0, 0, TimeUnit.MILLISECONDS,
                         1, 1, false
                 );
-                localStreamService.start();
+                result = localStreamService.start();
                 baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService);
             }
         }
+
+        return result;
     }
 
     public void stop() {
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
         if (localStreamService != null) {
             localStreamService.stop();
         }
-
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
         //////////////////////////////////////
         if (configManager.isEnableClient()) {
@@ -251,7 +272,7 @@ public class DashServer {
 
             DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd, expires);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
-            logger.debug("[DashHttpMessageFilter] [(+)CREATED] \n{}", dashUnit);
+            logger.debug("[DashServer] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;
         } catch (Exception e) {
             logger.warn("Fail to open the dash unit. (id={})", dashUnitId, e);
@@ -269,7 +290,7 @@ public class DashServer {
             dashUnitMapLock.lock();
 
             dashUnit.finishLiveStreaming();
-            logger.debug("[DashHttpMessageFilter] [(-)DELETED] \n{}", dashUnit);
+            logger.debug("[DashServer] [(-)DELETED] \n{}", dashUnit);
 
             dashUnitMap.remove(dashUnitId);
         } catch (Exception e) {
@@ -405,19 +426,13 @@ public class DashServer {
             ctx.writeAndFlush(response, ctx.voidPromise());
         }
 
-        logger.debug("[DashHttpMessageFilter] RESPONSE: {}", response);
+        logger.debug("[DashServer] RESPONSE: {}", response);
     }
 
     public void send100Continue(final ChannelHandlerContext ctx) {
         ctx.write(new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.CONTINUE));
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    public DashUnit getMyDashUnit() {
-        return myDashUnit;
     }
     ////////////////////////////////////////////////////////////
 

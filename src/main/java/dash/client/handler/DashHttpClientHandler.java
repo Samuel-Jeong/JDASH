@@ -3,6 +3,7 @@ package dash.client.handler;
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
 import dash.client.fsm.DashClientState;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
@@ -15,6 +16,7 @@ import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
@@ -78,8 +80,21 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
 
         // CONTENT
         if (httpObject instanceof HttpContent) {
-            HttpContent content = (HttpContent) httpObject;
-            String contentString = content.content().toString(CharsetUtil.UTF_8);
+            HttpContent httpContent = (HttpContent) httpObject;
+            ByteBuf buf = httpContent.content();
+            if (buf == null) {
+                logger.warn("[ProcessClientChannelHandler] DatagramPacket's content is null.");
+                return;
+            }
+
+            int readBytes = buf.readableBytes();
+            if (buf.readableBytes() <= 0) {
+                logger.warn("[ProcessClientChannelHandler] Message is null.");
+                return;
+            }
+
+            byte[] data = new byte[readBytes];
+            buf.getBytes(0, data);
 
             StateManager stateManager = dashClient.getDashClientFsmManager().getStateManager();
             StateHandler stateHandler = dashClient.getDashClientFsmManager().getStateManager().getStateHandler(DashClientState.NAME);
@@ -87,7 +102,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             String curState = stateUnit.getCurState();
             switch (curState) {
                 case DashClientState.IDLE:
-                    dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), contentString);
+                    dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), data);
                     break;
                 case DashClientState.MPD_DONE:
                     if (AppInstance.getInstance().getConfigManager().isEnableValidation()) {
@@ -98,19 +113,19 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         }
                     }
 
-                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), contentString);
+                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), data);
                     break;
                 case DashClientState.INIT_SEG_DONE:
                     String targetAudioMediaSegPath = FileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
                             dashClient.getMpdManager().getMediaSegmentName()
                     );
-                    dashClient.getMpdManager().makeMediaSegment(targetAudioMediaSegPath, contentString);;
+                    dashClient.getMpdManager().makeMediaSegment(targetAudioMediaSegPath, data);
                     break;
             }
 
-            logger.trace("[DashHttpClientHandler({})] {}", dashClient.getDashUnitId(), contentString);
-            if (content instanceof LastHttpContent) {
+            logger.trace("[DashHttpClientHandler({})] {}", dashClient.getDashUnitId(), data);
+            if (httpContent instanceof LastHttpContent) {
                 switch (curState) {
                     case DashClientState.IDLE:
                         stateHandler.fire(DashClientEvent.GET_MPD, stateUnit);
@@ -122,10 +137,14 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         String prevMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
                         dashClient.getMpdManager().incAndGetAudioSegmentSeqNum();
                         String curMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
-                        logger.debug("[DashHttpClientHandler({})] [+] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
+                        logger.trace("[DashHttpClientHandler({})] [+] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration();
+                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+                        /*double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(); // 0.8
+                        if (availabilityTimeOffset > 0) {
+                            segmentDuration *= availabilityTimeOffset; // 800000
+                        }*/
                         if (segmentDuration > 0) {
                             try {
                                 timeUnit.sleep(segmentDuration);

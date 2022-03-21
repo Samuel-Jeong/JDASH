@@ -8,8 +8,6 @@ import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
-import org.bytedeco.ffmpeg.global.avcodec;
-import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.OpenCVFrameGrabber;
@@ -22,6 +20,7 @@ import service.scheduler.schedule.ScheduleManager;
 import util.module.ConcurrentCyclicFIFO;
 import util.module.FileManager;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 public class LocalStreamService extends Job {
@@ -37,10 +36,6 @@ public class LocalStreamService extends Job {
     protected static final int CAMERA_INDEX = 0;
     protected static final int MIKE_INDEX = 4;
 
-    public final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 640;
-    public static final int CAPTURE_HEIGHT = 320;
-    public static final int GOP_LENGTH_IN_FRAMES = 20;
     private final String URI;
 
     private final ConfigManager configManager;
@@ -63,22 +58,41 @@ public class LocalStreamService extends Job {
         this.scheduleManager = scheduleManager;
         this.configManager = AppInstance.getInstance().getConfigManager();
 
-        String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-        URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
+        if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
+            String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+            URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
+        } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
+            String uriFileName = FileManager.getFileNameFromUri(configManager.getCameraPath());
+            String uri = FileManager.concatFilePath(configManager.getCameraPath(), uriFileName + ".mpd");
+            URI = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+        } else {
+            URI = null;
+        }
     }
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public void start() {
+    public boolean start() {
         try {
             audioService.initSampleService(scheduleManager);
 
-            openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
-            openCVFrameGrabber.setImageWidth(CAPTURE_WIDTH);
-            openCVFrameGrabber.setImageHeight(CAPTURE_HEIGHT);
-            openCVFrameGrabber.start();
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
+                if (!configManager.isAudioOnly()) {
+                    openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
+                    openCVFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
+                    openCVFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                    openCVFrameGrabber.start();
+                }
+            } else {
+                openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
+                openCVFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
+                openCVFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                openCVFrameGrabber.start();
+            }
 
-            if (configManager.isEnableGui()) {
+            if (configManager.isEnableGui()
+                    && openCVFrameGrabber != null
+                    && !configManager.isAudioOnly()) {
                 if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 1)) {
                     logger.debug("[LocalStreamService] Success to init [{}]", LOCAL_STREAM_SCHEDULE_KEY);
 
@@ -98,6 +112,7 @@ public class LocalStreamService extends Job {
         }
 
         logger.debug("[LocalStreamService] [START] URI=[{}]", URI);
+        return URI != null;
     }
 
     public void stop() {
@@ -113,8 +128,14 @@ public class LocalStreamService extends Job {
                 openCVFrameGrabber.close();
                 openCVFrameGrabber = null;
             }
+
+            String mpdParentPath = FileManager.getParentPathFromUri(URI);
+            if (mpdParentPath != null) {
+                FileManager.deleteFile(mpdParentPath);
+                logger.debug("[LocalStreamService] DELETE ALL MPD Files. (path={})", mpdParentPath);
+            }
         } catch (Exception e) {
-            logger.warn("LocalStreamService.run.finally.Exception", e);
+            logger.warn("LocalStreamService.stop.Exception", e);
         }
     }
     ///////////////////////////////////////////////////////////////////////////
@@ -124,46 +145,115 @@ public class LocalStreamService extends Job {
     public void run() {
         logger.info("[LocalStreamService] RUNNING...");
 
-        FFmpegFrameRecorder videoFrameRecorder = null;
+        FFmpegFrameRecorder fFmpegFrameRecorder = null;
         try {
             /////////////////////////////////
-            videoFrameRecorder = new FFmpegFrameRecorder(
-                    URI,
-                    CAPTURE_WIDTH, CAPTURE_HEIGHT,
-                    AudioService.CHANNEL_NUM
-            );
-            setVideoOptions(videoFrameRecorder);
-            setAudioOptions(videoFrameRecorder);
-            videoFrameRecorder.start();
-            audioService.startSampling(videoFrameRecorder);
+            // DASH 스트리밍일 경우 (비디오, 오디오 선택 포함)
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
+                if (configManager.isAudioOnly()) {
+                    fFmpegFrameRecorder = new FFmpegFrameRecorder(
+                            URI,
+                            AudioService.CHANNEL_NUM
+                    );
+                } else {
+                    fFmpegFrameRecorder = new FFmpegFrameRecorder(
+                            URI,
+                            StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                            AudioService.CHANNEL_NUM
+                    );
+                    StreamConfigManager.setLocalStreamVideoOptions(fFmpegFrameRecorder);
+                }
+
+                String mpdParentPath = FileManager.getParentPathFromUri(URI);
+                File mpdParentFile = new File(mpdParentPath);
+                if (!mpdParentFile.exists()) {
+                    if (mpdParentFile.mkdirs()) {
+                        logger.debug("[LocalStreamService] Parent mpd path is created. (mpdParentPath={})", mpdParentPath);
+                    }
+                }
+                StreamConfigManager.setDashOptions(fFmpegFrameRecorder,
+                        FileManager.getFileNameFromUri(URI),
+                        configManager.isAudioOnly(),
+                        configManager.getSegmentDuration(), configManager.getWindowSize()
+                );
+            }
+            // RTMP 스트리밍일 경우 (비디오, 오디오 모두 포함)
+            else {
+                fFmpegFrameRecorder = new FFmpegFrameRecorder(
+                        URI,
+                        StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                        AudioService.CHANNEL_NUM
+                );
+                StreamConfigManager.setLocalStreamVideoOptions(fFmpegFrameRecorder);
+            }
+            StreamConfigManager.setLocalStreamAudioOptions(fFmpegFrameRecorder);
+
+            fFmpegFrameRecorder.start();
             /////////////////////////////////
 
             /////////////////////////////////
-            if (openCVFrameGrabber != null) {
-                Frame capturedFrame;
-
-                while ((capturedFrame = openCVFrameGrabber.grab()) != null) {
-                    if (exit) { break; }
-
-                    if (startTime == 0) {
-                        startTime = System.currentTimeMillis();
-                    } else {
-                        if (!isPreMediaReqSent) {
-                            if ((System.currentTimeMillis() - startTime) >= configManager.getPreprocessInitIdleTime()) {
-                                sendPreLiveMediaProcessRequest();
-                                isPreMediaReqSent = true;
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)
+                    && configManager.isAudioOnly()) {
+                //TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+                while(audioService.record(fFmpegFrameRecorder)) {
+                    try {
+                        if (startTime == 0) {
+                            startTime = System.currentTimeMillis();
+                        } else {
+                            if (!isPreMediaReqSent) {
+                                if ((System.currentTimeMillis() - startTime)
+                                        >= configManager.getPreprocessInitIdleTime()) {
+                                    sendPreLiveMediaProcessRequest();
+                                    isPreMediaReqSent = true;
+                                }
                             }
                         }
-                    }
 
-                    // Check for AV drift
-                    long videoTS = 1000 * (System.currentTimeMillis() - startTime);
-                    if (videoTS > videoFrameRecorder.getTimestamp()) {
-                        videoFrameRecorder.setTimestamp(videoTS);
-                    }
+                        // Check for AV drift
+                        long audioTs = 1000 * (System.currentTimeMillis() - startTime);
+                        if (audioTs > fFmpegFrameRecorder.getTimestamp()) {
+                            fFmpegFrameRecorder.setTimestamp(audioTs);
+                        }
 
-                    videoFrameRecorder.record(capturedFrame);
-                    if (localCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
+                        //timeUnit.sleep(1);
+                    } catch (Exception e) {
+                        //logger.warn("");
+                    }
+                }
+            } else {
+                audioService.startSampling(fFmpegFrameRecorder);
+
+                if (openCVFrameGrabber != null) {
+                    Frame capturedFrame;
+
+                    while ((capturedFrame = openCVFrameGrabber.grab()) != null) {
+                        if (exit) {
+                            break;
+                        }
+
+                        if (startTime == 0) {
+                            startTime = System.currentTimeMillis();
+                        } else {
+                            if (!isPreMediaReqSent) {
+                                if ((System.currentTimeMillis() - startTime)
+                                        >= configManager.getPreprocessInitIdleTime()) {
+                                    sendPreLiveMediaProcessRequest();
+                                    isPreMediaReqSent = true;
+                                }
+                            }
+                        }
+
+                        // Check for AV drift
+                        long videoTS = 1000 * (System.currentTimeMillis() - startTime);
+                        if (videoTS > fFmpegFrameRecorder.getTimestamp()) {
+                            fFmpegFrameRecorder.setTimestamp(videoTS);
+                        }
+
+                        fFmpegFrameRecorder.record(capturedFrame);
+                        if (localCameraCanvasController != null) {
+                            frameQueue.offer(capturedFrame);
+                        }
+                    }
                 }
             }
             /////////////////////////////////
@@ -174,9 +264,9 @@ public class LocalStreamService extends Job {
             try {
                 audioService.releaseOutputResource();
 
-                if (videoFrameRecorder != null) {
-                    videoFrameRecorder.stop();
-                    videoFrameRecorder.release();
+                if (fFmpegFrameRecorder != null) {
+                    fFmpegFrameRecorder.stop();
+                    fFmpegFrameRecorder.release();
                 }
             } catch (Exception e) {
                 // ignore
@@ -216,61 +306,6 @@ public class LocalStreamService extends Job {
                 logger.debug("[LocalStreamService] SEND PreLiveMediaProcessRequest={}", preLiveMediaProcessRequest);
             }
         }
-    }
-    ////////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////////
-    private void setVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
-        fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
-        fFmpegFrameRecorder.setVideoOption("preset", "slow");
-
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
-
-        /**
-         * 1. Flash Video (.flv)
-         * - Owner : Adobe
-         * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
-         * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
-         */
-        fFmpegFrameRecorder.setFormat("flv");
-        /**
-         * 2. Matroska (wp, .mkv/.mka/.mks)
-         * - Owner : CoreCodec
-         * [Video] : H.264, Realvideo, DivX, XviD, HEVC
-         * [Audio] : AAC, Vorbis, Dolby AC3, MP3
-         */
-        //fFmpegFrameRecorder.setFormat("matroska");
-
-        /**
-         * The range of the CRF scale is 0–51,
-         *      where 0 is lossless (for 8 bit only, for 10 bit use -qp 0),
-         *      23 is the default, and 5matroska1 is worst quality possible.
-         * A lower value generally leads to higher quality,
-         *      and a subjectively sane range is 17–28.
-         * Consider 17 or 18 to be visually lossless or nearly so;
-         *      it should look the same or nearly the same as the input but it isn't technically lossless.
-         */
-        fFmpegFrameRecorder.setVideoOption("crf", "28");
-        fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
-        fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
-    }
-
-    private void setAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
-
-        fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
-        fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
-        fFmpegFrameRecorder.setAudioOption("crf", "18");
-        fFmpegFrameRecorder.setAudioQuality(0);
-        fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
-        fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
-        //fFmpegFrameRecorder.setSampleRate(48000); // FOR AC3
-        fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }
     ////////////////////////////////////////////////////////////////////////////////
 

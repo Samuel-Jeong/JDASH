@@ -97,6 +97,17 @@ public class MpdManager {
         return representation.getSegmentTemplate().getTimescale(); // micro-sec
     }
 
+    public double getAvailabilityTimeOffset() {
+        List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
+        Representation audioRepresentation = representations.get(0);
+        if (audioRepresentation != null) {
+            // GET from SegmentTemplate
+            return audioRepresentation.getSegmentTemplate().getAvailabilityTimeOffset();
+        } else {
+            return 0;
+        }
+    }
+
     public long getAudioSegmentDuration() {
         List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
         Representation audioRepresentation = representations.get(0);
@@ -184,32 +195,32 @@ public class MpdManager {
         return true;
     }
 
-    public void makeMpd(String targetMpdPath, String content) {
-        FileManager.writeString(
+    public void makeMpd(String targetMpdPath, byte[] content) {
+        FileManager.writeBytes(
                 targetMpdPath,
                 content,
                 true
         );
     }
 
-    public void makeInitSegment(String targetInitSegPath, String content) {
+    public void makeInitSegment(String targetInitSegPath, byte[] content) {
         if (targetInitSegPath == null) {
             return;
         }
 
-        FileManager.writeString(
+        FileManager.writeBytes(
                 targetInitSegPath,
                 content,
                 true
         );
     }
 
-    public void makeMediaSegment(String targetMediaSegPath, String content) {
+    public void makeMediaSegment(String targetMediaSegPath, byte[] content) {
         if (targetMediaSegPath == null) {
             return;
         }
 
-        FileManager.writeString(
+        FileManager.writeBytes(
                 targetMediaSegPath,
                 content,
                 true

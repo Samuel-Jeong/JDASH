@@ -7,7 +7,6 @@ import instance.DebugLevel;
 import org.junit.Test;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
-import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +34,7 @@ public class DashClientTest {
                 "TEST_1", baseEnvironment,
                 "http://" + configManager.getHttpTargetIp() +
                         ":" + configManager.getHttpTargetPort() +
-                        "/test/outdoor_market_ambiance_Dolby.mpd",
+                        "/test/outdoor_market_ambiance_Dolby/outdoor_market_ambiance_Dolby.mpd",
                 targetBasePath
         );
         dashClient.start();

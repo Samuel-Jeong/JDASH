@@ -16,6 +16,7 @@ import network.socket.SocketProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 
 import java.net.URI;
 
@@ -42,12 +43,18 @@ public class DashHttpMessageSender {
         socketManager = new SocketManager(
                 baseEnvironment,
                 false, false,
-                configManager.getThreadCount(), configManager.getSendBufSize(), configManager.getRecvBufSize()
+                configManager.getThreadCount(),
+                configManager.getSendBufSize(),
+                configManager.getRecvBufSize()
         );
 
         localListenAddress = new NetAddress(
                 configManager.getHttpListenIp(),
-                configManager.getHttpListenPort() + 1,
+                ServiceManager.getInstance()
+                        .getDashServer()
+                        .getBaseEnvironment()
+                        .getPortResourceManager()
+                        .takePort(),
                 true, SocketProtocol.TCP
         );
         targetAddress = new NetAddress(

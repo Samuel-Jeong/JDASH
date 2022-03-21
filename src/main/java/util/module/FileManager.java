@@ -217,24 +217,47 @@ public class FileManager {
         }
     }
 
-    public static void deleteOldFilesBySecond(String rootPath, String exceptFileName, long limitTime) throws IOException {
+    public static void deleteOldFilesBySecond(String rootPath, String[] exceptFileNameList, String[] exceptFileExtensionList, long limitTime) throws IOException {
         File rootPathFile = new File(rootPath);
         File[] list = rootPathFile.listFiles();
         if (list == null || list.length == 0) { return; }
 
         for (File curFile : list) {
             if (curFile == null || !curFile.exists() || curFile.isDirectory()) { continue; }
-            if (curFile.getAbsolutePath().contains(exceptFileName)) { continue; }
 
+            ///////////////////////////////
+            boolean isExcepted = false;
+            // 1) 제외할 파일 이름 확인
+            for (String exceptFileName : exceptFileNameList) {
+                if (curFile.getAbsolutePath().contains(exceptFileName)) {
+                    isExcepted = true;
+                    break;
+                }
+            }
+            // 2) 제외할 파일 확장자 확인
+            for (String exceptFileExtension : exceptFileExtensionList) {
+                String curFileExtension = FileUtils.getExtension(curFile.getAbsolutePath());
+                if (curFileExtension.isEmpty()) { continue; }
+                if (curFileExtension.equals(exceptFileExtension)) {
+                    isExcepted = true;
+                    break;
+                }
+            }
+            if (isExcepted) { continue; }
+            ///////////////////////////////
+
+            ///////////////////////////////
+            // 3) 파일 마지막 수정 시간 확인
             long lastModifiedTime = getLastModificationSecondTime(curFile);
             if (lastModifiedTime >= limitTime) { // 제한 시간 [이상] 경과
                 if (curFile.delete()) {
-                    logger.debug("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
+                    logger.trace("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
                             curFile.getAbsolutePath(),
                             lastModifiedTime, limitTime
                     );
                 }
             }
+            ///////////////////////////////
         }
     }
 

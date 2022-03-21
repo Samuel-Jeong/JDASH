@@ -16,6 +16,7 @@ import service.AppInstance;
 import service.ServiceManager;
 import stream.AudioService;
 import stream.RemoteStreamService;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.io.File;
@@ -90,8 +91,8 @@ public class DashMessageHandler implements HttpMessageHandler {
                         ///////////////////////////
                         FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);
                         if (!configManager.isAudioOnly()) {
-                            fFmpegFrameGrabber.setImageWidth(RemoteStreamService.CAPTURE_WIDTH);
-                            fFmpegFrameGrabber.setImageHeight(RemoteStreamService.CAPTURE_HEIGHT);
+                            fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
+                            fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
                         }
                         fFmpegFrameGrabber.start();
                         ///////////////////////////
@@ -103,8 +104,8 @@ public class DashMessageHandler implements HttpMessageHandler {
                                     mpdPath,
                                     AudioService.CHANNEL_NUM
                             );
-                            RemoteStreamService.setAudioOptions(audioFrameRecorder);
-                            RemoteStreamService.setDashOptions(audioFrameRecorder,
+                            StreamConfigManager.setRemoteStreamAudioOptions(audioFrameRecorder);
+                            StreamConfigManager.setDashOptions(audioFrameRecorder,
                                     uriFileName,
                                     configManager.isAudioOnly(),
                                     configManager.getSegmentDuration(), 0
@@ -113,12 +114,12 @@ public class DashMessageHandler implements HttpMessageHandler {
                         } else {
                             videoFrameRecorder = new FFmpegFrameRecorder(
                                     mpdPath,
-                                    RemoteStreamService.CAPTURE_WIDTH, RemoteStreamService.CAPTURE_HEIGHT,
+                                    StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
                                     AudioService.CHANNEL_NUM
                             );
-                            RemoteStreamService.setVideoOptions(videoFrameRecorder);
-                            RemoteStreamService.setAudioOptions(videoFrameRecorder);
-                            RemoteStreamService.setDashOptions(videoFrameRecorder,
+                            StreamConfigManager.setRemoteStreamVideoOptions(videoFrameRecorder);
+                            StreamConfigManager.setRemoteStreamAudioOptions(videoFrameRecorder);
+                            StreamConfigManager.setDashOptions(videoFrameRecorder,
                                     uriFileName,
                                     configManager.isAudioOnly(),
                                     configManager.getSegmentDuration(), 0

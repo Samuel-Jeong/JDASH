@@ -10,6 +10,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -115,7 +116,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            logger.trace("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
+            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
             return;
         }
 
@@ -157,19 +158,19 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
 
                 dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
-                if (!FileManager.isExist(uri)) {
-                    dashServer.writeNotFound(channelHandlerContext, request);
-                    return;
-                }
-
                 byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
-                logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
-                //FileManager.deleteFile(uri);
+                if (segmentBytes != null) {
+                    logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
+                    dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
+                    //FileManager.deleteFile(uri);
+                } else {
+                    logger.warn("[DashHttpMessageFilter] The segment file is not exist. (uri={})", uri);
+                    dashServer.writeNotFound(channelHandlerContext, request);
+                }
             }
             ///////////////////////////
         } catch (final Exception e) {
-            logger.warn("DashHttpHandler.messageReceived.Exception", e);
+            logger.warn("DashHttpMessageFilter.messageReceived.Exception", e);
             dashServer.writeInternalServerError(channelHandlerContext, request);
         }
     }

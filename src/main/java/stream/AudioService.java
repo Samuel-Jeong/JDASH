@@ -125,23 +125,24 @@ public class AudioService {
         }
         /////////////////////////////////
 
-        /////////////////////////////////
-        private void record(FFmpegFrameRecorder fFmpegFrameRecorder) throws Exception {
-            int nBytesRead = 0;
-            while (nBytesRead == 0) {
-                nBytesRead = line.read(audioBytes, 0, line.available());
-            }
-            if (nBytesRead < 1) { return; }
+    }
+    ////////////////////////////////////////////////////////////////////////////////
 
-            int nSamplesRead = nBytesRead / 2;
-            short[] samples = new short[nSamplesRead];
-
-            ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
-            ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
-            fFmpegFrameRecorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
+    ////////////////////////////////////////////////////////////////////////////////
+    public boolean record(FFmpegFrameRecorder fFmpegFrameRecorder) throws Exception {
+        int nBytesRead = 0;
+        while (nBytesRead == 0) {
+            nBytesRead = line.read(audioBytes, 0, line.available());
         }
-        /////////////////////////////////
+        if (nBytesRead < 1) { return false; }
 
+        int nSamplesRead = nBytesRead / 2;
+        short[] samples = new short[nSamplesRead];
+
+        ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
+        ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
+        fFmpegFrameRecorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
+        return true;
     }
     ////////////////////////////////////////////////////////////////////////////////
 

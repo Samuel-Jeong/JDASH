@@ -3,12 +3,15 @@ package dash.unit;
 import config.ConfigManager;
 import dash.client.DashClient;
 import dash.mpd.parser.mpd.MPD;
+import dash.unit.tool.OldFileController;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import stream.RemoteStreamService;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
@@ -36,11 +39,13 @@ public class DashUnit {
     private boolean isRegistered = false;
 
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
+    public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
 
     transient private final ScheduleManager scheduleManager = new ScheduleManager();
     transient private RemoteStreamService remoteCameraService = null;
 
     private DashClient dashClient = null;
+    private OldFileController oldFileController = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -55,6 +60,11 @@ public class DashUnit {
         if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
             logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
         }
+
+        this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
+        if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
+            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
+        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -67,7 +77,8 @@ public class DashUnit {
 
         try {
             //////////////////////////////
-            if (configManager.getStreaming().equals("rtmp")) {
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
+                //////////////////////////////
                 // REMOTE CAMERA SERVICE with RTMP
                 remoteCameraService = new RemoteStreamService(
                         scheduleManager,
@@ -82,12 +93,12 @@ public class DashUnit {
                             REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
                             remoteCameraService
                     );
-                    isLiveStreaming.set(true);
                     logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
                 } else {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
                 }
-            } else if (configManager.getStreaming().equals("dash")) {
+                //////////////////////////////
+            } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 dashClient = new DashClient(
                         id,
                         ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
@@ -95,8 +106,35 @@ public class DashUnit {
                         FileManager.getParentPathFromUri(mpdPath)
                 );
                 dashClient.start();
+                dashClient.sendHttpGetRequest(sourceUri);
+
+                //////////////////////////////
+                // OLD FILE CONTROLLER
+                String dashPath = mpdPath;
+                String dashPathExtension = FileUtils.getExtension(dashPath);
+                if (!dashPathExtension.isEmpty()) {
+                    dashPath = FileManager.getParentPathFromUri(dashPath);
+                    logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
+                }
+
+                oldFileController = new OldFileController(
+                        scheduleManager,
+                        OldFileController.class.getSimpleName() + "_" + id,
+                        0, 1000, TimeUnit.MILLISECONDS,
+                        1, 1, true,
+                        id, dashPath
+                );
+                scheduleManager.startJob(
+                        OLD_FILE_CONTROL_SCHEDULE_KEY,
+                        oldFileController
+                );
+                logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
+                //////////////////////////////
+
                 logger.debug("[DashUnit(id={})] [+RUN] Dash client streaming", id);
             }
+
+            isLiveStreaming.set(true);
             //////////////////////////////
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runLiveStreaming.Exception", id, e);
@@ -105,16 +143,38 @@ public class DashUnit {
 
     public void finishLiveStreaming() {
         if (isLiveStreaming.get()) {
+            //////////////////////////////
+            // OLD FILE CONTROLLER
+            if (oldFileController != null) {
+                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController);
+                oldFileController = null;
+                logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
+            }
+            //////////////////////////////
+
+            //////////////////////////////
+            // REMOTE CAMERA SERVICE with RTMP
             if (remoteCameraService != null) {
                 scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteCameraService);
                 remoteCameraService.stop();
                 remoteCameraService = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] Rtmp client streaming", id);
-            } else if (dashClient != null) {
+            }
+            // REMOTE CAMERA SERVICE with DASH
+            else if (dashClient != null) {
                 dashClient.stop();
                 dashClient = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] Dash client streaming", id);
             }
+            //////////////////////////////
+
+            //////////////////////////////
+            // CLEAR Dash data if session closed
+            if (configManager.isClearDashDataIfSessionClosed()) {
+                clearMpdPath();
+            }
+            //////////////////////////////
+
             isLiveStreaming.set(false);
         }
     }

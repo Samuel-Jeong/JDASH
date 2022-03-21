@@ -47,7 +47,7 @@ public class DashClient {
         this.srcPath = srcPath;
         this.srcBasePath = FileManager.getParentPathFromUri(srcPath);
         this.uriFileName = FileManager.getFileNameFromUri(srcPath);
-        this.targetBasePath = FileManager.concatFilePath(targetBasePath, uriFileName);
+        this.targetBasePath = targetBasePath;
         this.targetMpdPath = FileManager.concatFilePath(this.targetBasePath, uriFileName + ".mpd");
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
@@ -86,16 +86,20 @@ public class DashClient {
             FileManager.mkdirs(targetBasePath);
             mpdManager.makeMpd(
                     targetMpdPath,
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n".getBytes()
             );
         }
         //////////////////////////////
+
+        logger.debug("[DashClient({})] START", dashUnitId);
     }
 
     public void stop() {
         this.dashClientFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
         this.dashHttpMessageSender.stop();
+
         isStopped = true;
+        logger.debug("[DashClient({})] STOP", dashUnitId);
     }
     ////////////////////////////////////////////////////////////
 
@@ -106,7 +110,7 @@ public class DashClient {
             logger.warn("[DashClient({})] Fail to send the http request. (path={})", dashUnitId, path);
             return;
         } else {
-            logger.debug("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
+            logger.trace("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
         }
 
         dashHttpMessageSender.sendMessage(httpRequest);
