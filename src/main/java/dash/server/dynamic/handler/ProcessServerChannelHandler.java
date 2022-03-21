@@ -99,7 +99,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
                 String networkPath = "";
                 if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-                    networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+                    networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
                 } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                     networkPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                 }
@@ -114,7 +114,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 }
 
                 String uriFileName = FileManager.getFileNameFromUri(uri);
-                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + ".mpd");
+                mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
                 logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
 
                 dashUnit.setInputFilePath(sourceUri);

@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public class MediaManager {
                 String dashPathExtension = FileUtils.getExtension(uri);
                 if (dashPathExtension.length() != 0) {
                     if (!streamType.equals(StreamType.STATIC)) { continue; }
-                    if (!uri.endsWith(".mp4") && !uri.endsWith(".mpd")) { continue; }
+                    if (!uri.endsWith(".mp4") && !uri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
 
                     DashUnit dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
                             streamType,
@@ -101,7 +102,7 @@ public class MediaManager {
 
                         String mpdPath = fullPath;
                         if (mpdPath.endsWith(".mp4")) {
-                            mpdPath = mpdPath.replace(".mp4", ".mpd");
+                            mpdPath = mpdPath.replace(".mp4", StreamConfigManager.DASH_POSTFIX);
                         }
                         dashUnit.setOutputFilePath(mpdPath);
 

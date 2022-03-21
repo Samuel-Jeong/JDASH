@@ -10,6 +10,7 @@ import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stream.StreamConfigManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
@@ -48,7 +49,7 @@ public class DashClient {
         this.srcBasePath = FileManager.getParentPathFromUri(srcPath);
         this.uriFileName = FileManager.getFileNameFromUri(srcPath);
         this.targetBasePath = targetBasePath;
-        this.targetMpdPath = FileManager.concatFilePath(this.targetBasePath, uriFileName + ".mpd");
+        this.targetMpdPath = FileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
         this.mpdManager = new MpdManager(dashUnitId);

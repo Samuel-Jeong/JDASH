@@ -10,6 +10,9 @@ public class StreamConfigManager {
     public static final String STREAMING_WITH_DASH = "dash";
     public static final String STREAMING_WITH_RTMP = "rtmp";
 
+    public static final String RTMP_PREFIX = "rtmp://";
+    public static final String DASH_POSTFIX = ".mpd";
+
     private static final String INIT_SEGMENT_POSTFIX = "_init$RepresentationID$.m4s";
     private static final String MEDIA_SEGMENT_POSTFIX = "_chunk$RepresentationID$_$Number%05d$.m4s";
 

@@ -33,6 +33,7 @@ import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import service.system.ResourceManager;
 import stream.LocalStreamService;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.nio.charset.StandardCharsets;
@@ -121,7 +122,7 @@ public class DashServer {
         );
 
         String uri = FileManager.getFileNameFromUri(configManager.getCameraPath());
-        uri = FileManager.concatFilePath(configManager.getCameraPath(), uri + ".mpd");
+        uri = FileManager.concatFilePath(configManager.getCameraPath(), uri + StreamConfigManager.DASH_POSTFIX);
         localDashUnit.setOutputFilePath(
                 FileManager.concatFilePath(configManager.getMediaBasePath(), uri)
         );

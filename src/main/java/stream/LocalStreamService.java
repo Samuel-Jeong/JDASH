@@ -34,7 +34,7 @@ public class LocalStreamService extends Job {
     private CameraCanvasController localCameraCanvasController = null;
 
     protected static final int CAMERA_INDEX = 0;
-    protected static final int MIKE_INDEX = 4;
+    //protected static final int MIKE_INDEX = 4;
 
     private final String URI;
 
@@ -59,11 +59,11 @@ public class LocalStreamService extends Job {
         this.configManager = AppInstance.getInstance().getConfigManager();
 
         if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-            String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+            String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
             URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
         } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
             String uriFileName = FileManager.getFileNameFromUri(configManager.getCameraPath());
-            String uri = FileManager.concatFilePath(configManager.getCameraPath(), uriFileName + ".mpd");
+            String uri = FileManager.concatFilePath(configManager.getCameraPath(), uriFileName + StreamConfigManager.DASH_POSTFIX);
             URI = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
         } else {
             URI = null;

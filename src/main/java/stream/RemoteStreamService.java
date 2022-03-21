@@ -70,9 +70,9 @@ public class RemoteStreamService extends Job {
         this.scheduleManager = scheduleManager;
         this.configManager = configManager;
 
-        String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+        String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
-        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + ".mpd");
+        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
         URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
         SUBTITLE = "TEST";
     }
@@ -90,9 +90,9 @@ public class RemoteStreamService extends Job {
         this.scheduleManager = scheduleManager;
         this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
 
-        String networkPath = "rtmp://" + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+        String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
         RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
-        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + ".mpd");
+        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
         URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
         SUBTITLE = "TEST";
     }

@@ -27,7 +27,6 @@ public class ServiceManager {
     private final static ServiceManager serviceManager = new ServiceManager(); // lazy initialization
 
     private final ScheduleManager scheduleManager = new ScheduleManager();
-
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
     public static final int DELAY = 1000;
 
@@ -44,7 +43,7 @@ public class ServiceManager {
     private ServiceManager() {
         Runtime.getRuntime().addShutdownHook(new ShutDownHookHandler("ShutDownHookHandler", Thread.currentThread()));
     }
-
+    
     public static ServiceManager getInstance ( ) {
         return serviceManager;
     }
@@ -66,6 +65,7 @@ public class ServiceManager {
         ////////////////////////////////////////
         // SCHEDULE MAIN JOBS
         if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, 10, 10 * 2)) {
+            // FOR CHECKING the availability of this program
             scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     new HaHandler(
                             scheduleManager,
@@ -75,6 +75,7 @@ public class ServiceManager {
                     )
             );
 
+            // FOR REMOVING the old session for this service
             scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     new LongSessionRemover(
                             scheduleManager,
@@ -84,6 +85,7 @@ public class ServiceManager {
                     )
             );
 
+            // FOR CHECKING [~/media_info/~]
             FileKeeper fileKeeper = new FileKeeper(
                     scheduleManager,
                     FileKeeper.class.getSimpleName(),
@@ -101,7 +103,10 @@ public class ServiceManager {
         if (!dashServer.start()) { return false; }
         ////////////////////////////////////////
 
+        ////////////////////////////////////////
+        // SET the log level of AV Module
         avutil.av_log_set_level(AV_LOG_ERROR);
+        ////////////////////////////////////////
 
         logger.debug("| All services are opened.");
         return true;

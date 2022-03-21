@@ -72,9 +72,9 @@ public class DashMessageHandler implements HttpMessageHandler {
             if (uriFileNameWithExtension.contains(".")) {
                 if (uri.endsWith(".mp4")) {
                     mp4Path = uri;
-                    mpdPath = uri.replace(".mp4", ".mpd");
-                } else if (uri.endsWith(".mpd")) {
-                    mp4Path = uri.replace(".mpd", ".mp4");
+                    mpdPath = uri.replace(".mp4", StreamConfigManager.DASH_POSTFIX);
+                } else if (uri.endsWith(StreamConfigManager.DASH_POSTFIX)) {
+                    mp4Path = uri.replace(StreamConfigManager.DASH_POSTFIX, ".mp4");
                     mpdPath = uri;
                 } else {
                     logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
@@ -189,7 +189,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                     logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
                 }*/
             } else {
-                mpdPath = FileManager.concatFilePath(uri, uriFileName + ".mpd");
+                mpdPath = FileManager.concatFilePath(uri, uriFileName + StreamConfigManager.DASH_POSTFIX);
             }
 
             ///////////////////////////

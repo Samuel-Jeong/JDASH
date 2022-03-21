@@ -52,7 +52,6 @@ public class FileManager {
         }
     }
 
-
     public static boolean writeBytes(String fileName, byte[] data, boolean isAppend) {
         if (fileName == null) { return false; }
 
