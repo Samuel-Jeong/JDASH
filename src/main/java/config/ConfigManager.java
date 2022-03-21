@@ -3,6 +3,7 @@ package config;
 import org.ini4j.Ini;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stream.StreamConfigManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -222,6 +223,12 @@ public class ConfigManager {
         if (streaming == null) {
             logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_STREAMING);
             System.exit(1);
+        } else {
+            if (!streaming.equals(StreamConfigManager.STREAMING_WITH_DASH)
+                    && !streaming.equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_STREAMING);
+                System.exit(1);
+            }
         }
 
         String enablePreloadWithDashString = getIniValue(SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
