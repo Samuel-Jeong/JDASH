@@ -13,6 +13,7 @@ import network.definition.NetAddress;
 import network.socket.GroupSocket;
 import network.socket.SocketManager;
 import network.socket.SocketProtocol;
+import network.socket.netty.NettyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -83,7 +84,7 @@ public class DashHttpMessageSender {
         localGroupSocket.addDestination(
                 targetAddress,
                 null,
-                0,
+                dashUnitId.hashCode(),
                 new HttpMessageClientInitializer(sslContext, dashClient)
         );
     }
@@ -92,8 +93,13 @@ public class DashHttpMessageSender {
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
         localGroupSocket.getListenSocket().closeListenChannel();
 
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(0);
-        destinationRecord.getNettyChannel().closeConnectChannel();
+        DestinationRecord destinationRecord = localGroupSocket.getDestination(dashUnitId.hashCode());
+        if (destinationRecord == null) { return; }
+
+        NettyChannel nettyChannel = destinationRecord.getNettyChannel();
+        if (nettyChannel != null) {
+            nettyChannel.closeConnectChannel();
+        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -122,10 +128,13 @@ public class DashHttpMessageSender {
         GroupSocket localGroupSocket = socketManager.getSocket(localListenAddress);
         if (localGroupSocket == null) { return; }
 
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(0);
+        DestinationRecord destinationRecord = localGroupSocket.getDestination(dashUnitId.hashCode());
         if (destinationRecord == null) { return; }
 
-        destinationRecord.getNettyChannel().sendHttpRequest(httpRequest);
+        NettyChannel nettyChannel = destinationRecord.getNettyChannel();
+        if (nettyChannel != null) {
+            nettyChannel.sendHttpRequest(httpRequest);
+        }
     }
     ////////////////////////////////////////////////////////////
 

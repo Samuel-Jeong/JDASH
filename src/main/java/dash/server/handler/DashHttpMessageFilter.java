@@ -10,7 +10,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -69,7 +68,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         uri = uri.trim();
         String originUri = uri;
         if (originUri.contains("bad-request")) { return; }
-        logger.debug("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, request);
+        logger.trace("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, request);
         ///////////////////////////
 
         ///////////////////////////

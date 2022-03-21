@@ -1,6 +1,7 @@
 package service;
 
 import dash.server.DashServer;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardOpenOption.*;
+import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
 public class ServiceManager {
 
@@ -42,7 +44,7 @@ public class ServiceManager {
     private ServiceManager() {
         Runtime.getRuntime().addShutdownHook(new ShutDownHookHandler("ShutDownHookHandler", Thread.currentThread()));
     }
-    
+
     public static ServiceManager getInstance ( ) {
         return serviceManager;
     }
@@ -98,6 +100,8 @@ public class ServiceManager {
         // INITIATE DASH MANAGER
         if (!dashServer.start()) { return false; }
         ////////////////////////////////////////
+
+        avutil.av_log_set_level(AV_LOG_ERROR);
 
         logger.debug("| All services are opened.");
         return true;
