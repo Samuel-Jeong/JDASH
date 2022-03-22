@@ -9,6 +9,7 @@ import dash.mpd.parser.mpd.Period;
 import dash.mpd.parser.mpd.Representation;
 import dash.mpd.validator.MPDValidator;
 import dash.mpd.validator.ManifestValidationException;
+import org.opencv.videoio.VideoCapture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -16,9 +17,12 @@ import util.module.FileManager;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MpdManager {
@@ -34,21 +38,34 @@ public class MpdManager {
     private final MPDParser mpdParser;
     private MPDValidator mpdValidator = null;
     private MPD mpd = null;
+    private AtomicBoolean isMpdDone = new AtomicBoolean(false);
 
     private final AtomicLong audioSegmentSeqNum = new AtomicLong(0);
-    //private final AtomicInteger videoSegmentSeqNum = new AtomicInteger(0);
+    private final AtomicLong videoSegmentSeqNum = new AtomicLong(0);
+
+    private final int videoRepresentationId;
+    private final int audioRepresentationId;
+
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public MpdManager(String dashUnitId) {
-        this.dashUnitId = dashUnitId;
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
+        this.dashUnitId = dashUnitId;
         this.mpdParser = new MPDParser();
         try {
-            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
             mpdValidator = new MPDValidator(mpdParser, configManager.getValidationXsdPath());
         } catch (Exception e) {
             logger.warn("[DashServer] Fail to make a mpd validator.");
+        }
+
+        if (configManager.isAudioOnly()) {
+            videoRepresentationId = -1;
+            audioRepresentationId = 0;
+        } else {
+            videoRepresentationId = 0;
+            audioRepresentationId = 1;
         }
     }
     ////////////////////////////////////////////////////////////
@@ -89,6 +106,10 @@ public class MpdManager {
         return representation.getSegmentTemplate().getStartNumber();
     }
 
+    public Duration getMaxSegmentDuration() {
+        return mpd.getMaxSegmentDuration();
+    }
+
     public Long getDurationOfTemplate(Representation representation) {
         return representation.getSegmentTemplate().getDuration(); // micro-sec
     }
@@ -127,6 +148,25 @@ public class MpdManager {
         }
     }
 
+    public long getVideoSegmentDuration() {
+        List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
+        Representation audioRepresentation = representations.get(0);
+        if (audioRepresentation != null) {
+            // GET from SegmentTemplate
+            Long duration = getDurationOfTemplate(audioRepresentation);
+            if (duration == null) {
+                // GET from SegmentTimeline
+                duration = audioRepresentation.getSegmentTemplate()
+                        .getSegmentTimeline()
+                        .get((int) getVideoSegmentDuration())
+                        .getD(); // micro-sec
+            }
+            return duration;
+        } else {
+            return 0;
+        }
+    }
+
     public List<Representation> getRepresentations(String contentType) {
         if (mpd == null || contentType == null) {
             return null;
@@ -151,7 +191,7 @@ public class MpdManager {
             try {
                 inputStream = new FileInputStream(targetMpdPath);
             } catch (Exception e) {
-                logger.warn("[MpdManager] Fail to get the input stream. (filePath={})", targetMpdPath, e);
+                logger.warn("[MpdManager] Fail to get the input stream. (filePath={})", targetMpdPath);
                 return false;
             }
 
@@ -168,6 +208,17 @@ public class MpdManager {
                 if (startNumber != null) {
                     setAudioSegmentSeqNum(startNumber);
                     logger.debug("[MpdManager({})] [AUDIO] Media Segment's start number is [{}].", dashUnitId, startNumber);
+                }
+            }
+
+            if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+                representations = getRepresentations(CONTENT_VIDEO_TYPE);
+                if (representations != null && !representations.isEmpty()) {
+                    Long startNumber = getStartNumber(representations.get(0));
+                    if (startNumber != null) {
+                        setVideoSegmentSeqNum(startNumber);
+                        logger.debug("[MpdManager({})] [VIDEO] Media Segment's start number is [{}].", dashUnitId, startNumber);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -196,11 +247,15 @@ public class MpdManager {
     }
 
     public void makeMpd(String targetMpdPath, byte[] content) {
+        boolean isMpdDone = getIsMpdDone();
         FileManager.writeBytes(
                 targetMpdPath,
                 content,
-                true
+                !isMpdDone
         );
+        if (isMpdDone) {
+            setIsMpdDone(false);
+        }
     }
 
     public void makeInitSegment(String targetInitSegPath, byte[] content) {
@@ -227,7 +282,7 @@ public class MpdManager {
         );
     }
 
-    public String getMediaSegmentName() {
+    public String getAudioMediaSegmentName() {
         List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             ConfigManager configManager = AppInstance.getInstance().getConfigManager();
@@ -236,12 +291,36 @@ public class MpdManager {
             // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getRepresentationIdFormat(),
-                    0 + ""
+                    audioRepresentationId + ""
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
                     String.format("%05d", getAudioSegmentSeqNum())
+            );
+            return mediaSegmentName;
+        }
+
+        return null;
+    }
+
+    public String getVideoMediaSegmentName() {
+        if (videoRepresentationId < 0) { return null; }
+
+        List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
+        if (representations != null && !representations.isEmpty()) {
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
+            String mediaSegmentName = getRawMediaSegmentName(representations.get(0));
+            // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
+            mediaSegmentName = mediaSegmentName.replace(
+                    configManager.getRepresentationIdFormat(),
+                    videoRepresentationId + ""
+            );
+            // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
+            mediaSegmentName = mediaSegmentName.replace(
+                    configManager.getChunkNumberFormat(),
+                    String.format("%05d", getVideoSegmentSeqNum())
             );
             return mediaSegmentName;
         }
@@ -267,12 +346,32 @@ public class MpdManager {
         return audioSegmentSeqNum.incrementAndGet();
     }
 
+    public long getVideoSegmentSeqNum() {
+        return videoSegmentSeqNum.get();
+    }
+
+    public void setVideoSegmentSeqNum(long number) {
+        videoSegmentSeqNum.set(number);
+    }
+
+    public long incAndGetVideoSegmentSeqNum() {
+        return videoSegmentSeqNum.incrementAndGet();
+    }
+
     public MPD getMpd() {
         return mpd;
     }
 
     public void setMpd(MPD mpd) {
         this.mpd = mpd;
+    }
+
+    public boolean getIsMpdDone() {
+        return isMpdDone.get();
+    }
+
+    public void setIsMpdDone(boolean isMpdDone) {
+        this.isMpdDone.set(isMpdDone);
     }
     ////////////////////////////////////////////////////////////
 

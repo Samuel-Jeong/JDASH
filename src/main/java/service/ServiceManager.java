@@ -33,7 +33,7 @@ public class ServiceManager {
     private final DashServer dashServer = new DashServer();
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
-    private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "jdash_server.lock"));
+    private final File lockFile = new File(tmpdir, System.getProperty("lock_file", "udash_server.lock"));
     private FileChannel fileChannel;
     private FileLock lock;
     private boolean isQuit = false;
@@ -101,11 +101,6 @@ public class ServiceManager {
         ////////////////////////////////////////
         // INITIATE DASH MANAGER
         if (!dashServer.start()) { return false; }
-        ////////////////////////////////////////
-
-        ////////////////////////////////////////
-        // SET the log level of AV Module
-        avutil.av_log_set_level(AV_LOG_ERROR);
         ////////////////////////////////////////
 
         logger.debug("| All services are opened.");

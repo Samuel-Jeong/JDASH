@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
 import dash.client.handler.DashHttpMessageSender;
+import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
@@ -13,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import stream.StreamConfigManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * [DASH Client] : [Remote Dash Unit] = 1 : 1
@@ -30,7 +33,12 @@ public class DashClient {
     private final String uriFileName;
     private final String targetBasePath;
     private final String targetMpdPath;
+
     private String targetAudioInitSegPath;
+    private String targetVideoInitSegPath;
+
+    private AtomicInteger audioRetryCount = new AtomicInteger(0);
+    private AtomicInteger videoRetryCount = new AtomicInteger(0);
 
     transient private final DashClientFsmManager dashClientFsmManager = new DashClientFsmManager();
     private final String dashClientStateUnitId;
@@ -105,7 +113,7 @@ public class DashClient {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void sendHttpGetRequest(String path) {
+    public void sendHttpGetRequest(String path, MessageType messageType) {
         HttpRequest httpRequest = dashHttpMessageSender.makeHttpGetRequestMessage(path);
         if (httpRequest == null) {
             logger.warn("[DashClient({})] Fail to send the http request. (path={})", dashUnitId, path);
@@ -114,7 +122,19 @@ public class DashClient {
             logger.trace("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
         }
 
-        dashHttpMessageSender.sendMessage(httpRequest);
+        switch (messageType) {
+            case MPD:
+                dashHttpMessageSender.sendMessageForMpd(httpRequest);
+                break;
+            case VIDEO:
+                dashHttpMessageSender.sendMessageForVideo(httpRequest);
+                break;
+            case AUDIO:
+                dashHttpMessageSender.sendMessageForAudio(httpRequest);
+                break;
+            default:
+                break;
+        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -167,8 +187,24 @@ public class DashClient {
         this.targetAudioInitSegPath = targetAudioInitSegPath;
     }
 
+    public String getTargetVideoInitSegPath() {
+        return targetVideoInitSegPath;
+    }
+
+    public void setTargetVideoInitSegPath(String targetVideoInitSegPath) {
+        this.targetVideoInitSegPath = targetVideoInitSegPath;
+    }
+
     public MpdManager getMpdManager() {
         return mpdManager;
+    }
+
+    public int incAndGetAudioRetryCount() {
+        return audioRetryCount.incrementAndGet();
+    }
+
+    public int incAndGetVideoRetryCount() {
+        return videoRetryCount.incrementAndGet();
     }
     ////////////////////////////////////////////////////////////
 

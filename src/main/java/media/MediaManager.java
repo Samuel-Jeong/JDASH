@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.client.DashClient;
+import dash.client.handler.base.MessageType;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import org.apache.commons.io.FileUtils;
@@ -88,7 +89,7 @@ public class MediaManager {
                 String dashPathExtension = FileUtils.getExtension(uri);
                 if (dashPathExtension.length() != 0) {
                     if (!streamType.equals(StreamType.STATIC)) { continue; }
-                    if (!uri.endsWith(".mp4") && !uri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
+                    if (!uri.endsWith(StreamConfigManager.MP4_POSTFIX) && !uri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
 
                     DashUnit dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
                             streamType,
@@ -101,14 +102,14 @@ public class MediaManager {
                         dashUnit.setInputFilePath(fullPath);
 
                         String mpdPath = fullPath;
-                        if (mpdPath.endsWith(".mp4")) {
-                            mpdPath = mpdPath.replace(".mp4", StreamConfigManager.DASH_POSTFIX);
+                        if (mpdPath.endsWith(StreamConfigManager.MP4_POSTFIX)) {
+                            mpdPath = mpdPath.replace(StreamConfigManager.MP4_POSTFIX, StreamConfigManager.DASH_POSTFIX);
                         }
                         dashUnit.setOutputFilePath(mpdPath);
 
                         if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
                             // GET STATIC MEDIA SOURCE from remote dash server
-                            String httpPath = "http://" + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
+                            String httpPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                             httpPath = FileManager.concatFilePath(httpPath, uri);
                             DashClient dashClient = new DashClient(
                                     dashUnit.getId(),
@@ -120,7 +121,7 @@ public class MediaManager {
                                     )
                             );
                             dashClient.start();
-                            dashClient.sendHttpGetRequest(httpPath);
+                            dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
                             dashUnit.setDashClient(dashClient);
                         }
                     }

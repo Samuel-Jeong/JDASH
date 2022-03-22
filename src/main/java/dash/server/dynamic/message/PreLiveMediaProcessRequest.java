@@ -29,7 +29,7 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
 
     ////////////////////////////////////////////////////////////
     public PreLiveMediaProcessRequest(byte[] data) throws MessageException {
-        logger.debug("data.length: {}", data.length);
+        //logger.debug("data.length: {}", data.length);
         if (data.length >= MIN_SIZE) {
             int index = 0;
 
@@ -37,19 +37,19 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
             System.arraycopy(data, index, headerByteData, 0, headerByteData.length);
             this.messageHeader = new MessageHeader(headerByteData);
             index += headerByteData.length;
-            logger.debug("[{}] messageHeader: {}", index, messageHeader);
+            //logger.debug("[{}] messageHeader: {}", index, messageHeader);
 
             byte[] sourceIpLengthByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
             System.arraycopy(data, index, sourceIpLengthByteData, 0, sourceIpLengthByteData.length);
             sourceIpLength = ByteUtil.bytesToInt(sourceIpLengthByteData, true);
-            logger.debug("[{}] sourceIpLength: {}", index, sourceIpLength);
+            //logger.debug("[{}] sourceIpLength: {}", index, sourceIpLength);
             index += sourceIpLengthByteData.length;
 
             if (sourceIpLength > 0) {
                 byte[] sourceIpByteData = new byte[sourceIpLength];
                 System.arraycopy(data, index, sourceIpByteData, 0, sourceIpLength);
                 sourceIp = new String(sourceIpByteData);
-                logger.debug("[{}] sourceIp: {}", index, sourceIp);
+                //logger.debug("[{}] sourceIp: {}", index, sourceIp);
                 index += sourceIpLength;
             } else {
                 sourceIp = null;
@@ -58,14 +58,14 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
             byte[] uriLengthByteData = new byte[ByteUtil.NUM_BYTES_IN_INT];
             System.arraycopy(data, index, uriLengthByteData, 0, uriLengthByteData.length);
             uriLength = ByteUtil.bytesToInt(uriLengthByteData, true);
-            logger.debug("[{}] uriLength: {}", index, uriLength);
+            //logger.debug("[{}] uriLength: {}", index, uriLength);
             index += uriLengthByteData.length;
 
             if (uriLength > 0) {
                 byte[] uriByteData = new byte[uriLength];
                 System.arraycopy(data, index, uriByteData, 0, uriLength);
                 uri = new String(uriByteData, StandardCharsets.UTF_8);
-                logger.debug("[{}] uri: {}", index, uri);
+                //logger.debug("[{}] uri: {}", index, uri);
                 index += uriLength;
             } else {
                 uri = null;
@@ -74,7 +74,7 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
             byte[] expiresByteData = new byte[ByteUtil.NUM_BYTES_IN_LONG];
             System.arraycopy(data, index, expiresByteData, 0, expiresByteData.length);
             expires = ByteUtil.bytesToLong(expiresByteData, true);
-            logger.debug("[{}] expires: {}", index, expires);
+            //logger.debug("[{}] expires: {}", index, expires);
         } else {
             messageHeader = null;
             sourceIpLength = 0;

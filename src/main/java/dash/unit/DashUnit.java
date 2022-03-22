@@ -2,6 +2,7 @@ package dash.unit;
 
 import config.ConfigManager;
 import dash.client.DashClient;
+import dash.client.handler.base.MessageType;
 import dash.mpd.parser.mpd.MPD;
 import dash.unit.tool.OldFileController;
 import org.apache.commons.io.FileUtils;
@@ -106,7 +107,7 @@ public class DashUnit {
                         FileManager.getParentPathFromUri(mpdPath)
                 );
                 dashClient.start();
-                dashClient.sendHttpGetRequest(sourceUri);
+                dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
 
                 //////////////////////////////
                 // OLD FILE CONTROLLER

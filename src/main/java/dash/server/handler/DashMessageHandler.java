@@ -53,7 +53,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         }
 
         String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
-        if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(".mp4")) {
+        if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(StreamConfigManager.MP4_POSTFIX)) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to find the mp4 file. (uri={})", this.uri, uri);
@@ -70,11 +70,11 @@ public class DashMessageHandler implements HttpMessageHandler {
             ///////////////////////////
             // GET COMMAND & RUN SCRIPT
             if (uriFileNameWithExtension.contains(".")) {
-                if (uri.endsWith(".mp4")) {
+                if (uri.endsWith(StreamConfigManager.MP4_POSTFIX)) {
                     mp4Path = uri;
-                    mpdPath = uri.replace(".mp4", StreamConfigManager.DASH_POSTFIX);
+                    mpdPath = uri.replace(StreamConfigManager.MP4_POSTFIX, StreamConfigManager.DASH_POSTFIX);
                 } else if (uri.endsWith(StreamConfigManager.DASH_POSTFIX)) {
-                    mp4Path = uri.replace(StreamConfigManager.DASH_POSTFIX, ".mp4");
+                    mp4Path = uri.replace(StreamConfigManager.DASH_POSTFIX, StreamConfigManager.MP4_POSTFIX);
                     mpdPath = uri;
                 } else {
                     logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);

@@ -3,13 +3,14 @@ package dash.client.handler;
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
 import dash.client.fsm.DashClientState;
+import dash.client.handler.base.MessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.AppInstance;
+import stream.StreamConfigManager;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
@@ -17,15 +18,15 @@ import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
-    private static final Logger logger = LoggerFactory.getLogger(DashHttpClientHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashVideoHttpClientHandler.class);
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final DashClient dashClient;
 
-    public DashHttpClientHandler(DashClient dashClient) {
+    public DashVideoHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
     }
 
@@ -50,10 +51,35 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             HttpResponse response = (HttpResponse) httpObject;
 
             if (!response.status().equals(HttpResponseStatus.OK)) {
-                logger.trace("[DashHttpClientHandler({})] [-] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
-                dashClient.stop();
-                channelHandlerContext.close();
-                return;
+                int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
+                if (curVideoRetryCount > StreamConfigManager.VIDEO_RETRY_LIMIT) {
+                    logger.warn("[DashHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
+                    dashClient.stop();
+                    channelHandlerContext.close();
+                    return;
+                } else {
+                    // SegmentDuration 의 절반 만큼(micro-sec) sleep
+                    long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+                    if (segmentDuration > 0) {
+                        try {
+                            segmentDuration /= 2; // 500000
+                            timeUnit.sleep(segmentDuration);
+                            logger.trace("[DashHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                        } catch (Exception e) {
+                            //logger.warn("");
+                        }
+                    }
+
+                    dashClient.sendHttpGetRequest(
+                            FileManager.concatFilePath(
+                                    dashClient.getSrcBasePath(),
+                                    dashClient.getMpdManager().getVideoMediaSegmentName()
+                            ),
+                            MessageType.VIDEO
+                    );
+
+                    logger.warn("[DashHttpClientHandler({})] [VIDEO] Retrying... ({})", dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoMediaSegmentName());
+                }
             }
 
             if (logger.isTraceEnabled()) {
@@ -99,46 +125,32 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
             StateUnit stateUnit = stateManager.getStateUnit(dashClient.getDashClientStateUnitId());
             String curState = stateUnit.getCurState();
             switch (curState) {
-                case DashClientState.IDLE:
-                    dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), data);
-                    break;
                 case DashClientState.MPD_DONE:
-                    if (AppInstance.getInstance().getConfigManager().isEnableValidation()) {
-                        if (dashClient.getMpdManager().validate()) {
-                            logger.debug("[DashHttpClientHandler({})] Success to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
-                        } else {
-                            logger.warn("[DashHttpClientHandler({})] Fail to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
-                        }
-                    }
-
-                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), data);
+                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetVideoInitSegPath(), data);
                     break;
                 case DashClientState.INIT_SEG_DONE:
-                    String targetAudioMediaSegPath = FileManager.concatFilePath(
+                    String targetVideoMediaSegPath = FileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
-                            dashClient.getMpdManager().getMediaSegmentName()
+                            dashClient.getMpdManager().getVideoMediaSegmentName()
                     );
-                    dashClient.getMpdManager().makeMediaSegment(targetAudioMediaSegPath, data);
+                    dashClient.getMpdManager().makeMediaSegment(targetVideoMediaSegPath, data);
                     break;
             }
 
-            logger.trace("[DashHttpClientHandler({})] {}", dashClient.getDashUnitId(), data);
+            logger.trace("[DashHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
             if (httpContent instanceof LastHttpContent) {
                 switch (curState) {
-                    case DashClientState.IDLE:
-                        stateHandler.fire(DashClientEvent.GET_MPD, stateUnit);
-                        break;
                     case DashClientState.MPD_DONE:
                         stateHandler.fire(DashClientEvent.GET_INIT_SEG, stateUnit);
                         break;
                     case DashClientState.INIT_SEG_DONE:
-                        String prevMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
-                        dashClient.getMpdManager().incAndGetAudioSegmentSeqNum();
-                        String curMediaSegmentName = dashClient.getMpdManager().getMediaSegmentName();
-                        logger.trace("[DashHttpClientHandler({})] [+] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
+                        String prevMediaSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+                        dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
+                        String curMediaSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+                        logger.trace("[DashHttpClientHandler({})] [+] [VIDEO] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
                         /*double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(); // 0.8
                         if (availabilityTimeOffset > 0) {
                             segmentDuration *= availabilityTimeOffset; // 800000
@@ -146,6 +158,7 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                         if (segmentDuration > 0) {
                             try {
                                 timeUnit.sleep(segmentDuration);
+                                logger.trace("[DashHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                             } catch (Exception e) {
                                 //logger.warn("");
                             }
@@ -155,7 +168,8 @@ public class DashHttpClientHandler extends SimpleChannelInboundHandler<HttpObjec
                                 FileManager.concatFilePath(
                                         dashClient.getSrcBasePath(),
                                         curMediaSegmentName
-                                )
+                                ),
+                                MessageType.VIDEO
                         );
                         break;
                 }

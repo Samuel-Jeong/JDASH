@@ -11,7 +11,9 @@ public class StreamConfigManager {
     public static final String STREAMING_WITH_RTMP = "rtmp";
 
     public static final String RTMP_PREFIX = "rtmp://";
+    public static final String HTTP_PREFIX = "http://";
     public static final String DASH_POSTFIX = ".mpd";
+    public static final String MP4_POSTFIX = ".mp4";
 
     private static final String INIT_SEGMENT_POSTFIX = "_init$RepresentationID$.m4s";
     private static final String MEDIA_SEGMENT_POSTFIX = "_chunk$RepresentationID$_$Number%05d$.m4s";
@@ -27,6 +29,9 @@ public class StreamConfigManager {
     public static final int CAPTURE_WIDTH = 640;
     public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 2;
+
+    public static final int AUDIO_RETRY_LIMIT = 3;
+    public static final int VIDEO_RETRY_LIMIT = 3;
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
@@ -35,7 +40,7 @@ public class StreamConfigManager {
                                       boolean isAudioOnly, double segmentDuration, int windowSize) {
         if (fFmpegFrameRecorder == null) { return; }
 
-        if (!isAudioOnly) {
+        /*if (!isAudioOnly) {
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
@@ -53,7 +58,7 @@ public class StreamConfigManager {
             fFmpegFrameRecorder.setOption("profile:v:2", "baseline");
 
             fFmpegFrameRecorder.setOption("bf", "1");
-        }
+        }*/
 
         fFmpegFrameRecorder.setFormat("dash");
         fFmpegFrameRecorder.setOption("init_seg_name", uriFileName + INIT_SEGMENT_POSTFIX);
@@ -79,18 +84,18 @@ public class StreamConfigManager {
             fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(segmentDuration));
         }
 
-        fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
+        //fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
         /**
          * Set the length in seconds of fragments within segments (fractional value can be set).
          * Create fragments that are duration microseconds long.
          */
-        fFmpegFrameRecorder.setOption("frag_duration", "0.2");
+        //fFmpegFrameRecorder.setOption("frag_duration", "0.2");
 
         // URL of the page that will return the UTC timestamp in ISO format. Example: "https://time.akamai.com/?iso"
         fFmpegFrameRecorder.setOption("utc_timing_url", "https://time.akamai.com/?iso");
 
         // Adjusts the sensitivity of x264's scenecut detection. Rarely needs to be adjusted. Recommended default: 40
-        fFmpegFrameRecorder.setOption("sc_threshold", "0");
+        //fFmpegFrameRecorder.setOption("sc_threshold", "0");
 
         /**
          * x264, by default,
@@ -107,7 +112,7 @@ public class StreamConfigManager {
          *      its recommended to keep bframes relatively low (perhaps around 3) when using this option.
          *      It also may slow down the first pass of x264 when in threaded mode.
          */
-        fFmpegFrameRecorder.setOption("b_strategy", "0");
+        //fFmpegFrameRecorder.setOption("b_strategy", "0");
 
         /**
          * Set container format (mp4/webm) options using a : separated list of key=value parameters.
@@ -183,8 +188,8 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
         //fFmpegFrameRecorder.setFormat("flv");
         fFmpegFrameRecorder.setFormat("matroska");
@@ -192,17 +197,17 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
+        //fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
     }
 
     public static void setLocalStreamVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
-        fFmpegFrameRecorder.setVideoOption("preset", "slow");
+        fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
         /**
          * 1. Flash Video (.flv)
@@ -210,14 +215,14 @@ public class StreamConfigManager {
          * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
          * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
          */
-        fFmpegFrameRecorder.setFormat("flv");
+        //fFmpegFrameRecorder.setFormat("flv");
         /**
          * 2. Matroska (wp, .mkv/.mka/.mks)
          * - Owner : CoreCodec
          * [Video] : H.264, Realvideo, DivX, XviD, HEVC
          * [Audio] : AAC, Vorbis, Dolby AC3, MP3
          */
-        //fFmpegFrameRecorder.setFormat("matroska");
+        fFmpegFrameRecorder.setFormat("matroska");
 
         /**
          * The range of the CRF scale is 0–51,
@@ -231,7 +236,7 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
+        //fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
     }
     ///////////////////////////////////////////////////////////////////////////
 

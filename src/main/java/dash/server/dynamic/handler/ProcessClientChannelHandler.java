@@ -4,12 +4,14 @@ import dash.server.dynamic.message.EndLiveMediaProcessResponse;
 import dash.server.dynamic.message.PreLiveMediaProcessResponse;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
+import dash.server.dynamic.message.base.ResponseType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.ServiceManager;
 
 public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
@@ -48,6 +50,11 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
             int statusCode = preProcessResponse.getStatusCode();
             String reason = preProcessResponse.getReason();
             logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse(statusCode={}, reason={})", statusCode, reason);
+
+            if (statusCode == ResponseType.NOT_FOUND) {
+                logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse [404 NOT FOUND], Fail to start service.");
+                ServiceManager.getInstance().stop();
+            }
         } else if (messageHeader.getMessageType() == MessageType.ENDPROCESS_RES) {
             EndLiveMediaProcessResponse endLiveMediaProcessResponse = new EndLiveMediaProcessResponse(data);
             int statusCode = endLiveMediaProcessResponse.getStatusCode();

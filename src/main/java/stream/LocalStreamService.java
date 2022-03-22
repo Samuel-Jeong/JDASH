@@ -8,6 +8,7 @@ import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.OpenCVFrameGrabber;
@@ -22,6 +23,8 @@ import util.module.FileManager;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+
+import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
 public class LocalStreamService extends Job {
 
@@ -76,6 +79,8 @@ public class LocalStreamService extends Job {
         try {
             audioService.initSampleService(scheduleManager);
 
+            /////////////////////////////////
+            // [INPUT] OpenCVFrameGrabber
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 if (!configManager.isAudioOnly()) {
                     openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
@@ -89,7 +94,10 @@ public class LocalStreamService extends Job {
                 openCVFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
                 openCVFrameGrabber.start();
             }
+            /////////////////////////////////
 
+            /////////////////////////////////
+            // [OUTPUT] LOCAL CAMERA CANVAS CONTROLLER
             if (configManager.isEnableGui()
                     && openCVFrameGrabber != null
                     && !configManager.isAudioOnly()) {
@@ -106,6 +114,7 @@ public class LocalStreamService extends Job {
                     scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
                 }
             }
+            /////////////////////////////////
         } catch (Exception e) {
             logger.warn("LocalStreamService.start.Exception", e);
             System.exit(1);
@@ -188,6 +197,7 @@ public class LocalStreamService extends Job {
             }
             StreamConfigManager.setLocalStreamAudioOptions(fFmpegFrameRecorder);
 
+            avutil.av_log_set_level(AV_LOG_ERROR);
             fFmpegFrameRecorder.start();
             /////////////////////////////////
 

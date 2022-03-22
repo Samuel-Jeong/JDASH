@@ -1,6 +1,7 @@
 package stream;
 
 import config.ConfigManager;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
@@ -12,6 +13,8 @@ import util.module.ConcurrentCyclicFIFO;
 import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
+
+import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
 public class RemoteStreamService extends Job {
 
@@ -29,8 +32,6 @@ public class RemoteStreamService extends Job {
     private static String URI_FILE_NAME = null;
     private final String RTMP_PATH;
     private final String DASH_PATH;
-
-    private final String SUBTITLE;
 
     private static long startTime = 0;
     private boolean exit = false;
@@ -53,28 +54,6 @@ public class RemoteStreamService extends Job {
         URI_FILE_NAME = uriFileName;
         RTMP_PATH = rtmpPath;
         DASH_PATH = dashPath;
-        SUBTITLE = "> REMOTE (" + URI_FILE_NAME + ")";
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
-    // FOR TEST
-    public RemoteStreamService(ScheduleManager scheduleManager,
-                               String name,
-                               int initialDelay, int interval, TimeUnit timeUnit,
-                               int priority, int totalRunCount, boolean isLasted,
-                               ConfigManager configManager) {
-        super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
-
-        this.dashUnitId = null;
-        this.scheduleManager = scheduleManager;
-        this.configManager = configManager;
-
-        String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-        RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
-        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
-        URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
-        SUBTITLE = "TEST";
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -94,9 +73,10 @@ public class RemoteStreamService extends Job {
         RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
         DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
         URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
-        SUBTITLE = "TEST";
     }
+    ///////////////////////////////////////////////////////////////////////////
 
+    ///////////////////////////////////////////////////////////////////////////
     public boolean init() {
         try {
             /////////////////////////////////
@@ -109,6 +89,8 @@ public class RemoteStreamService extends Job {
             fFmpegFrameGrabber.start();
             /////////////////////////////////
 
+            /////////////////////////////////
+            // [OUTPUT] REMOTE CAMERA CANVAS CONTROLLER
             if (configManager.isEnableClient() && configManager.isEnableGui() && !configManager.isAudioOnly()) {
                 if (scheduleManager.initJob(REMOTE_STREAM_SCHEDULE_KEY, 1, 1)) {
                     logger.debug("[RemoteStreamService] Success to init [{}]", REMOTE_STREAM_SCHEDULE_KEY);
@@ -123,6 +105,7 @@ public class RemoteStreamService extends Job {
                     scheduleManager.startJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController);
                 }
             }
+            /////////////////////////////////
         } catch (Exception e) {
             logger.warn("RemoteStreamService.init.Exception", e);
             return false;
@@ -189,6 +172,7 @@ public class RemoteStreamService extends Job {
                 );
                 videoFrameRecorder.start();
             }
+            avutil.av_log_set_level(AV_LOG_ERROR);
             /////////////////////////////////
 
             /////////////////////////////////
