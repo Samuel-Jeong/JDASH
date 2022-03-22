@@ -51,6 +51,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             HttpResponse response = (HttpResponse) httpObject;
 
             if (!response.status().equals(HttpResponseStatus.OK)) {
+                // 재시도 로직
                 int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
                 if (curVideoRetryCount > StreamConfigManager.VIDEO_RETRY_LIMIT) {
                     logger.warn("[DashHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());

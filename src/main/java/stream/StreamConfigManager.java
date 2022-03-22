@@ -32,6 +32,9 @@ public class StreamConfigManager {
 
     public static final int AUDIO_RETRY_LIMIT = 3;
     public static final int VIDEO_RETRY_LIMIT = 3;
+
+    public static final int MEDIA_PRESENTATION_DURATION = 5; // seconds
+    public static final int MIN_BUFFER_TIME = 2; // seconds
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
@@ -73,7 +76,7 @@ public class StreamConfigManager {
          * Applicable only when streaming and write_prft options are enabled.
          * This is an informative fields clients can use to measure the latency of the service.
          */
-        fFmpegFrameRecorder.setOption("target_latency", "3");
+        //fFmpegFrameRecorder.setOption("target_latency", "3");
 
         /**
          * Set the segment length in seconds (fractional value can be set).
@@ -166,7 +169,7 @@ public class StreamConfigManager {
         }
 
         // Bit set of AV_CODEC_EXPORT_DATA_* flags, which affects the kind of metadata exported in frame, packet, or coded stream side data by decoders and encoders.
-        fFmpegFrameRecorder.setOption("export_side_data", "prft");
+        //fFmpegFrameRecorder.setOption("export_side_data", "prft");
 
         /**
          * Write Producer Reference Time elements on supported streams.
@@ -175,7 +178,7 @@ public class StreamConfigManager {
          * It’s set to auto by default,
          *      in which case the muxer will attempt to enable it only in modes that require it.
          */
-        fFmpegFrameRecorder.setOption("write_prft", "1");
+        //fFmpegFrameRecorder.setOption("write_prft", "1");
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -188,8 +191,8 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
         //fFmpegFrameRecorder.setFormat("flv");
         fFmpegFrameRecorder.setFormat("matroska");
@@ -201,13 +204,15 @@ public class StreamConfigManager {
     }
 
     public static void setLocalStreamVideoOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        if (fFmpegFrameRecorder == null) { return; }
+
         fFmpegFrameRecorder.setVideoBitrate(2000000); // 2000K > default: 400000 (400K)
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
         fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
 
         /**
          * 1. Flash Video (.flv)
@@ -215,14 +220,14 @@ public class StreamConfigManager {
          * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
          * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
          */
-        //fFmpegFrameRecorder.setFormat("flv");
+        fFmpegFrameRecorder.setFormat("flv");
         /**
          * 2. Matroska (wp, .mkv/.mka/.mks)
          * - Owner : CoreCodec
          * [Video] : H.264, Realvideo, DivX, XviD, HEVC
          * [Audio] : AAC, Vorbis, Dolby AC3, MP3
          */
-        fFmpegFrameRecorder.setFormat("matroska");
+        //fFmpegFrameRecorder.setFormat("matroska");
 
         /**
          * The range of the CRF scale is 0–51,
@@ -236,7 +241,7 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
         fFmpegFrameRecorder.setFrameRate(FRAME_RATE); // default: 30
-        //fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
+        fFmpegFrameRecorder.setOption("keyint_min", String.valueOf(GOP_LENGTH_IN_FRAMES));
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -258,6 +263,8 @@ public class StreamConfigManager {
     }
 
     public static void setLocalStreamAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
+        if (fFmpegFrameRecorder == null) { return; }
+
         fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
         //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
 

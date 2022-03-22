@@ -51,6 +51,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
             HttpResponse response = (HttpResponse) httpObject;
 
             if (!response.status().equals(HttpResponseStatus.OK)) {
+                // 재시도 로직
                 int curAudioRetryCount = dashClient.incAndGetAudioRetryCount();
                 if (curAudioRetryCount > StreamConfigManager.AUDIO_RETRY_LIMIT) {
                     logger.warn("[DashHttpClientHandler({})] [-] [AUDIO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());

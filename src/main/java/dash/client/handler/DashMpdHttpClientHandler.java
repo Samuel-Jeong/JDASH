@@ -113,12 +113,11 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
                 dashClient.getMpdManager().setIsMpdDone(true);
                 logger.trace("[DashHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
 
-                Duration maxSegmentDuration = dashClient.getMpdManager().getMaxSegmentDuration();
-                if (maxSegmentDuration != null) {
+                Duration mediaPresentationDuration = dashClient.getMpdManager().getMediaPresentationDuration();
+                if (mediaPresentationDuration != null) {
                     try {
-                        long seconds = maxSegmentDuration.getSeconds();
+                        long seconds = mediaPresentationDuration.getSeconds();
                         if (seconds > 0) {
-                            seconds *= 3;
                             timeUnit.sleep(seconds);
                             logger.trace("[DashHttpClientHandler({})] [MPD] Waiting... ({})", dashClient.getDashUnitId(), seconds);
 

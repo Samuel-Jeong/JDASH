@@ -74,7 +74,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                     mp4Path = uri;
                     mpdPath = uri.replace(StreamConfigManager.MP4_POSTFIX, StreamConfigManager.DASH_POSTFIX);
                 } else if (uri.endsWith(StreamConfigManager.DASH_POSTFIX)) {
-                    mp4Path = uri.replace(StreamConfigManager.DASH_POSTFIX, StreamConfigManager.MP4_POSTFIX);
+                    mp4Path = uri.replace(StreamConfigManager.DASH_POSTFIX, ".mp4");
                     mpdPath = uri;
                 } else {
                     logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. Wrong file extension. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
@@ -163,7 +163,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                         /////////////////////////////////
                     } catch (Exception e) {
                         // ignore
-                        //logger.warn("RemoteStreamService.run.Exception", e);
+                        //logger.warn("DashMessageHandler.run.Exception", e);
                     } finally {
                         try {
                             if (videoFrameRecorder != null) {

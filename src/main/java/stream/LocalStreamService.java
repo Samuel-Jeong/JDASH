@@ -138,10 +138,12 @@ public class LocalStreamService extends Job {
                 openCVFrameGrabber = null;
             }
 
-            String mpdParentPath = FileManager.getParentPathFromUri(URI);
-            if (mpdParentPath != null) {
-                FileManager.deleteFile(mpdParentPath);
-                logger.debug("[LocalStreamService] DELETE ALL MPD Files. (path={})", mpdParentPath);
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
+                String mpdParentPath = FileManager.getParentPathFromUri(URI);
+                if (mpdParentPath != null) {
+                    FileManager.deleteFile(mpdParentPath);
+                    logger.debug("[LocalStreamService] DELETE ALL MPD Files. (path={})", mpdParentPath);
+                }
             }
         } catch (Exception e) {
             logger.warn("LocalStreamService.stop.Exception", e);

@@ -3,16 +3,14 @@ package dash.mpd;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import config.ConfigManager;
 import dash.mpd.parser.MPDParser;
-import dash.mpd.parser.mpd.AdaptationSet;
-import dash.mpd.parser.mpd.MPD;
-import dash.mpd.parser.mpd.Period;
-import dash.mpd.parser.mpd.Representation;
+import dash.mpd.parser.mpd.*;
 import dash.mpd.validator.MPDValidator;
 import dash.mpd.validator.ManifestValidationException;
 import org.opencv.videoio.VideoCapture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import stream.StreamConfigManager;
 import util.module.FileManager;
 
 import java.io.FileInputStream;
@@ -21,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,7 +37,7 @@ public class MpdManager {
     private final MPDParser mpdParser;
     private MPDValidator mpdValidator = null;
     private MPD mpd = null;
-    private AtomicBoolean isMpdDone = new AtomicBoolean(false);
+    private final AtomicBoolean isMpdDone = new AtomicBoolean(false);
 
     private final AtomicLong audioSegmentSeqNum = new AtomicLong(0);
     private final AtomicLong videoSegmentSeqNum = new AtomicLong(0);
@@ -108,6 +107,10 @@ public class MpdManager {
 
     public Duration getMaxSegmentDuration() {
         return mpd.getMaxSegmentDuration();
+    }
+
+    public Duration getMediaPresentationDuration() {
+        return mpd.getMediaPresentationDuration();
     }
 
     public Long getDurationOfTemplate(Representation representation) {
@@ -199,28 +202,82 @@ public class MpdManager {
             if (mpd == null) {
                 logger.warn("[MpdManager({})] Fail to parse the mpd. (path={})", dashUnitId, targetMpdPath);
             } else {
-                logger.debug("[MpdManager({})] Success to parse the mpd. (path={}, mpd=\n{})", dashUnitId, targetMpdPath, mpd);
+                logger.trace("[MpdManager({})] Success to parse the mpd. (path={}, mpd=\n{})", dashUnitId, targetMpdPath, mpd);
             }
 
-            List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
-            if (representations != null && !representations.isEmpty()) {
-                Long startNumber = getStartNumber(representations.get(0));
-                if (startNumber != null) {
-                    setAudioSegmentSeqNum(startNumber);
-                    logger.debug("[MpdManager({})] [AUDIO] Media Segment's start number is [{}].", dashUnitId, startNumber);
+            // 현재 DASH 에 설정된 SegmentDuration 설정
+            long curSegmentDuration = (long) (AppInstance.getInstance().getConfigManager().getSegmentDuration() * 1000000); // to micro-seconds;
+            //logger.debug("curSegmentDuration: {}", (long) AppInstance.getInstance().getConfigManager().getSegmentDuration());
+
+            int adaptationSetIndex = 0;
+            if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+                List<Representation> videoRepresentations = getRepresentations(CONTENT_VIDEO_TYPE);
+                if (videoRepresentations != null && !videoRepresentations.isEmpty()) {
+                    Representation videoRepresentation = videoRepresentations.get(0);
+                    if (videoRepresentation != null) {
+                        SegmentTemplate newVideoSegmentTemplate = videoRepresentation.getSegmentTemplate().buildUpon()
+                                .withDuration(curSegmentDuration)
+                                .build();
+                        videoRepresentation = videoRepresentation.buildUpon().withSegmentTemplate(newVideoSegmentTemplate).build();
+                        //logger.debug("videoRepresentation : {}", videoRepresentation.getSegmentTemplate().getDuration());
+
+                        Long startNumber = getStartNumber(videoRepresentation);
+                        if (startNumber != null) {
+                            setVideoSegmentSeqNum(startNumber);
+                            logger.debug("[MpdManager({})] [VIDEO] Media Segment's start number is [{}].", dashUnitId, startNumber);
+                        }
+                    }
+
+                    /*List<Representation> newVideRepresentations = new ArrayList<>();
+                    newVideRepresentations.add(videoRepresentation);
+                    for(int i = 1; i < videoRepresentations.size(); i++) {
+                        newVideRepresentations.add(i, videoRepresentations.get(i));
+                    }
+
+                    AdaptationSet newVideoSet = mpd.getPeriods().get(0).getAdaptationSets().get(adaptationSetIndex)
+                            .buildUpon()
+                            .withRepresentations(newVideRepresentations)
+                            .build();
+                    List<AdaptationSet> newAdaptationSets = new ArrayList<>();
+                    newAdaptationSets.add(newVideoSet);
+                    for(int i = 1; i < mpd.getPeriods().get(0).getAdaptationSets().size(); i++) {
+                        newAdaptationSets.add(i, mpd.getPeriods().get(0).getAdaptationSets().get(i));
+                    }
+
+                    Period newPeriod = mpd.getPeriods().get(0);
+                    newPeriod = newPeriod.buildUpon().withAdaptationSets(newAdaptationSets).build();
+                    List<Period> newPeriods = new ArrayList<>();
+                    newPeriods.add(newPeriod);
+                    for(int i = 1; i < mpd.getPeriods().size(); i++) {
+                        newPeriods.add(i, mpd.getPeriods().get(i));
+                    }
+                    mpd = mpd.buildUpon().withPeriods(newPeriods).build();*/
                 }
             }
 
-            if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
-                representations = getRepresentations(CONTENT_VIDEO_TYPE);
-                if (representations != null && !representations.isEmpty()) {
-                    Long startNumber = getStartNumber(representations.get(0));
+            List<Representation> audioRepresentations = getRepresentations(CONTENT_AUDIO_TYPE);
+            if (audioRepresentations != null && !audioRepresentations.isEmpty()) {
+                Representation audioRepresentation = audioRepresentations.get(0);
+                if (audioRepresentation != null) {
+                    SegmentTemplate newAudioSegmentTemplate = audioRepresentation.getSegmentTemplate().buildUpon()
+                            .withDuration(curSegmentDuration)
+                            .build();
+                    audioRepresentation = audioRepresentation.buildUpon().withSegmentTemplate(newAudioSegmentTemplate).build();
+                    //logger.debug("audioRepresentation : {}", audioRepresentation.getSegmentTemplate().getDuration());
+
+                    Long startNumber = getStartNumber(audioRepresentation);
                     if (startNumber != null) {
-                        setVideoSegmentSeqNum(startNumber);
-                        logger.debug("[MpdManager({})] [VIDEO] Media Segment's start number is [{}].", dashUnitId, startNumber);
+                        setAudioSegmentSeqNum(startNumber);
+                        logger.debug("[MpdManager({})] [AUDIO] Media Segment's start number is [{}].", dashUnitId, startNumber);
                     }
                 }
             }
+
+            mpd = mpd.buildUpon()
+                    .withMediaPresentationDuration(Duration.ofSeconds(StreamConfigManager.MEDIA_PRESENTATION_DURATION))
+                    .withMinBufferTime(Duration.ofSeconds(StreamConfigManager.MIN_BUFFER_TIME))
+                    .withMaxSegmentDuration(Duration.ofSeconds((long) AppInstance.getInstance().getConfigManager().getSegmentDuration()))
+                    .build();
         } catch (Exception e) {
             logger.warn("[MpdManager({})] (targetMpdPath={}) parseMpd.Exception", dashUnitId, targetMpdPath, e);
             return false;
