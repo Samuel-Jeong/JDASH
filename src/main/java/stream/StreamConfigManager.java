@@ -35,6 +35,7 @@ public class StreamConfigManager {
 
     public static final int MEDIA_PRESENTATION_DURATION = 5; // seconds
     public static final int MIN_BUFFER_TIME = 2; // seconds
+    public static final double AVAILABILITY_TIME_OFFSET_FACTOR = 0.967; // seconds
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
