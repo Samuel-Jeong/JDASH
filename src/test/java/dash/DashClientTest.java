@@ -2,6 +2,7 @@ package dash;
 
 import config.ConfigManager;
 import dash.client.DashClient;
+import dash.client.handler.base.MessageType;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class DashClientTest {
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
-        dashClient.sendHttpGetRequest("http://192.168.7.33:5858/test/outdoor_market_ambiance_Dolby.mpd");
+        dashClient.sendHttpGetRequest("http://192.168.7.33:5858/test/outdoor_market_ambiance_Dolby.mpd", MessageType.MPD);
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
