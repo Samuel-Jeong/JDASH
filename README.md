@@ -35,7 +35,7 @@
 ~~~
 
 ## Service
-![dash_flow](https://user-images.githubusercontent.com/37236920/159409118-ff376426-4b6e-4b02-8089-ea7a510bb3f9.png)
+![dash_stream_flow](https://user-images.githubusercontent.com/37236920/159614833-43d3128c-fadb-435f-a528-80d496463b57.png)
   
 ![스크린샷 2022-02-15 오후 4 02 51](https://user-images.githubusercontent.com/37236920/154009715-e31fbbd9-d4b9-489d-93ed-ec72d3c00b1a.png)
   
