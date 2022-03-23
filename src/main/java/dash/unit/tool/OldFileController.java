@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 public class OldFileController extends Job {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(OldFileController.class);
 
     private final String dashUnitId; // DashUnit ID
@@ -21,6 +22,10 @@ public class OldFileController extends Job {
     private final String[] exceptFileNameList = new String[] { "init" };
     private final String[] exceptFileExtensionList = new String[] { "mpd" };
 
+    private final FileManager fileManager = new FileManager();
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
     public OldFileController(ScheduleManager scheduleManager, String name,
                              int initialDelay, int interval, TimeUnit timeUnit,
                              int priority, int totalRunCount, boolean isLasted,
@@ -37,13 +42,15 @@ public class OldFileController extends Job {
                 dashUnitId, dashPath, limitTime
         );
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public void run() {
         if (dashPath == null) { return; }
 
         try {
-            FileManager.deleteOldFilesBySecond(
+            fileManager.deleteOldFilesBySecond(
                     dashPath,
                     exceptFileNameList,
                     exceptFileExtensionList,
@@ -53,5 +60,6 @@ public class OldFileController extends Job {
             logger.warn("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
         }
     }
+    ////////////////////////////////////////////////////////////
 
 }

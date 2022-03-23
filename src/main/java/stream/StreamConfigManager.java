@@ -1,8 +1,9 @@
 package stream;
 
+import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avcodec;
-import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
+import service.AppInstance;
 
 public class StreamConfigManager {
 
@@ -35,16 +36,17 @@ public class StreamConfigManager {
 
     public static final int MEDIA_PRESENTATION_DURATION = 5; // seconds
     public static final int MIN_BUFFER_TIME = 2; // seconds
-    public static final double AVAILABILITY_TIME_OFFSET_FACTOR = 0.967; // seconds
+    public static final double AVAILABILITY_TIME_OFFSET_FACTOR = 0.033; // seconds
+
+    private static final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
     public static void setDashOptions(FFmpegFrameRecorder fFmpegFrameRecorder,
-                                      String uriFileName,
-                                      boolean isAudioOnly, double segmentDuration, int windowSize) {
+                                      String uriFileName, double segmentDuration, int windowSize) {
         if (fFmpegFrameRecorder == null) { return; }
 
-        /*if (!isAudioOnly) {
+        /*if (!configManager.isAudioOnly()) {
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
             fFmpegFrameRecorder.setOption("-map", "0");
@@ -191,9 +193,13 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        fFmpegFrameRecorder.setPixelFormat(configManager.getRemoteVideoPixelFormat());
+        if (configManager.getRemoteVideoCodec() == avcodec.AV_CODEC_ID_H265) {
+            //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265); // > NOT WORKING > BUG?
+            fFmpegFrameRecorder.setVideoCodecName("H265");
+        } else {
+            fFmpegFrameRecorder.setVideoCodec(configManager.getRemoteVideoCodec());
+        }
 
         //fFmpegFrameRecorder.setFormat("flv");
         fFmpegFrameRecorder.setFormat("matroska");
@@ -211,9 +217,13 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setVideoOption("tune", "zerolatency");
         fFmpegFrameRecorder.setVideoOption("preset", "ultrafast");
 
-        fFmpegFrameRecorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-        fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-        //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+        fFmpegFrameRecorder.setPixelFormat(configManager.getLocalVideoPixelFormat());
+        if (configManager.getLocalVideoCodec() == avcodec.AV_CODEC_ID_H265) {
+            //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265); // > NOT WORKING > BUG?
+            fFmpegFrameRecorder.setVideoCodecName("H265");
+        } else {
+            fFmpegFrameRecorder.setVideoCodec(configManager.getLocalVideoCodec());
+        }
 
         /**
          * 1. Flash Video (.flv)
@@ -221,14 +231,14 @@ public class StreamConfigManager {
          * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
          * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
          */
-        fFmpegFrameRecorder.setFormat("flv");
+        //fFmpegFrameRecorder.setFormat("flv");
         /**
          * 2. Matroska (wp, .mkv/.mka/.mks)
          * - Owner : CoreCodec
          * [Video] : H.264, Realvideo, DivX, XviD, HEVC
          * [Audio] : AAC, Vorbis, Dolby AC3, MP3
          */
-        //fFmpegFrameRecorder.setFormat("matroska");
+        fFmpegFrameRecorder.setFormat("matroska");
 
         /**
          * The range of the CRF scale is 0–51,
@@ -250,15 +260,18 @@ public class StreamConfigManager {
     public static void setRemoteStreamAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         if (fFmpegFrameRecorder == null) { return; }
 
-        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
+        fFmpegFrameRecorder.setAudioCodec(configManager.getRemoteAudioCodec());
 
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
         fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
-        fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
+
+        int sampleRate = configManager.getRemoteAudioSampleRate();
+        if (sampleRate <= 0) { sampleRate = AudioService.DEFAULT_SAMPLE_RATE; }
+        fFmpegFrameRecorder.setSampleRate(sampleRate);
+
         //fFmpegFrameRecorder.setSampleRate(48000); // FOR AC3
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }
@@ -266,16 +279,20 @@ public class StreamConfigManager {
     public static void setLocalStreamAudioOptions(FFmpegFrameRecorder fFmpegFrameRecorder) {
         if (fFmpegFrameRecorder == null) { return; }
 
-        fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+        //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
         //fFmpegFrameRecorder.setAudioCodec(avcodec.AV_CODEC_ID_AC3);
+        fFmpegFrameRecorder.setAudioCodec(configManager.getLocalAudioCodec());
 
         fFmpegFrameRecorder.setAudioOption("tune", "zerolatency");
         fFmpegFrameRecorder.setAudioOption("preset", "ultrafast");
         fFmpegFrameRecorder.setAudioOption("crf", "18");
         fFmpegFrameRecorder.setAudioQuality(0);
         fFmpegFrameRecorder.setAudioBitrate(192000); // 192K > default: 64000 (64K)
-        fFmpegFrameRecorder.setSampleRate(AudioService.SAMPLE_RATE); // default: 44100
-        //fFmpegFrameRecorder.setSampleRate(48000); // FOR AC3
+
+        int sampleRate = configManager.getLocalAudioSampleRate();
+        if (sampleRate <= 0) { sampleRate = AudioService.DEFAULT_SAMPLE_RATE; }
+        fFmpegFrameRecorder.setSampleRate(sampleRate);
+
         fFmpegFrameRecorder.setAudioChannels(AudioService.CHANNEL_NUM);
     }
     ///////////////////////////////////////////////////////////////////////////

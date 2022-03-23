@@ -66,6 +66,14 @@ public class ConfigManager {
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
     public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
     public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
+    public static final String FIELD_LOCAL_AUDIO_CODEC = "LOCAL_AUDIO_CODEC";
+    public static final String FIELD_LOCAL_AUDIO_SAMPLERATE = "LOCAL_AUDIO_SAMPLERATE";
+    public static final String FIELD_LOCAL_VIDEO_CODEC = "LOCAL_VIDEO_CODEC";
+    public static final String FIELD_LOCAL_VIDEO_PIXEL_FORMAT = "LOCAL_VIDEO_PIXEL_FORMAT";
+    public static final String FIELD_REMOTE_AUDIO_CODEC = "REMOTE_AUDIO_CODEC";
+    public static final String FIELD_REMOTE_AUDIO_SAMPLERATE = "REMOTE_AUDIO_SAMPLERATE";
+    public static final String FIELD_REMOTE_VIDEO_CODEC = "REMOTE_VIDEO_CODEC";
+    public static final String FIELD_REMOTE_VIDEO_PIXEL_FORMAT = "REMOTE_VIDEO_PIXEL_FORMAT";
 
     // MPD
     public static final String FIELD_ENABLE_VALIDATION = "ENABLE_VALIDATION";
@@ -116,6 +124,14 @@ public class ConfigManager {
     private boolean clearDashDataIfSessionClosed = true;
     private int chunkFileDeletionIntervalSeconds = 0;
     private boolean audioOnly = false;
+    private int localAudioCodec = 0;
+    private int localAudioSampleRate = 0;
+    private int localVideoCodec = 0;
+    private int localVideoPixelFormat = 0;
+    private int remoteAudioCodec = 0;
+    private int remoteAudioSampleRate = 0;
+    private int remoteVideoCodec = 0;
+    private int remoteVideoPixelFormat = 0;
 
     // MPD
     private boolean enableValidation = false;
@@ -408,6 +424,102 @@ public class ConfigManager {
             this.audioOnly = Boolean.parseBoolean(audioOnlyString);
         }
 
+        String localAudioCodecString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
+        if (localAudioCodecString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
+            System.exit(1);
+        } else {
+            this.localAudioCodec = Integer.parseInt(localAudioCodecString);
+            if (this.localAudioCodec <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
+                System.exit(1);
+            }
+        }
+
+        String localAudioSampleRateString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
+        if (localAudioSampleRateString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
+            System.exit(1);
+        } else {
+            this.localAudioSampleRate = Integer.parseInt(localAudioSampleRateString);
+            if (this.localAudioSampleRate <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
+                System.exit(1);
+            }
+        }
+
+        String localVideoCodecString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
+        if (localVideoCodecString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
+            System.exit(1);
+        } else {
+            this.localVideoCodec = Integer.parseInt(localVideoCodecString);
+            if (this.localVideoCodec <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
+                System.exit(1);
+            }
+        }
+
+        String localVideoPixelFormatString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
+        if (localVideoPixelFormatString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
+            System.exit(1);
+        } else {
+            this.localVideoPixelFormat = Integer.parseInt(localVideoPixelFormatString);
+            if (this.localVideoPixelFormat < 0) { // 0 : YUV420P
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
+                System.exit(1);
+            }
+        }
+
+        String remoteAudioCodecString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
+        if (remoteAudioCodecString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
+            System.exit(1);
+        } else {
+            this.remoteAudioCodec = Integer.parseInt(remoteAudioCodecString);
+            if (this.remoteAudioCodec <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
+                System.exit(1);
+            }
+        }
+
+        String remoteAudioSampleRateString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
+        if (remoteAudioSampleRateString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
+            System.exit(1);
+        } else {
+            this.remoteAudioSampleRate = Integer.parseInt(remoteAudioSampleRateString);
+            if (this.remoteAudioSampleRate <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
+                System.exit(1);
+            }
+        }
+
+        String remoteVideoCodecString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
+        if (remoteVideoCodecString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
+            System.exit(1);
+        } else {
+            this.remoteVideoCodec = Integer.parseInt(remoteVideoCodecString);
+            if (this.remoteVideoCodec <= 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
+                System.exit(1);
+            }
+        }
+
+        String remoteVideoPixelFormatString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+        if (remoteVideoPixelFormatString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+            System.exit(1);
+        } else {
+            this.remoteVideoPixelFormat = Integer.parseInt(remoteVideoPixelFormatString);
+            if (this.remoteVideoPixelFormat < 0) { // 0 : YUV420P
+                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+                System.exit(1);
+            }
+        }
+
         logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
     }
 
@@ -454,12 +566,12 @@ public class ConfigManager {
             }
         }
 
-        String windowSizeSring = getIniValue(SECTION_MPD, FIELD_WINDOW_SIZE);
-        if (windowSizeSring == null) {
+        String windowSizeString = getIniValue(SECTION_MPD, FIELD_WINDOW_SIZE);
+        if (windowSizeString == null) {
             logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
             System.exit(1);
         } else {
-            this.windowSize = Integer.parseInt(windowSizeSring);
+            this.windowSize = Integer.parseInt(windowSizeString);
             if (this.windowSize <= 0) {
                 logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
                 System.exit(1);
@@ -672,5 +784,37 @@ public class ConfigManager {
 
     public int getHttpListenPortEndOffset() {
         return httpListenPortEndOffset;
+    }
+
+    public int getLocalAudioCodec() {
+        return localAudioCodec;
+    }
+
+    public int getLocalVideoCodec() {
+        return localVideoCodec;
+    }
+
+    public int getLocalVideoPixelFormat() {
+        return localVideoPixelFormat;
+    }
+
+    public int getRemoteAudioCodec() {
+        return remoteAudioCodec;
+    }
+
+    public int getRemoteVideoCodec() {
+        return remoteVideoCodec;
+    }
+
+    public int getRemoteVideoPixelFormat() {
+        return remoteVideoPixelFormat;
+    }
+
+    public int getLocalAudioSampleRate() {
+        return localAudioSampleRate;
+    }
+
+    public int getRemoteAudioSampleRate() {
+        return remoteAudioSampleRate;
     }
 }

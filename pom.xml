@@ -251,6 +251,7 @@
 
                         <mapping>
                             <directory>/home/uangel/udash/lib/</directory>
+                            <filemode>644</filemode>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/out/artifacts/JDASH_jar/</location>
@@ -272,6 +273,7 @@
                         <mapping>
                             <configuration>noreplace</configuration>
                             <directory>/home/uangel/udash/config/</directory>
+                            <filemode>644</filemode>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/config/user_conf.ini</location>
@@ -284,18 +286,18 @@
 
                         <mapping>
                             <directory>/home/uangel/udash/logs/</directory>
-                            <filemode>755</filemode>
+                            <filemode>644</filemode>
                         </mapping>
 
                         <mapping>
                             <directory>/home/uangel/udash/media/</directory>
-                            <filemode>755</filemode>
+                            <filemode>644</filemode>
                         </mapping>
 
                         <mapping>
                             <configuration>noreplace</configuration>
                             <directory>/home/uangel/udash/media_info/</directory>
-                            <filemode>755</filemode>
+                            <filemode>644</filemode>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/video_list.txt</location>
@@ -304,8 +306,21 @@
                         </mapping>
 
                         <mapping>
+                            <directory>/home/udash/udash/media_info/</directory>
+                            <filemode>644</filemode>
+                            <sources>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/media_info/codec_list.txt</location>
+                                </source>
+                                <source>
+                                    <location>${project.basedir}/src/main/resources/media_info/pixel_format_list.txt</location>
+                                </source>
+                            </sources>
+                        </mapping>
+
+                        <mapping>
                             <directory>/home/uangel/udash/validation_xsd/</directory>
-                            <filemode>755</filemode>
+                            <filemode>644</filemode>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/validation_xsd/DASH-MPD.xsd</location>

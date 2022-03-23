@@ -42,6 +42,7 @@ public class LocalStreamService extends Job {
     private final String URI;
 
     private final ConfigManager configManager;
+    private final FileManager fileManager = new FileManager();
 
     private OpenCVFrameGrabber openCVFrameGrabber = null;
     private final AudioService audioService = new AudioService();
@@ -63,11 +64,11 @@ public class LocalStreamService extends Job {
 
         if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
             String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-            URI = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
+            URI = fileManager.concatFilePath(networkPath, configManager.getCameraPath());
         } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
-            String uriFileName = FileManager.getFileNameFromUri(configManager.getCameraPath());
-            String uri = FileManager.concatFilePath(configManager.getCameraPath(), uriFileName + StreamConfigManager.DASH_POSTFIX);
-            URI = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+            String uriFileName = fileManager.getFileNameFromUri(configManager.getCameraPath());
+            String uri = fileManager.concatFilePath(configManager.getCameraPath(), uriFileName + StreamConfigManager.DASH_POSTFIX);
+            URI = fileManager.concatFilePath(configManager.getMediaBasePath(), uri);
         } else {
             URI = null;
         }
@@ -139,9 +140,9 @@ public class LocalStreamService extends Job {
             }
 
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
-                String mpdParentPath = FileManager.getParentPathFromUri(URI);
+                String mpdParentPath = fileManager.getParentPathFromUri(URI);
                 if (mpdParentPath != null) {
-                    FileManager.deleteFile(mpdParentPath);
+                    fileManager.deleteFile(mpdParentPath);
                     logger.debug("[LocalStreamService] DELETE ALL MPD Files. (path={})", mpdParentPath);
                 }
             }
@@ -175,7 +176,7 @@ public class LocalStreamService extends Job {
                     StreamConfigManager.setLocalStreamVideoOptions(fFmpegFrameRecorder);
                 }
 
-                String mpdParentPath = FileManager.getParentPathFromUri(URI);
+                String mpdParentPath = fileManager.getParentPathFromUri(URI);
                 File mpdParentFile = new File(mpdParentPath);
                 if (!mpdParentFile.exists()) {
                     if (mpdParentFile.mkdirs()) {
@@ -183,8 +184,7 @@ public class LocalStreamService extends Job {
                     }
                 }
                 StreamConfigManager.setDashOptions(fFmpegFrameRecorder,
-                        FileManager.getFileNameFromUri(URI),
-                        configManager.isAudioOnly(),
+                        fileManager.getFileNameFromUri(URI),
                         configManager.getSegmentDuration(), configManager.getWindowSize()
                 );
             }
@@ -266,6 +266,7 @@ public class LocalStreamService extends Job {
                             frameQueue.offer(capturedFrame);
                         }
                     }
+                    openCVFrameGrabber.flush();
                 }
             }
             /////////////////////////////////

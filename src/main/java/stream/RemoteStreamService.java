@@ -70,9 +70,10 @@ public class RemoteStreamService extends Job {
         this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
 
         String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-        RTMP_PATH = FileManager.concatFilePath(networkPath, configManager.getCameraPath());
-        DASH_PATH = FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
-        URI_FILE_NAME = FileManager.getFileNameFromUri(DASH_PATH);
+        FileManager fileManager = new FileManager();
+        RTMP_PATH = fileManager.concatFilePath(networkPath, configManager.getCameraPath());
+        DASH_PATH = fileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
+        URI_FILE_NAME = fileManager.getFileNameFromUri(DASH_PATH);
     }
     ///////////////////////////////////////////////////////////////////////////
 
@@ -153,7 +154,6 @@ public class RemoteStreamService extends Job {
                 StreamConfigManager.setRemoteStreamAudioOptions(audioFrameRecorder);
                 StreamConfigManager.setDashOptions(audioFrameRecorder,
                         URI_FILE_NAME,
-                        configManager.isAudioOnly(),
                         configManager.getSegmentDuration(), configManager.getWindowSize()
                 );
                 audioFrameRecorder.start();
@@ -167,7 +167,6 @@ public class RemoteStreamService extends Job {
                 StreamConfigManager.setRemoteStreamAudioOptions(videoFrameRecorder);
                 StreamConfigManager.setDashOptions(videoFrameRecorder,
                         URI_FILE_NAME,
-                        configManager.isAudioOnly(),
                         configManager.getSegmentDuration(), configManager.getWindowSize()
                 );
                 videoFrameRecorder.start();

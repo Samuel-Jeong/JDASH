@@ -47,6 +47,7 @@ public class DashUnit {
 
     private DashClient dashClient = null;
     private OldFileController oldFileController = null;
+    transient private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -104,7 +105,7 @@ public class DashUnit {
                         id,
                         ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                         sourceUri,
-                        FileManager.getParentPathFromUri(mpdPath)
+                        fileManager.getParentPathFromUri(mpdPath)
                 );
                 dashClient.start();
                 dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
@@ -114,7 +115,7 @@ public class DashUnit {
                 String dashPath = mpdPath;
                 String dashPathExtension = FileUtils.getExtension(dashPath);
                 if (!dashPathExtension.isEmpty()) {
-                    dashPath = FileManager.getParentPathFromUri(dashPath);
+                    dashPath = fileManager.getParentPathFromUri(dashPath);
                     logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
                 }
 
@@ -182,17 +183,17 @@ public class DashUnit {
 
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
-            String mpdParentPath = FileManager.getParentPathFromUri(outputFilePath);
+            String mpdParentPath = fileManager.getParentPathFromUri(outputFilePath);
             //logger.debug("[DashUnit(id={})] outputFilePath: {}, mpdParentPath: {}", id, outputFilePath, mpdParentPath);
             if (mpdParentPath != null) {
-                FileManager.deleteFile(mpdParentPath);
+                fileManager.deleteFile(mpdParentPath);
                 logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);
             }
         }
     }
 
     public byte[] getSegmentByteData(String uri) {
-        return FileManager.readAllBytes(uri);
+        return fileManager.readAllBytes(uri);
     }
     ////////////////////////////////////////////////////////////
 

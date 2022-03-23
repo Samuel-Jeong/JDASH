@@ -1,8 +1,10 @@
 package stream;
 
+import config.ConfigManager;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 
@@ -22,8 +24,10 @@ public class AudioService {
     ////////////////////////////////////////////////////////////////////////////////
     private static final String AUDIO_SERVICE_SCHEDULE_KEY = "AUDIO_SERVICE_SCHEDULE_KEY";
 
-    public final static int SAMPLE_RATE = 44100;
+    public final static int DEFAULT_SAMPLE_RATE = 44100;
     public final static int CHANNEL_NUM = 1;
+
+    private int sampleRate = 0;
     private TargetDataLine line;
     private byte[] audioBytes;
 
@@ -33,10 +37,17 @@ public class AudioService {
 
     ////////////////////////////////////////////////////////////////////////////////
     public void initSampleService(ScheduleManager scheduleManager) throws Exception {
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
         this.scheduleManager = scheduleManager;
 
+        sampleRate = configManager.getLocalAudioSampleRate();
+        if (configManager.getLocalAudioSampleRate() <= 0) {
+            sampleRate = DEFAULT_SAMPLE_RATE;
+        }
+
         AudioFormat audioFormat = new AudioFormat(
-                SAMPLE_RATE,
+                sampleRate,
                 16,
                 CHANNEL_NUM,
                 true,
@@ -48,7 +59,7 @@ public class AudioService {
         line.open(audioFormat);
         line.start();
 
-        final int audioBufferSize = SAMPLE_RATE * CHANNEL_NUM;
+        final int audioBufferSize = sampleRate * CHANNEL_NUM;
         audioBytes = new byte[audioBufferSize];
 
         if (scheduleManager != null) {
@@ -141,7 +152,7 @@ public class AudioService {
 
         ByteBuffer.wrap(audioBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples);
         ShortBuffer sBuff = ShortBuffer.wrap(samples, 0, nSamplesRead);
-        fFmpegFrameRecorder.recordSamples(SAMPLE_RATE, CHANNEL_NUM, sBuff);
+        fFmpegFrameRecorder.recordSamples(sampleRate, CHANNEL_NUM, sBuff);
         return true;
     }
     ////////////////////////////////////////////////////////////////////////////////

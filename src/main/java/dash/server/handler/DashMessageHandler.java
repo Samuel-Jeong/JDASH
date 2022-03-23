@@ -25,8 +25,10 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashMessageHandler.class);
 
-    private final String uri;
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    private final FileManager fileManager = new FileManager();
+
+    private final String uri;
     ////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +54,7 @@ public class DashMessageHandler implements HttpMessageHandler {
             return null;
         }
 
-        String uriFileNameWithExtension = FileManager.getFileNameWithExtensionFromUri(uri);
+        String uriFileNameWithExtension = fileManager.getFileNameWithExtensionFromUri(uri);
         if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(StreamConfigManager.MP4_POSTFIX)) {
             File uriFile = new File(uri);
             if (!uriFile.exists() || uriFile.isDirectory()) {
@@ -106,7 +108,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                             StreamConfigManager.setRemoteStreamAudioOptions(audioFrameRecorder);
                             StreamConfigManager.setDashOptions(audioFrameRecorder,
                                     uriFileName,
-                                    configManager.isAudioOnly(),
                                     configManager.getSegmentDuration(), 0
                             );
                             audioFrameRecorder.start();
@@ -120,7 +121,6 @@ public class DashMessageHandler implements HttpMessageHandler {
                             StreamConfigManager.setRemoteStreamAudioOptions(videoFrameRecorder);
                             StreamConfigManager.setDashOptions(videoFrameRecorder,
                                     uriFileName,
-                                    configManager.isAudioOnly(),
                                     configManager.getSegmentDuration(), 0
                             );
                             videoFrameRecorder.start();
@@ -163,7 +163,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                         /////////////////////////////////
                     } catch (Exception e) {
                         // ignore
-                        //logger.warn("DashMessageHandler.run.Exception", e);
+                        logger.warn("DashMessageHandler.run.Exception", e);
                     } finally {
                         try {
                             if (videoFrameRecorder != null) {
@@ -189,7 +189,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                     logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
                 }*/
             } else {
-                mpdPath = FileManager.concatFilePath(uri, uriFileName + StreamConfigManager.DASH_POSTFIX);
+                mpdPath = fileManager.concatFilePath(uri, uriFileName + StreamConfigManager.DASH_POSTFIX);
             }
 
             ///////////////////////////

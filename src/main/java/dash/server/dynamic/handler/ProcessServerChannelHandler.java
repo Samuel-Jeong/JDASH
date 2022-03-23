@@ -34,11 +34,12 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     private static final Logger logger = LoggerFactory.getLogger(ProcessServerChannelHandler.class);
 
     private final ConfigManager configManager;
-    private final List<String> validatedStreamNames = new ArrayList<>();
+    private final FileManager fileManager = new FileManager();
 
+    private final List<String> validatedStreamNames = new ArrayList<>();
     ////////////////////////////////////////////////////////////////////////////////
     public ProcessServerChannelHandler() {
-        List<String> mediaListFileLines = FileManager.readAllLines(AppInstance.getInstance().getConfigManager().getMediaListPath());
+        List<String> mediaListFileLines = fileManager.readAllLines(AppInstance.getInstance().getConfigManager().getMediaListPath());
         for (String mediaListFileLine : mediaListFileLines) {
             if (mediaListFileLine == null || mediaListFileLine.isEmpty()) { continue; }
 
@@ -117,7 +118,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             ResponseType.REASON_NOT_FOUND
                     );
                 } else {
-                    String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
+                    String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(uri);
                     logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                     DashUnit dashUnit = dashServer.addDashUnit(
                             StreamType.DYNAMIC,
@@ -137,8 +138,8 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                         networkPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                     }
 
-                    String sourceUri = FileManager.concatFilePath(networkPath, uri);
-                    String mpdPath = FileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+                    String sourceUri = fileManager.concatFilePath(networkPath, uri);
+                    String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), uri);
                     File mpdPathFile = new File(mpdPath);
                     if (!mpdPathFile.exists()) {
                         if (mpdPathFile.mkdirs()) {
@@ -146,8 +147,8 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                         }
                     }
 
-                    String uriFileName = FileManager.getFileNameFromUri(uri);
-                    mpdPath = FileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
+                    String uriFileName = fileManager.getFileNameFromUri(uri);
+                    mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
                     logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
 
                     dashUnit.setInputFilePath(sourceUri);
@@ -180,7 +181,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 String uri = endLiveMediaProcessRequest.getUri();
                 logger.debug("[ProcessServerChannelHandler] RECV EndLiveMediaProcessRequest(sourceIp={}, uri={})", sourceIp, uri);
 
-                String dashUnitId = sourceIp + ":" + FileManager.getFilePathWithoutExtensionFromUri(uri);
+                String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                 DashUnit dashUnit = dashServer.getDashUnitById(dashUnitId);
 

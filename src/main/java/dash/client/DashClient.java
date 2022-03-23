@@ -37,8 +37,8 @@ public class DashClient {
     private String targetAudioInitSegPath;
     private String targetVideoInitSegPath;
 
-    private AtomicInteger audioRetryCount = new AtomicInteger(0);
-    private AtomicInteger videoRetryCount = new AtomicInteger(0);
+    private final AtomicInteger audioRetryCount = new AtomicInteger(0);
+    private final AtomicInteger videoRetryCount = new AtomicInteger(0);
 
     transient private final DashClientFsmManager dashClientFsmManager = new DashClientFsmManager();
     private final String dashClientStateUnitId;
@@ -46,6 +46,7 @@ public class DashClient {
     transient private final DashHttpMessageSender dashHttpMessageSender;
 
     transient private final MpdManager mpdManager;
+    transient private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -54,10 +55,10 @@ public class DashClient {
         this.dashClientStateUnitId = "DASH_CLIENT_STATE:" + dashUnitId;
 
         this.srcPath = srcPath;
-        this.srcBasePath = FileManager.getParentPathFromUri(srcPath);
-        this.uriFileName = FileManager.getFileNameFromUri(srcPath);
+        this.srcBasePath = fileManager.getParentPathFromUri(srcPath);
+        this.uriFileName = fileManager.getFileNameFromUri(srcPath);
         this.targetBasePath = targetBasePath;
-        this.targetMpdPath = FileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
+        this.targetMpdPath = fileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
         this.mpdManager = new MpdManager(dashUnitId);
@@ -90,10 +91,11 @@ public class DashClient {
 
         //////////////////////////////
         // SETTING : TARGET PATH
-        if (!FileManager.isExist(targetBasePath)) {
+        if (!fileManager.isExist(targetBasePath)) {
             //FileManager.deleteFile(targetBasePath);
-            FileManager.mkdirs(targetBasePath);
+            fileManager.mkdirs(targetBasePath);
             mpdManager.makeMpd(
+                    fileManager,
                     targetMpdPath,
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n".getBytes()
             );
@@ -135,6 +137,24 @@ public class DashClient {
             default:
                 break;
         }
+    }
+
+    public String getSourcePath(String additionalPath) {
+        if (additionalPath == null) { return null; }
+
+        return fileManager.concatFilePath(
+                getSrcBasePath(),
+                additionalPath
+        );
+    }
+
+    public String getTargetPath(String additionalPath) {
+        if (additionalPath == null) { return null; }
+
+        return fileManager.concatFilePath(
+                getTargetBasePath(),
+                additionalPath
+        );
     }
     ////////////////////////////////////////////////////////////
 

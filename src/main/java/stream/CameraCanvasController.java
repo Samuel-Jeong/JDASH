@@ -58,6 +58,7 @@ public class CameraCanvasController extends Job {
                     curDate.setTime(System.currentTimeMillis());
                     opencv_imgproc.putText(mat, simpleDateFormat.format(curDate), point, opencv_imgproc.CV_FONT_VECTOR0, 0.8, scalar, 1, 0, false);
                     frame = openCVConverter.convert(mat);
+                    if (frame == null) { return; }
                 }
                 cameraFrame.showImage(frame);
             }

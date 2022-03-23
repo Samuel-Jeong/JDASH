@@ -10,7 +10,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.AppInstance;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
@@ -21,22 +20,30 @@ import java.util.concurrent.TimeUnit;
 
 public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashMpdHttpClientHandler.class);
 
     private final TimeUnit timeUnit = TimeUnit.SECONDS;
 
     private final DashClient dashClient;
+    private final FileManager fileManager = new FileManager();
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     public DashMpdHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
         if (dashClient == null) {
@@ -101,7 +108,11 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
             StateUnit stateUnit = stateManager.getStateUnit(dashClient.getDashClientStateUnitId());
             String curState = stateUnit.getCurState();
             //if (DashClientState.IDLE.equals(curState)) {
-                dashClient.getMpdManager().makeMpd(dashClient.getTargetMpdPath(), data);
+                dashClient.getMpdManager().makeMpd(
+                        fileManager,
+                        dashClient.getTargetMpdPath(),
+                        data
+                );
             //}
 
             logger.trace("[DashHttpClientHandler({})] [MPD] {}", dashClient.getDashUnitId(), data);
@@ -130,5 +141,6 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
             }
         }
     }
+    ////////////////////////////////////////////////////////////
 
 }

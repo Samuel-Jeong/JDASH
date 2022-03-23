@@ -117,14 +117,15 @@ public class DashServer {
                 0
         );
 
+        FileManager fileManager = new FileManager();
         localDashUnit.setInputFilePath(
-                FileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
+                fileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
         );
 
-        String uri = FileManager.getFileNameFromUri(configManager.getCameraPath());
-        uri = FileManager.concatFilePath(configManager.getCameraPath(), uri + StreamConfigManager.DASH_POSTFIX);
+        String uri = fileManager.getFileNameFromUri(configManager.getCameraPath());
+        uri = fileManager.concatFilePath(configManager.getCameraPath(), uri + StreamConfigManager.DASH_POSTFIX);
         localDashUnit.setOutputFilePath(
-                FileManager.concatFilePath(configManager.getMediaBasePath(), uri)
+                fileManager.concatFilePath(configManager.getMediaBasePath(), uri)
         );
 
         this.mpdManager = new MpdManager(localDashUnit.getId());

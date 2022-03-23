@@ -1,7 +1,6 @@
 package service;
 
 import dash.server.DashServer;
-import org.bytedeco.ffmpeg.global.avutil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
@@ -17,7 +16,6 @@ import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardOpenOption.*;
-import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
 public class ServiceManager {
 

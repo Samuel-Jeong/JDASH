@@ -2,17 +2,12 @@ package dash.client.fsm.callback;
 
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
-import dash.mpd.MpdManager;
-import dash.mpd.parser.mpd.Representation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import util.fsm.StateManager;
 import util.fsm.event.base.CallBack;
 import util.fsm.unit.StateUnit;
-import util.module.FileManager;
-
-import java.util.List;
 
 public class DashClientGetMpdCallBack extends CallBack {
 
@@ -45,64 +40,42 @@ public class DashClientGetMpdCallBack extends CallBack {
                 return null;
             }
         }
+        ////////////////////////////
 
-        int representationId = 0;
-
+        ////////////////////////////
+        // VIDEO INIT SEGMENT > Optional
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
-            List<Representation> representations = dashClient.getMpdManager().getRepresentations(MpdManager.CONTENT_VIDEO_TYPE);
-            if (representations != null && !representations.isEmpty()) {
-                // VIDEO INIT SEGMENT
-                // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
-                String videoInitSegmentName = dashClient.getMpdManager().getRawInitializationSegmentName(representations.get(0));
-                videoInitSegmentName = videoInitSegmentName.replace(
-                        AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
-                        representationId + ""
-                );
-                String targetVideoInitSegPath = FileManager.concatFilePath(
-                        dashClient.getTargetBasePath(),
-                        // outdoor_market_ambiance_Dolby_init1.m4s
-                        videoInitSegmentName
-                );
+            // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
+            String videoInitSegmentName = dashClient.getMpdManager().getVideoInitSegmentName();
+            if (videoInitSegmentName != null) {
+                // outdoor_market_ambiance_Dolby_init0.m4s
+                String targetVideoInitSegPath = dashClient.getTargetPath(videoInitSegmentName);
                 dashClient.setTargetVideoInitSegPath(targetVideoInitSegPath);
-                if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
-                    dashClient.sendHttpGetRequest(
-                            FileManager.concatFilePath(
-                                    dashClient.getSrcBasePath(),
-                                    videoInitSegmentName
-                            ),
-                            MessageType.VIDEO
-                    );
-                }
-
-                representationId++;
+                dashClient.sendHttpGetRequest(
+                        dashClient.getSourcePath(videoInitSegmentName),
+                        MessageType.VIDEO
+                );
+                logger.debug("videoInitSegmentName: {}", targetVideoInitSegPath);
             }
         }
 
-        List<Representation> representations = dashClient.getMpdManager().getRepresentations(MpdManager.CONTENT_AUDIO_TYPE);
-        if (representations != null && !representations.isEmpty()) {
-            // AUDIO INIT SEGMENT
-            // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
-            String audioInitSegmentName = dashClient.getMpdManager().getRawInitializationSegmentName(representations.get(0));
-            audioInitSegmentName = audioInitSegmentName.replace(
-                    AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
-                    representationId + ""
-            );
-            String targetAudioInitSegPath = FileManager.concatFilePath(
-                    dashClient.getTargetBasePath(),
-                    // outdoor_market_ambiance_Dolby_init0.m4s
-                    audioInitSegmentName
-            );
-            dashClient.setTargetAudioInitSegPath(targetAudioInitSegPath);
-            dashClient.sendHttpGetRequest(
-                    FileManager.concatFilePath(
-                            dashClient.getSrcBasePath(),
-                            audioInitSegmentName
-                    ),
-                    MessageType.AUDIO
-            );
-        } else {
-            logger.warn("[DashClientMpdDoneCallBack] Fail to send http get request for init segment. Representation is not exists. (dashClient={})", dashClient);
+        ////////////////////////////
+        // AUDIO INIT SEGMENT > Mandatory
+        // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
+        String audioInitSegmentName = dashClient.getMpdManager().getAudioInitSegmentName();
+        if (audioInitSegmentName == null) {
+            logger.warn("[DashClientMpdDoneCallBack] Fail to send http get request for init segment. Audio init segment is not exists. (dashClient={})", dashClient);
+            return null;
         }
+
+        // outdoor_market_ambiance_Dolby_init1.m4s
+        String targetAudioInitSegPath = dashClient.getTargetPath(audioInitSegmentName);
+        dashClient.setTargetAudioInitSegPath(targetAudioInitSegPath);
+        dashClient.sendHttpGetRequest(
+                dashClient.getSourcePath(audioInitSegmentName),
+                MessageType.AUDIO
+        );
+        logger.debug("audioInitSegmentName: {}", targetAudioInitSegPath);
         ////////////////////////////
 
         return stateUnit.getCurState();

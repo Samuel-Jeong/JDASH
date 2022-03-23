@@ -201,43 +201,28 @@ public class DashHttpMessageSender {
         return request;
     }
 
-    public void sendMessageForAudio(HttpRequest httpRequest) {
+    public void sendMessageForMpd(HttpRequest httpRequest) {
         if (httpRequest == null) { return; }
 
-        GroupSocket localGroupSocket = socketManager.getSocket(localAudioListenAddress);
-        if (localGroupSocket == null) { return; }
-
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(dashUnitId.hashCode());
-        if (destinationRecord == null) { return; }
-
-        NettyChannel nettyChannel = destinationRecord.getNettyChannel();
-        if (nettyChannel != null) {
-            nettyChannel.sendHttpRequest(httpRequest);
-        }
+        sendMessage(socketManager.getSocket(localMpdListenAddress), httpRequest);
     }
 
     public void sendMessageForVideo(HttpRequest httpRequest) {
         if (httpRequest == null || localVideoListenAddress == null) { return; }
 
-        GroupSocket localGroupSocket = socketManager.getSocket(localVideoListenAddress);
-        if (localGroupSocket == null) { return; }
-
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(dashUnitId.hashCode());
-        if (destinationRecord == null) { return; }
-
-        NettyChannel nettyChannel = destinationRecord.getNettyChannel();
-        if (nettyChannel != null) {
-            nettyChannel.sendHttpRequest(httpRequest);
-        }
+        sendMessage(socketManager.getSocket(localVideoListenAddress), httpRequest);
     }
 
-    public void sendMessageForMpd(HttpRequest httpRequest) {
+    public void sendMessageForAudio(HttpRequest httpRequest) {
         if (httpRequest == null) { return; }
 
-        GroupSocket localGroupSocket = socketManager.getSocket(localMpdListenAddress);
-        if (localGroupSocket == null) { return; }
+        sendMessage(socketManager.getSocket(localAudioListenAddress), httpRequest);
+    }
 
-        DestinationRecord destinationRecord = localGroupSocket.getDestination(dashUnitId.hashCode());
+    public void sendMessage(GroupSocket groupSocket, HttpRequest httpRequest) {
+        if (groupSocket == null) { return; }
+
+        DestinationRecord destinationRecord = groupSocket.getDestination(dashUnitId.hashCode());
         if (destinationRecord == null) { return; }
 
         NettyChannel nettyChannel = destinationRecord.getNettyChannel();

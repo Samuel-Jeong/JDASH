@@ -27,6 +27,7 @@ public class MediaManager {
     private final String mediaListFilePath;
     private final List<MediaInfo> mediaInfoList = new ArrayList<>();
 
+    private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
     public MediaManager(String mediaListFilePath) {
         this.mediaListFilePath = mediaListFilePath;
@@ -40,7 +41,7 @@ public class MediaManager {
     public boolean loadUriList() {
         ////////////////////////////////
         // 1) GET RAW FILE LIST
-        List<String> fileLines = FileManager.readAllLines(mediaListFilePath);
+        List<String> fileLines = fileManager.readAllLines(mediaListFilePath);
         ////////////////////////////////
 
         ////////////////////////////////
@@ -80,7 +81,7 @@ public class MediaManager {
                 }
 
                 String uri = elements[1];
-                String fullPath = FileManager.concatFilePath(mediaBasePath, uri);
+                String fullPath = fileManager.concatFilePath(mediaBasePath, uri);
 
                 // ADD MediaInfo
                 addMediaInfo(mediaInfoListIndex, streamType, fullPath);
@@ -94,7 +95,7 @@ public class MediaManager {
                     DashUnit dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
                             streamType,
                              AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
-                                     FileManager.getFilePathWithoutExtensionFromUri(fullPath),
+                                     fileManager.getFilePathWithoutExtensionFromUri(fullPath),
                             null, 0
                     );
 
@@ -110,14 +111,14 @@ public class MediaManager {
                         if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
                             // GET STATIC MEDIA SOURCE from remote dash server
                             String httpPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
-                            httpPath = FileManager.concatFilePath(httpPath, uri);
+                            httpPath = fileManager.concatFilePath(httpPath, uri);
                             DashClient dashClient = new DashClient(
                                     dashUnit.getId(),
                                     ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                                     httpPath,
-                                    FileManager.concatFilePath(
-                                            FileManager.getParentPathFromUri(mpdPath),
-                                            FileManager.getFileNameFromUri(mpdPath)
+                                    fileManager.concatFilePath(
+                                            fileManager.getParentPathFromUri(mpdPath),
+                                            fileManager.getFileNameFromUri(mpdPath)
                                     )
                             );
                             dashClient.start();

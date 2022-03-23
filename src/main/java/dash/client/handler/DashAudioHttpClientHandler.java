@@ -20,22 +20,30 @@ import java.util.concurrent.TimeUnit;
 
 public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashAudioHttpClientHandler.class);
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final DashClient dashClient;
+    private final FileManager fileManager = new FileManager();
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     public DashAudioHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
         if (dashClient == null) {
@@ -72,7 +80,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     }
 
                     dashClient.sendHttpGetRequest(
-                            FileManager.concatFilePath(
+                            fileManager.concatFilePath(
                                     dashClient.getSrcBasePath(),
                                     dashClient.getMpdManager().getAudioMediaSegmentName()
                             ),
@@ -127,14 +135,14 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
             String curState = stateUnit.getCurState();
             switch (curState) {
                 case DashClientState.MPD_DONE:
-                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetAudioInitSegPath(), data);
+                    dashClient.getMpdManager().makeInitSegment(fileManager, dashClient.getTargetAudioInitSegPath(), data);
                     break;
                 case DashClientState.INIT_SEG_DONE:
-                    String targetAudioMediaSegPath = FileManager.concatFilePath(
+                    String targetAudioMediaSegPath = fileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
                             dashClient.getMpdManager().getAudioMediaSegmentName()
                     );
-                    dashClient.getMpdManager().makeMediaSegment(targetAudioMediaSegPath, data);
+                    dashClient.getMpdManager().makeMediaSegment(fileManager, targetAudioMediaSegPath, data);
                     break;
             }
 
@@ -166,7 +174,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         }
 
                         dashClient.sendHttpGetRequest(
-                                FileManager.concatFilePath(
+                                fileManager.concatFilePath(
                                         dashClient.getSrcBasePath(),
                                         curMediaSegmentName
                                 ),
@@ -179,5 +187,6 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
             }
         }
     }
+    ////////////////////////////////////////////////////////////
 
 }

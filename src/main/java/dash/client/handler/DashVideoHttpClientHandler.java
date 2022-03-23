@@ -20,22 +20,30 @@ import java.util.concurrent.TimeUnit;
 
 public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashVideoHttpClientHandler.class);
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final DashClient dashClient;
+    private final FileManager fileManager = new FileManager();
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     public DashVideoHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
         if (dashClient == null) {
@@ -72,7 +80,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     }
 
                     dashClient.sendHttpGetRequest(
-                            FileManager.concatFilePath(
+                            fileManager.concatFilePath(
                                     dashClient.getSrcBasePath(),
                                     dashClient.getMpdManager().getVideoMediaSegmentName()
                             ),
@@ -127,14 +135,14 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             String curState = stateUnit.getCurState();
             switch (curState) {
                 case DashClientState.MPD_DONE:
-                    dashClient.getMpdManager().makeInitSegment(dashClient.getTargetVideoInitSegPath(), data);
+                    dashClient.getMpdManager().makeInitSegment(fileManager, dashClient.getTargetVideoInitSegPath(), data);
                     break;
                 case DashClientState.INIT_SEG_DONE:
-                    String targetVideoMediaSegPath = FileManager.concatFilePath(
+                    String targetVideoMediaSegPath = fileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
                             dashClient.getMpdManager().getVideoMediaSegmentName()
                     );
-                    dashClient.getMpdManager().makeMediaSegment(targetVideoMediaSegPath, data);
+                    dashClient.getMpdManager().makeMediaSegment(fileManager, targetVideoMediaSegPath, data);
                     break;
             }
 
@@ -166,7 +174,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         }
 
                         dashClient.sendHttpGetRequest(
-                                FileManager.concatFilePath(
+                                fileManager.concatFilePath(
                                         dashClient.getSrcBasePath(),
                                         curMediaSegmentName
                                 ),
@@ -179,5 +187,6 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             }
         }
     }
+    ////////////////////////////////////////////////////////////
 
 }

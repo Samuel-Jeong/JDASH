@@ -16,21 +16,21 @@ public class FileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(FileManager.class);
 
-    public static boolean isExist(String fileName) {
+    public boolean isExist(String fileName) {
         if (fileName == null) { return false; }
 
         File file = new File(fileName);
         return file.exists();
     }
 
-    public static boolean mkdirs(String fileName) {
+    public boolean mkdirs(String fileName) {
         if (fileName == null) { return false; }
 
         File file = new File(fileName);
         return file.mkdirs();
     }
 
-    public static boolean writeBytes(File file, byte[] data, boolean isAppend) {
+    public boolean writeBytes(File file, byte[] data, boolean isAppend) {
         if (file == null || data == null || data.length == 0) { return false; }
 
         BufferedOutputStream bufferedOutputStream = null;
@@ -52,7 +52,7 @@ public class FileManager {
         }
     }
 
-    public static boolean writeBytes(String fileName, byte[] data, boolean isAppend) {
+    public boolean writeBytes(String fileName, byte[] data, boolean isAppend) {
         if (fileName == null) { return false; }
 
         BufferedOutputStream bufferedOutputStream = null;
@@ -74,7 +74,7 @@ public class FileManager {
         }
     }
 
-    public static boolean writeString(String fileName, String data, boolean isAppend) {
+    public boolean writeString(String fileName, String data, boolean isAppend) {
         if (fileName == null) { return false; }
 
         BufferedWriter bufferedWriter = null;
@@ -96,7 +96,7 @@ public class FileManager {
         }
     }
 
-    public static byte[] readAllBytes(String fileName) {
+    public byte[] readAllBytes(String fileName) {
         if (fileName == null) { return null; }
 
         BufferedInputStream bufferedInputStream = null;
@@ -117,7 +117,7 @@ public class FileManager {
         }
     }
 
-    public static List<String> readAllLines(String fileName) {
+    public List<String> readAllLines(String fileName) {
         if (fileName == null) { return null; }
 
         BufferedReader bufferedReader = null;
@@ -144,7 +144,7 @@ public class FileManager {
     }
 
     // [/home/uangel/udash/media] + [animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers/tigers.mp4]
-    public static String concatFilePath(String from, String to) {
+    public String concatFilePath(String from, String to) {
         if (from == null) { return null; }
         if (to == null) { return from; }
 
@@ -164,14 +164,14 @@ public class FileManager {
     }
 
     // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers]
-    public static String getParentPathFromUri(String uri) {
+    public String getParentPathFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
         return uri.substring(0, uri.lastIndexOf("/")).trim();
     }
 
     // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [tigers.mp4]
-    public static String getFileNameWithExtensionFromUri(String uri) {
+    public String getFileNameWithExtensionFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains("/")) { return uri; }
 
@@ -181,14 +181,14 @@ public class FileManager {
     }
 
     // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [/home/uangel/udash/media/animal/tigers/tigers]
-    public static String getFilePathWithoutExtensionFromUri(String uri) {
+    public String getFilePathWithoutExtensionFromUri(String uri) {
         if (uri == null) { return null; }
         if (!uri.contains(".")) { return uri; }
         return uri.substring(0, uri.lastIndexOf(".")).trim();
     }
 
     // [/home/uangel/udash/media/animal/tigers/tigers.mp4] > [tigers]
-    public static String getFileNameFromUri(String uri) {
+    public String getFileNameFromUri(String uri) {
         uri = getFileNameWithExtensionFromUri(uri);
         if (uri == null) { return null; }
         if (!uri.contains(".")) { return uri; }
@@ -197,7 +197,7 @@ public class FileManager {
         return uri;
     }
 
-    public static void deleteFile(String path) {
+    public void deleteFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
             logger.warn("[FileManager] Fail to delete the file. File is not exist. (path={})", path);
@@ -216,7 +216,7 @@ public class FileManager {
         }
     }
 
-    public static void deleteOldFilesBySecond(String rootPath, String[] exceptFileNameList, String[] exceptFileExtensionList, long limitTime) throws IOException {
+    public void deleteOldFilesBySecond(String rootPath, String[] exceptFileNameList, String[] exceptFileExtensionList, long limitTime) throws IOException {
         File rootPathFile = new File(rootPath);
         File[] list = rootPathFile.listFiles();
         if (list == null || list.length == 0) { return; }
@@ -260,7 +260,7 @@ public class FileManager {
         }
     }
 
-    private static long getLastModificationSecondTime(File file) throws IOException {
+    private long getLastModificationSecondTime(File file) throws IOException {
         Path attribPath = file.toPath();
         BasicFileAttributes basicAttr = Files.readAttributes(attribPath, BasicFileAttributes.class);
         return (System.currentTimeMillis() - basicAttr.lastModifiedTime().to(TimeUnit.MILLISECONDS)) / 1000;

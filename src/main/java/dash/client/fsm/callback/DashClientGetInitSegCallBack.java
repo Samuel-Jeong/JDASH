@@ -14,14 +14,21 @@ import java.util.concurrent.TimeUnit;
 
 public class DashClientGetInitSegCallBack extends CallBack {
 
+    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashClientGetInitSegCallBack.class);
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
+    private final FileManager fileManager = new FileManager();
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
     public DashClientGetInitSegCallBack(StateManager stateManager, String name) {
         super(stateManager, name);
     }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////
     @Override
     public Object callBackFunc(StateUnit stateUnit) {
         if (stateUnit == null) { return null; }
@@ -41,7 +48,7 @@ public class DashClientGetInitSegCallBack extends CallBack {
             }
         }
         dashClient.sendHttpGetRequest(
-                FileManager.concatFilePath(
+                fileManager.concatFilePath(
                         dashClient.getSrcBasePath(),
                         dashClient.getMpdManager().getAudioMediaSegmentName()
                 ),
@@ -59,7 +66,7 @@ public class DashClientGetInitSegCallBack extends CallBack {
                 }
             }
             dashClient.sendHttpGetRequest(
-                    FileManager.concatFilePath(
+                    fileManager.concatFilePath(
                             dashClient.getSrcBasePath(),
                             dashClient.getMpdManager().getVideoMediaSegmentName()
                     ),
@@ -70,6 +77,6 @@ public class DashClientGetInitSegCallBack extends CallBack {
 
         return stateUnit.getCurState();
     }
-
+    ////////////////////////////////////////////////////////////
 
 }
