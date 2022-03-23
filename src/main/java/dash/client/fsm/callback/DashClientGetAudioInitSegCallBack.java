@@ -46,6 +46,7 @@ public class DashClientGetAudioInitSegCallBack extends CallBack {
                 //logger.warn("");
             }
         }
+
         dashClient.sendHttpGetRequest(
                 fileManager.concatFilePath(
                         dashClient.getSrcBasePath(),

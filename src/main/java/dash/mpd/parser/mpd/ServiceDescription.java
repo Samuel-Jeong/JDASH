@@ -56,13 +56,13 @@ public class ServiceDescription {
     }
 
     public Builder buildUpon() {
-        return new Builder()
+        return new ServiceDescription.Builder()
                 .withId(id)
                 .withLatency(latency);
     }
 
     public static Builder builder() {
-        return new Builder();
+        return new ServiceDescription.Builder();
     }
 
     public static class Builder {

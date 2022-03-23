@@ -102,6 +102,7 @@ public class NettyUdpChannel extends NettyChannel {
             connectChannel = channel;
             return channel;
         } catch (Exception e) {
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[UDP] Connect Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
             return null;
         }
     }

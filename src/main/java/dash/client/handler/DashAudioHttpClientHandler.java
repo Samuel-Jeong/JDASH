@@ -166,7 +166,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         String prevMediaSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
                         if (prevMediaSegmentName == null) {
                             logger.debug("[DashVideoHttpClientHandler({})] [+] [AUDIO] Previous MediaSegment name is not defined. (audioSeqNum={})",
-                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNumList()
+                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNum()
                             );
                             return;
                         }
@@ -175,12 +175,12 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         String curAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
                         if (curAudioSegmentName == null) {
                             logger.debug("[DashVideoHttpClientHandler({})] [+] [AUDIO] Current MediaSegment name is not defined. (audioSeqNum={})",
-                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNumList()
+                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNum()
                             );
                             return;
                         }
 
-                        logger.debug("[DashAudioHttpClientHandler({})] [+] [AUDIO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
+                        logger.trace("[DashAudioHttpClientHandler({})] [+] [AUDIO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
                                 dashClient.getDashUnitId(), curSeqNum, prevMediaSegmentName, curAudioSegmentName
                         );
 

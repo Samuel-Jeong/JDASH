@@ -28,7 +28,7 @@ public class MpdManager {
 
     transient public static final String CONTENT_AUDIO_TYPE = "audio";
     transient public static final String CONTENT_VIDEO_TYPE = "video";
-    
+
     private final String dashUnitId;
 
     private final MPDParser mpdParser;
@@ -46,6 +46,8 @@ public class MpdManager {
     private int curAudioId; // 오디오 Representation List 중 현재 오디오 ID
 
     private boolean isVideoFirst = false;
+    private int curAudioRepresentationCount = 0;
+    private int curVideoRepresentationCount = 0;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -212,6 +214,7 @@ public class MpdManager {
                 return false;
             }
 
+            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
             int adaptationSetIndex = 0;
             int audioRepresentationCount = 0;
             int videoRepresentationCount = 0;
@@ -237,29 +240,56 @@ public class MpdManager {
                 }
                 adaptationSetIndex++;
             }
-            logger.debug("[MpdManager({})] audioRepresentationCount: {}, videoRepresentationCount: {}",
+            logger.trace("[MpdManager({})] audioRepresentationCount: {}, videoRepresentationCount: {}",
                     dashUnitId, audioRepresentationCount, videoRepresentationCount
             );
 
             if (isVideoFirst) { // video definition first
+                // VIDEO REPRESENTATION
                 int audioRepresentationStartIndex = 0;
-                if (AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+                if (configManager.isAudioOnly()) {
                     videoRepresentationIdList = null;
                     videoSegmentSeqNumList = null;
                     curVideoId = -1;
                 } else {
                     if (videoRepresentationCount > 0) {
-                        int videoRepresentationIndex = 0;
-                        videoRepresentationIdList = new ArrayList<>();
-                        for (; videoRepresentationIndex < videoRepresentationCount; videoRepresentationIndex++) {
-                            videoRepresentationIdList.add(videoRepresentationIndex);
-                        }
-                        audioRepresentationStartIndex = videoRepresentationIndex;
+                        if (videoRepresentationIdList != null && !videoRepresentationIdList.isEmpty()) {
+                            if (videoRepresentationCount != curVideoRepresentationCount) {
+                                List<Integer> newVideoRepresentationIdList;
+                                List<AtomicLong> newVideoSegmentSeqNumList;
+                                if (videoRepresentationCount > curVideoRepresentationCount) {
+                                    newVideoRepresentationIdList = new ArrayList<>(videoRepresentationIdList);
+                                    newVideoSegmentSeqNumList = new ArrayList<>(videoSegmentSeqNumList);
+                                    for (int i = curVideoRepresentationCount; i < videoRepresentationCount; i++) {
+                                        newVideoRepresentationIdList.add(i);
+                                        newVideoSegmentSeqNumList.add(new AtomicLong(1));
+                                    }
+                                } else {
+                                    newVideoRepresentationIdList = new ArrayList<>();
+                                    newVideoSegmentSeqNumList = new ArrayList<>();
+                                    for (int i = 0; i < curVideoRepresentationCount; i++) {
+                                        newVideoRepresentationIdList.add(i);
+                                        newVideoSegmentSeqNumList.add(videoSegmentSeqNumList.get(i));
+                                    }
+                                }
+                                videoRepresentationIdList = newVideoRepresentationIdList;
+                                videoSegmentSeqNumList = newVideoSegmentSeqNumList;
+                            }
+                            audioRepresentationStartIndex = videoRepresentationIdList.size();
+                        } else {
+                            videoRepresentationIdList = new ArrayList<>();
+                            int videoRepresentationIndex = 0;
+                            for (; videoRepresentationIndex < videoRepresentationCount; videoRepresentationIndex++) {
+                                videoRepresentationIdList.add(videoRepresentationIndex);
+                            }
+                            audioRepresentationStartIndex = videoRepresentationIndex;
 
-                        videoSegmentSeqNumList = new ArrayList<>();
-                        for (int i = 0; i < videoRepresentationIdList.size(); i++) {
-                            videoSegmentSeqNumList.add(new AtomicLong(1));
+                            videoSegmentSeqNumList = new ArrayList<>();
+                            for (int i = 0; i < videoRepresentationIdList.size(); i++) {
+                                videoSegmentSeqNumList.add(new AtomicLong(1));
+                            }
                         }
+                        curVideoRepresentationCount = videoRepresentationCount;
                         curVideoId = videoRepresentationIdList.get(0);
                     } else {
                         videoRepresentationIdList = null;
@@ -268,16 +298,45 @@ public class MpdManager {
                     }
                 }
 
+                // AUDIO REPRESENTATION
                 if (audioRepresentationCount > 0) {
-                    audioRepresentationIdList = new ArrayList<>();
-                    for (int i = 0; i < audioRepresentationCount; i++) {
-                        audioRepresentationIdList.add(audioRepresentationStartIndex);
-                        audioRepresentationStartIndex++;
+                    if (audioRepresentationIdList != null && !audioRepresentationIdList.isEmpty()) {
+                        if (audioRepresentationCount != curAudioRepresentationCount) {
+                            List<Integer> newAudioRepresentationIdList;
+                            List<AtomicLong> newAudioSegmentSeqNumList;
+                            if (audioRepresentationCount > curAudioRepresentationCount) {
+                                newAudioRepresentationIdList = new ArrayList<>(audioRepresentationIdList);
+                                newAudioSegmentSeqNumList = new ArrayList<>(audioSegmentSeqNumList);
+                                for (int i = curAudioRepresentationCount; i < audioRepresentationCount; i++) {
+                                    newAudioRepresentationIdList.add(audioRepresentationStartIndex);
+                                    newAudioSegmentSeqNumList.add(new AtomicLong(1));
+                                    audioRepresentationStartIndex++;
+                                }
+                            } else {
+                                newAudioRepresentationIdList = new ArrayList<>();
+                                newAudioSegmentSeqNumList = new ArrayList<>();
+                                for (int i = 0; i < audioRepresentationCount; i++) {
+                                    newAudioRepresentationIdList.add(audioRepresentationStartIndex);
+                                    newAudioSegmentSeqNumList.add(audioSegmentSeqNumList.get(i));
+                                    audioRepresentationStartIndex++;
+                                }
+                            }
+                            audioRepresentationIdList = newAudioRepresentationIdList;
+                            audioSegmentSeqNumList = newAudioSegmentSeqNumList;
+                        }
+                    } else {
+                        audioRepresentationIdList = new ArrayList<>();
+                        for (int i = 0; i < audioRepresentationCount; i++) {
+                            audioRepresentationIdList.add(audioRepresentationStartIndex);
+                            audioRepresentationStartIndex++;
+                        }
+                        audioSegmentSeqNumList = new ArrayList<>();
+                        for (int i = 0; i < audioRepresentationIdList.size(); i++) {
+                            audioSegmentSeqNumList.add(new AtomicLong(1));
+                        }
                     }
-                    audioSegmentSeqNumList = new ArrayList<>();
-                    for (int i = 0; i < audioRepresentationIdList.size(); i++) {
-                        audioSegmentSeqNumList.add(new AtomicLong(1));
-                    }
+
+                    curAudioRepresentationCount = audioRepresentationCount;
                     curAudioId = audioRepresentationIdList.get(0);
                 } else {
                     audioRepresentationIdList = null;
@@ -285,19 +344,47 @@ public class MpdManager {
                     curAudioId = -1;
                 }
             } else { // audio definition first
+                // AUDIO REPRESENTATION
                 int videoRepresentationStartIndex = 0;
                 if (audioRepresentationCount > 0) {
-                    int audioRepresentationIndex = 0;
-                    audioRepresentationIdList = new ArrayList<>();
-                    for (; audioRepresentationIndex < audioRepresentationCount; audioRepresentationIndex++) {
-                        audioRepresentationIdList.add(audioRepresentationIndex);
-                    }
-                    videoRepresentationStartIndex = audioRepresentationIndex;
+                    if (audioRepresentationIdList != null && !audioRepresentationIdList.isEmpty()) {
+                        if (audioRepresentationCount != curAudioRepresentationCount) {
+                            List<Integer> newAudioRepresentationIdList;
+                            List<AtomicLong> newAudioSegmentSeqNumList;
+                            if (audioRepresentationCount > curAudioRepresentationCount) {
+                                newAudioRepresentationIdList = new ArrayList<>(audioRepresentationIdList);
+                                newAudioSegmentSeqNumList = new ArrayList<>(audioSegmentSeqNumList);
+                                for (int i = curAudioRepresentationCount; i < audioRepresentationCount; i++) {
+                                    newAudioRepresentationIdList.add(i);
+                                    newAudioSegmentSeqNumList.add(new AtomicLong(1));
+                                }
+                            } else {
+                                newAudioRepresentationIdList = new ArrayList<>();
+                                newAudioSegmentSeqNumList = new ArrayList<>();
+                                for (int i = 0; i < audioRepresentationCount; i++) {
+                                    newAudioRepresentationIdList.add(i);
+                                    newAudioSegmentSeqNumList.add(audioSegmentSeqNumList.get(i));
+                                }
+                            }
+                            audioRepresentationIdList = newAudioRepresentationIdList;
+                            audioSegmentSeqNumList = newAudioSegmentSeqNumList;
+                        }
 
-                    audioSegmentSeqNumList = new ArrayList<>();
-                    for (int i = 0; i < audioRepresentationIdList.size(); i++) {
-                        audioSegmentSeqNumList.add(new AtomicLong(1));
+                        videoRepresentationStartIndex = audioRepresentationIdList.size();
+                    } else {
+                        audioRepresentationIdList = new ArrayList<>();
+                        int audioRepresentationIndex = 0;
+                        for (; audioRepresentationIndex < audioRepresentationCount; audioRepresentationIndex++) {
+                            audioRepresentationIdList.add(audioRepresentationIndex);
+                        }
+                        audioSegmentSeqNumList = new ArrayList<>();
+                        for (int i = 0; i < audioRepresentationIdList.size(); i++) {
+                            audioSegmentSeqNumList.add(new AtomicLong(1));
+                        }
+                        videoRepresentationStartIndex = audioRepresentationIndex;
                     }
+
+                    curAudioRepresentationCount = audioRepresentationCount;
                     curAudioId = audioRepresentationIdList.get(0);
                 } else {
                     audioRepresentationIdList = null;
@@ -305,22 +392,50 @@ public class MpdManager {
                     curAudioId = -1;
                 }
 
-                if (AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+                // VIDEO REPRESENTATION
+                if (configManager.isAudioOnly()) {
                     videoRepresentationIdList = null;
                     videoSegmentSeqNumList = null;
                     curVideoId = -1;
                 } else {
                     if (videoRepresentationCount > 0) {
-                        videoRepresentationIdList = new ArrayList<>();
-                        for (int i = 0; i < videoRepresentationCount; i++) {
-                            videoRepresentationIdList.add(videoRepresentationStartIndex);
-                            videoRepresentationStartIndex++;
+                        if (videoRepresentationIdList != null && !videoRepresentationIdList.isEmpty()) {
+                            if (videoRepresentationCount != curVideoRepresentationCount) {
+                                List<Integer> newVideoRepresentationIdList;
+                                List<AtomicLong> newVideoSegmentSeqNumList;
+                                if (videoRepresentationCount > curVideoRepresentationCount) {
+                                    newVideoRepresentationIdList = new ArrayList<>(videoRepresentationIdList);
+                                    newVideoSegmentSeqNumList = new ArrayList<>(videoSegmentSeqNumList);
+                                    for (int i = curVideoRepresentationCount; i < videoRepresentationCount; i++) {
+                                        newVideoRepresentationIdList.add(videoRepresentationStartIndex);
+                                        newVideoSegmentSeqNumList.add(new AtomicLong(1));
+                                        videoRepresentationStartIndex++;
+                                    }
+                                } else {
+                                    newVideoRepresentationIdList = new ArrayList<>();
+                                    newVideoSegmentSeqNumList = new ArrayList<>();
+                                    for (int i = 0; i < videoRepresentationCount; i++) {
+                                        newVideoRepresentationIdList.add(videoRepresentationStartIndex);
+                                        newVideoSegmentSeqNumList.add(videoSegmentSeqNumList.get(i));
+                                        videoRepresentationStartIndex++;
+                                    }
+                                }
+                                videoRepresentationIdList = newVideoRepresentationIdList;
+                                videoSegmentSeqNumList = newVideoSegmentSeqNumList;
+                            }
+                        } else {
+                            videoRepresentationIdList = new ArrayList<>();
+                            for (int i = 0; i < videoRepresentationCount; i++) {
+                                videoRepresentationIdList.add(videoRepresentationStartIndex);
+                                videoRepresentationStartIndex++;
+                            }
+
+                            videoSegmentSeqNumList = new ArrayList<>();
+                            for (int i = 0; i < videoRepresentationIdList.size(); i++) {
+                                videoSegmentSeqNumList.add(new AtomicLong(1));
+                            }
                         }
 
-                        videoSegmentSeqNumList = new ArrayList<>();
-                        for (int i = 0; i < videoRepresentationIdList.size(); i++) {
-                            videoSegmentSeqNumList.add(new AtomicLong(1));
-                        }
                         curVideoId = videoRepresentationIdList.get(0);
                     } else {
                         videoRepresentationIdList = null;
@@ -329,7 +444,7 @@ public class MpdManager {
                     }
                 }
             }
-            logger.debug("[MpdManager({})] Audio ID list: {}, Cur Audio ID: {} / Video ID list: {}, Cur Video ID: {}",
+            logger.trace("[MpdManager({})] Audio ID list: {}, Cur Audio ID: {} / Video ID list: {}, Cur Video ID: {}",
                     dashUnitId,
                     audioRepresentationIdList, curAudioId,
                     videoRepresentationIdList == null? "NONE" : videoRepresentationIdList, curVideoId
@@ -340,7 +455,7 @@ public class MpdManager {
             // 4) DYNAMIC STREAM 인 경우 MPD 수정
             if (mpd.getType().equals(PresentationType.DYNAMIC)) {
                 int adaptationId = 0;
-                if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+                if (!configManager.isAudioOnly()) {
                     for (int curVideoId : videoRepresentationIdList) {
                         setCustomRepresentationOptions(adaptationId, curVideoId, CONTENT_VIDEO_TYPE);
                     }
@@ -355,7 +470,7 @@ public class MpdManager {
             }
             /////////////////////////////////////////
 
-            logger.debug("[MpdManager({})] MPD PARSE DONE (path={})", dashUnitId, targetMpdPath);
+            //logger.debug("[MpdManager({})] MPD PARSE DONE (path={})", dashUnitId, targetMpdPath);
         } catch (Exception e) {
             logger.warn("[MpdManager({})] (targetMpdPath={}) parseMpd.Exception", dashUnitId, targetMpdPath, e);
             return false;
@@ -421,10 +536,11 @@ public class MpdManager {
     public String getAudioInitSegmentName() {
         if (curAudioId < 0) { return null; }
 
+        int representationId = getRepresentationId(CONTENT_AUDIO_TYPE);
         List<Representation> representations = getRepresentations(MpdManager.CONTENT_AUDIO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
-            String audioInitSegmentName = getRawInitializationSegmentName(representations.get(curAudioId));
+            String audioInitSegmentName = getRawInitializationSegmentName(representations.get(representationId));
             audioInitSegmentName = audioInitSegmentName.replace(
                     AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
                     curAudioId + ""
@@ -439,11 +555,12 @@ public class MpdManager {
     public String getAudioMediaSegmentName() {
         if (curAudioId < 0) { return null; }
 
+        int representationId = getRepresentationId(CONTENT_AUDIO_TYPE);
         List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
-            String mediaSegmentName = getRawMediaSegmentName(representations.get(curAudioId));
+            String mediaSegmentName = getRawMediaSegmentName(representations.get(representationId));
             // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getRepresentationIdFormat(),
@@ -451,7 +568,7 @@ public class MpdManager {
             );
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
-                    String.format("%05d", getAudioSegmentSeqNumList())
+                    String.format("%05d", getAudioSegmentSeqNum())
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             return mediaSegmentName;
@@ -463,10 +580,11 @@ public class MpdManager {
     public String getVideoInitSegmentName() {
         if (curVideoId < 0) { return null; }
 
-        List<Representation> representations = getRepresentations(MpdManager.CONTENT_VIDEO_TYPE);
+        int representationId = getRepresentationId(CONTENT_VIDEO_TYPE);
+        List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             // outdoor_market_ambiance_Dolby_init$RepresentationID$.m4s
-            String videoInitSegmentName = getRawInitializationSegmentName(representations.get(curVideoId));
+            String videoInitSegmentName = getRawInitializationSegmentName(representations.get(representationId));
             videoInitSegmentName = videoInitSegmentName.replace(
                     AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
                     curVideoId + ""
@@ -481,11 +599,12 @@ public class MpdManager {
     public String getVideoMediaSegmentName() {
         if (curVideoId < 0) { return null; }
 
+        int representationId = getRepresentationId(CONTENT_VIDEO_TYPE);
         List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
         if (representations != null && !representations.isEmpty()) {
             ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
-            String mediaSegmentName = getRawMediaSegmentName(representations.get(curVideoId));
+            String mediaSegmentName = getRawMediaSegmentName(representations.get(representationId));
             // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getRepresentationIdFormat(),
@@ -502,14 +621,14 @@ public class MpdManager {
         return null;
     }
 
-    public void setSegmentStartNumber(String contentType) {
-        if (contentType == null) { return; }
-
-        // @ Order correction
-        // ex) Video AdaptationSet 이 먼저 정의된 경우
-        //     audio first representation 가 4 이고, curAudioId 가 5 이면,
-        //     representations.get(representationId) 에 들어갈 representationId 값이 1 이 되서,
-        //     [두 번째] Representation 을 찾는 것으로 계산되어야 한다.
+    /**
+     * @ Order correction
+     *      Video AdaptationSet 이 먼저 정의된 경우
+     *          audio first representation 가 4 이고, curAudioId 가 5 이면,
+     *          representations.get(representationId) 에 들어갈 representationId 값이 1 이 되서,
+     *          [두 번째] Representation 을 찾는 것으로 계산되어야 한다.
+     */
+    public int getRepresentationId(String contentType) {
         int representationId;
         if (isVideoFirst) {
             if (contentType.equals(CONTENT_AUDIO_TYPE)) {
@@ -526,6 +645,13 @@ public class MpdManager {
                 representationId -= videoRepresentationIdList.get(0);
             }
         }
+        return representationId;
+    }
+
+    public void setSegmentStartNumber(String contentType) {
+        if (contentType == null) { return; }
+
+        int representationId = getRepresentationId(contentType);
 
         List<Representation> representations = getRepresentations(contentType);
         if (representations == null || representations.isEmpty()) {
@@ -541,9 +667,9 @@ public class MpdManager {
         Long startNumber = getStartNumber(representation);
         if (startNumber != null) {
             if (contentType.equals(CONTENT_VIDEO_TYPE)) {
-                setVideoSegmentSeqNumList(startNumber);
+                setVideoSegmentSeqNum(startNumber);
             } else {
-                setAudioSegmentSeqNumList(startNumber);
+                setAudioSegmentSeqNum(startNumber);
             }
             logger.debug("[MpdManager({})] [{}] Media Segment's start number is [{}].", dashUnitId, contentType, startNumber);
         }
@@ -569,13 +695,16 @@ public class MpdManager {
 
         ////////////////////////////////
         // 1) SET Representation
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (isVideoFirst) {
             if (contentType.equals(CONTENT_AUDIO_TYPE)) {
                 representationId -= audioRepresentationIdList.get(0);
             }
         } else {
-            if (contentType.equals(CONTENT_AUDIO_TYPE)) {
-                representationId -= videoRepresentationIdList.get(0);
+            if (!configManager.isAudioOnly()) {
+                if (contentType.equals(CONTENT_AUDIO_TYPE)) {
+                    representationId -= videoRepresentationIdList.get(0);
+                }
             }
         }
 
@@ -673,28 +802,28 @@ public class MpdManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public long getAudioSegmentSeqNumList() {
-        return audioSegmentSeqNumList.get(curAudioId).get();
+    public long getAudioSegmentSeqNum() {
+        return audioSegmentSeqNumList.get(getRepresentationId(CONTENT_AUDIO_TYPE)).get();
     }
 
-    public void setAudioSegmentSeqNumList(long number) {
-        audioSegmentSeqNumList.get(curAudioId).set(number);
+    public void setAudioSegmentSeqNum(long number) {
+        audioSegmentSeqNumList.get(getRepresentationId(CONTENT_AUDIO_TYPE)).set(number);
     }
 
     public long incAndGetAudioSegmentSeqNum() {
-        return audioSegmentSeqNumList.get(curAudioId).incrementAndGet();
+        return audioSegmentSeqNumList.get(getRepresentationId(CONTENT_AUDIO_TYPE)).incrementAndGet();
     }
 
     public long getVideoSegmentSeqNum() {
-        return videoSegmentSeqNumList.get(curVideoId).get();
+        return videoSegmentSeqNumList.get(getRepresentationId(CONTENT_VIDEO_TYPE)).get();
     }
 
-    public void setVideoSegmentSeqNumList(long number) {
-        videoSegmentSeqNumList.get(curVideoId).set(number);
+    public void setVideoSegmentSeqNum(long number) {
+        videoSegmentSeqNumList.get(getRepresentationId(CONTENT_VIDEO_TYPE)).set(number);
     }
 
     public long incAndGetVideoSegmentSeqNum() {
-        return videoSegmentSeqNumList.get(curVideoId).incrementAndGet();
+        return videoSegmentSeqNumList.get(getRepresentationId(CONTENT_VIDEO_TYPE)).incrementAndGet();
     }
 
     public MPD getMpd() {
@@ -833,6 +962,5 @@ public class MpdManager {
         return time;
     }
     ////////////////////////////////////////////////////////////
-
 
 }

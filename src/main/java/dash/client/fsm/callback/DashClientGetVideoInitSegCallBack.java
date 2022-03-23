@@ -48,6 +48,7 @@ public class DashClientGetVideoInitSegCallBack extends CallBack {
                     //logger.warn("");
                 }
             }
+
             dashClient.sendHttpGetRequest(
                     fileManager.concatFilePath(
                             dashClient.getSrcBasePath(),

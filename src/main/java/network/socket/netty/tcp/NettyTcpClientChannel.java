@@ -107,6 +107,7 @@ public class NettyTcpClientChannel extends NettyChannel {
 
             return channel;
         } catch (Exception e) {
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[TCP] Connect Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
             return null;
         }
     }

@@ -180,7 +180,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                             return;
                         }
 
-                        logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
+                        logger.trace("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
                                 dashClient.getDashUnitId(), curSeqNum, prevMediaSegmentName, curVideoSegmentName
                         );
 
