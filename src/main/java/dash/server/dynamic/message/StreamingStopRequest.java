@@ -9,7 +9,7 @@ import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class EndLiveMediaProcessRequest extends MessageFactory {
+public class StreamingStopRequest extends MessageFactory {
 
     ////////////////////////////////////////////////////////////
     public static final int MIN_SIZE = MessageHeader.SIZE + ByteUtil.NUM_BYTES_IN_INT * 2;
@@ -23,7 +23,7 @@ public class EndLiveMediaProcessRequest extends MessageFactory {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public EndLiveMediaProcessRequest(byte[] data) throws MessageException {
+    public StreamingStopRequest(byte[] data) throws MessageException {
         if (data.length >= MIN_SIZE) {
             int index = 0;
 
@@ -67,7 +67,7 @@ public class EndLiveMediaProcessRequest extends MessageFactory {
         }
     }
 
-    public EndLiveMediaProcessRequest(MessageHeader messageHeader, int sourceIpLength, String sourceIp, int uriLength, String uri) {
+    public StreamingStopRequest(MessageHeader messageHeader, int sourceIpLength, String sourceIp, int uriLength, String uri) {
         this.messageHeader = messageHeader;
         this.sourceIpLength = sourceIpLength;
         this.sourceIp = sourceIp;

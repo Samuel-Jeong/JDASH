@@ -46,7 +46,7 @@ public class StateUnit {
         this.curState = curState;
         this.data = data;
 
-        logger.debug("[NEW] StateUnit: name=[{}], lockAddr=[{}]", name, logicLock);
+        logger.trace("[NEW] StateUnit: name=[{}], lockAddr=[{}]", name, logicLock);
     }
 
     /**
@@ -111,7 +111,7 @@ public class StateUnit {
 
     public void setData(Object data) {
         this.data = data;
-        logger.debug("({}) StateUnit: data=[{}]", name, data);
+        logger.trace("({}) StateUnit: data=[{}]", name, data);
     }
 
     ////////////////////////////////////////////////////////////////////////////////

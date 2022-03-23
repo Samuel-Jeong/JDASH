@@ -1,7 +1,7 @@
 package dash.server.dynamic.handler;
 
-import dash.server.dynamic.message.EndLiveMediaProcessResponse;
-import dash.server.dynamic.message.PreLiveMediaProcessResponse;
+import dash.server.dynamic.message.StreamingStartResponse;
+import dash.server.dynamic.message.StreamingStopResponse;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import dash.server.dynamic.message.base.ResponseType;
@@ -45,21 +45,21 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
         System.arraycopy(data, 0, headerData, 0, MessageHeader.SIZE);
         MessageHeader messageHeader = new MessageHeader(headerData);
 
-        if (messageHeader.getMessageType() == MessageType.PREPROCESS_RES) {
-            PreLiveMediaProcessResponse preProcessResponse = new PreLiveMediaProcessResponse(data);
-            int statusCode = preProcessResponse.getStatusCode();
-            String reason = preProcessResponse.getReason();
-            logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse(statusCode={}, reason={})", statusCode, reason);
+        if (messageHeader.getMessageType() == MessageType.STREAMING_START_RES) {
+            StreamingStartResponse streamingStartResponse = new StreamingStartResponse(data);
+            int statusCode = streamingStartResponse.getStatusCode();
+            String reason = streamingStartResponse.getReason();
+            logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
 
             if (statusCode == ResponseType.NOT_FOUND) {
-                logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse [404 NOT FOUND], Fail to start service.");
+                logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
                 ServiceManager.getInstance().stop();
             }
-        } else if (messageHeader.getMessageType() == MessageType.ENDPROCESS_RES) {
-            EndLiveMediaProcessResponse endLiveMediaProcessResponse = new EndLiveMediaProcessResponse(data);
-            int statusCode = endLiveMediaProcessResponse.getStatusCode();
-            String reason = endLiveMediaProcessResponse.getReason();
-            logger.debug("[ProcessClientChannelHandler] RECV EndLiveMediaProcessResponse(statusCode={}, reason={})", statusCode, reason);
+        } else if (messageHeader.getMessageType() == MessageType.STREAMING_STOP_RES) {
+            StreamingStopResponse streamingStopResponse = new StreamingStopResponse(data);
+            int statusCode = streamingStopResponse.getStatusCode();
+            String reason = streamingStopResponse.getReason();
+            logger.debug("[ProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
         } else {
             logger.debug("[ProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);
         }

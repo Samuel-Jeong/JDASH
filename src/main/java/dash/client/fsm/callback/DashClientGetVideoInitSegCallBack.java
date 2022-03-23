@@ -12,10 +12,10 @@ import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class DashClientGetInitSegCallBack extends CallBack {
+public class DashClientGetVideoInitSegCallBack extends CallBack {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashClientGetInitSegCallBack.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashClientGetVideoInitSegCallBack.class);
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
@@ -23,7 +23,7 @@ public class DashClientGetInitSegCallBack extends CallBack {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashClientGetInitSegCallBack(StateManager stateManager, String name) {
+    public DashClientGetVideoInitSegCallBack(StateManager stateManager, String name) {
         super(stateManager, name);
     }
     ////////////////////////////////////////////////////////////
@@ -37,23 +37,6 @@ public class DashClientGetInitSegCallBack extends CallBack {
         // GET MPD DONE > PARSE MPD & GET META DATA
         DashClient dashClient = (DashClient) stateUnit.getData();
         if (dashClient == null) { return null; }
-
-        long audioSegmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
-        if (audioSegmentDuration > 0) {
-            try {
-                timeUnit.sleep(audioSegmentDuration);
-                logger.trace("[DashClientGetInitSegCallBack({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), audioSegmentDuration);
-            } catch (Exception e) {
-                //logger.warn("");
-            }
-        }
-        dashClient.sendHttpGetRequest(
-                fileManager.concatFilePath(
-                        dashClient.getSrcBasePath(),
-                        dashClient.getMpdManager().getAudioMediaSegmentName()
-                ),
-                MessageType.AUDIO
-        );
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
             long videoSegmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000

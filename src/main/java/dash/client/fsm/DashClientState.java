@@ -10,7 +10,9 @@ public class DashClientState {
 
     public static final String IDLE = "IDLE";
     public static final String MPD_DONE = "MPD_DONE";
-    public static final String INIT_SEG_DONE = "INIT_SEG_DONE";
-    public static final String MEDIA_SEG_DONE = "MEDIA_SEG_DONE";
+    public static final String AUDIO_INIT_SEG_DONE = "AUDIO_INIT_SEG_DONE";
+    public static final String VIDEO_INIT_SEG_DONE = "VIDEO_INIT_SEG_DONE";
+    public static final String AUDIO_MEDIA_SEG_DONE = "AUDIO_MEDIA_SEG_DONE";
+    public static final String VIDEO_MEDIA_SEG_DONE = "VIDEO_MEDIA_SEG_DONE";
 
 }

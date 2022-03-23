@@ -1,8 +1,10 @@
 package dash.client.fsm;
 
 import dash.client.DashClient;
-import dash.client.fsm.callback.DashClientGetInitSegCallBack;
-import dash.client.fsm.callback.DashClientGetMpdCallBack;
+import dash.client.fsm.callback.DashClientGetAudioInitSegCallBack;
+import dash.client.fsm.callback.DashClientGetMpdAudioCallBack;
+import dash.client.fsm.callback.DashClientGetMpdVideoCallBack;
+import dash.client.fsm.callback.DashClientGetVideoInitSegCallBack;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 
@@ -39,31 +41,63 @@ public class DashClientFsmManager {
 
         // EVENT : GET_MPD
         // IDLE > MPD_DONE
-        DashClientGetMpdCallBack dashClientGetMpdCallBack = new DashClientGetMpdCallBack(stateManager, DashClientEvent.GET_MPD);
+        DashClientGetMpdAudioCallBack dashClientGetMpdAudioCallBack = new DashClientGetMpdAudioCallBack(stateManager, DashClientEvent.GET_MPD_AUDIO);
         dashClientStateHandler.addState(
-                DashClientEvent.GET_MPD,
+                DashClientEvent.GET_MPD_AUDIO,
                 DashClientState.IDLE, DashClientState.MPD_DONE,
-                dashClientGetMpdCallBack,
+                dashClientGetMpdAudioCallBack,
                 null,
                 null, 0, 0
         );
 
-        // EVENT : GET_INIT_SEG
-        // MPD_DONE > INIT_SEG_DONE
-        DashClientGetInitSegCallBack dashClientGetInitSegCallBack = new DashClientGetInitSegCallBack(stateManager, DashClientEvent.GET_INIT_SEG);
+        // EVENT : GET_MPD
+        // IDLE > MPD_DONE
+        DashClientGetMpdVideoCallBack dashClientGetMpdVideoCallBack = new DashClientGetMpdVideoCallBack(stateManager, DashClientEvent.GET_MPD_VIDEO);
         dashClientStateHandler.addState(
-                DashClientEvent.GET_INIT_SEG,
-                DashClientState.MPD_DONE, DashClientState.INIT_SEG_DONE,
-                dashClientGetInitSegCallBack,
+                DashClientEvent.GET_MPD_VIDEO,
+                DashClientState.IDLE, DashClientState.MPD_DONE,
+                dashClientGetMpdVideoCallBack,
                 null,
                 null, 0, 0
         );
 
-        // EVENT : GET_MEDIA_SEG
+        // EVENT : GET_AUDIO_INIT_SEG
+        // MPD_DONE > INIT_SEG_DONE
+        DashClientGetAudioInitSegCallBack dashClientGetAudioInitSegCallBack = new DashClientGetAudioInitSegCallBack(stateManager, DashClientEvent.GET_AUDIO_INIT_SEG);
+        dashClientStateHandler.addState(
+                DashClientEvent.GET_AUDIO_INIT_SEG,
+                DashClientState.MPD_DONE, DashClientState.AUDIO_INIT_SEG_DONE,
+                dashClientGetAudioInitSegCallBack,
+                null,
+                null, 0, 0
+        );
+
+        // EVENT : GET_VIDEO_INIT_SEG
+        // MPD_DONE > INIT_SEG_DONE
+        DashClientGetVideoInitSegCallBack dashClientGetVideoInitSegCallBack = new DashClientGetVideoInitSegCallBack(stateManager, DashClientEvent.GET_VIDEO_INIT_SEG);
+        dashClientStateHandler.addState(
+                DashClientEvent.GET_VIDEO_INIT_SEG,
+                DashClientState.MPD_DONE, DashClientState.VIDEO_INIT_SEG_DONE,
+                dashClientGetVideoInitSegCallBack,
+                null,
+                null, 0, 0
+        );
+
+        // EVENT : GET_AUDIO_MEDIA_SEG
         // INIT_SEG_DONE > MEDIA_SEG_DONE
         dashClientStateHandler.addState(
-                DashClientEvent.GET_MEDIA_SEG,
-                DashClientState.INIT_SEG_DONE, DashClientState.MEDIA_SEG_DONE,
+                DashClientEvent.GET_AUDIO_MEDIA_SEG,
+                DashClientState.AUDIO_INIT_SEG_DONE, DashClientState.AUDIO_MEDIA_SEG_DONE,
+                null,
+                null,
+                null, 0, 0
+        );
+
+        // EVENT : GET_VIDEO_MEDIA_SEG
+        // INIT_SEG_DONE > MEDIA_SEG_DONE
+        dashClientStateHandler.addState(
+                DashClientEvent.GET_VIDEO_MEDIA_SEG,
+                DashClientState.VIDEO_INIT_SEG_DONE, DashClientState.VIDEO_MEDIA_SEG_DONE,
                 null,
                 null,
                 null, 0, 0
@@ -73,7 +107,9 @@ public class DashClientFsmManager {
         // MPD_DONE, INIT_SEG_DONE, MEDIA_SEG_DONE > IDLE
         HashSet<String> idlePrevStateSet = new HashSet<>(
                 Arrays.asList(
-                        DashClientState.MPD_DONE, DashClientState.INIT_SEG_DONE, DashClientState.MEDIA_SEG_DONE
+                        DashClientState.MPD_DONE,
+                        DashClientState.AUDIO_INIT_SEG_DONE, DashClientState.VIDEO_INIT_SEG_DONE,
+                        DashClientState.AUDIO_MEDIA_SEG_DONE, DashClientState.VIDEO_MEDIA_SEG_DONE
                 )
         );
         dashClientStateHandler.addState(

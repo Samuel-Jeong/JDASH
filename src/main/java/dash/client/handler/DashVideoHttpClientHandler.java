@@ -2,6 +2,7 @@ package dash.client.handler;
 
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
+import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
 import dash.client.handler.base.MessageType;
 import io.netty.buffer.ByteBuf;
@@ -47,10 +48,17 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
         if (dashClient == null) {
-            logger.warn("[DashHttpClientHandler] DashClient is null. Fail to recv the message.");
+            logger.warn("[DashVideoHttpClientHandler] DashClient is null. Fail to recv the message.");
             return;
         } else if (dashClient.isStopped()) {
-            //logger.warn("[DashHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
+            //logger.warn("[DashVideoHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
+            return;
+        }
+
+        // VIDEO FSM
+        DashClientFsmManager dashClientVideoFsmManager = dashClient.getDashClientVideoFsmManager();
+        if (dashClientVideoFsmManager == null) {
+            logger.warn("[DashAudioHttpClientHandler({})] Video Fsm manager is not defined.", dashClient.getDashUnitId());
             return;
         }
 
@@ -62,10 +70,9 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 // 재시도 로직
                 int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
                 if (curVideoRetryCount > StreamConfigManager.VIDEO_RETRY_LIMIT) {
-                    logger.warn("[DashHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
+                    logger.warn("[DashVideoHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
                     dashClient.stop();
                     channelHandlerContext.close();
-                    return;
                 } else {
                     // SegmentDuration 의 절반 만큼(micro-sec) sleep
                     long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
@@ -73,7 +80,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         try {
                             segmentDuration /= 2; // 500000
                             timeUnit.sleep(segmentDuration);
-                            logger.trace("[DashHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                            logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                         } catch (Exception e) {
                             //logger.warn("");
                         }
@@ -87,26 +94,29 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                             MessageType.VIDEO
                     );
 
-                    logger.warn("[DashHttpClientHandler({})] [VIDEO] Retrying... ({})", dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoMediaSegmentName());
+                    logger.warn("[DashVideoHttpClientHandler({})] [VIDEO] [count={}] Retrying... ({})",
+                            dashClient.getDashUnitId(), curVideoRetryCount, dashClient.getMpdManager().getVideoMediaSegmentName()
+                    );
                 }
+                return;
             }
 
             if (logger.isTraceEnabled()) {
-                logger.trace("[DashHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), response.status());
+                logger.trace("[DashVideoHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), response.status());
                 logger.trace("> VERSION: {}", response.protocolVersion());
 
                 if (!response.headers().isEmpty()) {
                     for (CharSequence name : response.headers().names()) {
                         for (CharSequence value : response.headers().getAll(name)) {
-                            logger.trace("[DashHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
+                            logger.trace("[DashVideoHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
                         }
                     }
                 }
 
                 if (HttpHeaderUtil.isTransferEncodingChunked(response)) {
-                    logger.trace("[DashHttpClientHandler({})] > CHUNKED CONTENT {", dashClient.getDashUnitId());
+                    logger.trace("[DashVideoHttpClientHandler({})] > CHUNKED CONTENT {", dashClient.getDashUnitId());
                 } else {
-                    logger.trace("[DashHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
+                    logger.trace("[DashVideoHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
                 }
             }
         }
@@ -116,28 +126,28 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             HttpContent httpContent = (HttpContent) httpObject;
             ByteBuf buf = httpContent.content();
             if (buf == null) {
-                logger.warn("[ProcessClientChannelHandler] DatagramPacket's content is null.");
+                logger.warn("[DashVideoHttpClientHandler({})] DatagramPacket's content is null.", dashClient.getDashUnitId());
                 return;
             }
 
             int readBytes = buf.readableBytes();
             if (buf.readableBytes() <= 0) {
-                logger.warn("[ProcessClientChannelHandler] Message is null.");
+                logger.warn("[DashVideoHttpClientHandler({})] Message is null.", dashClient.getDashUnitId());
                 return;
             }
 
             byte[] data = new byte[readBytes];
             buf.getBytes(0, data);
 
-            StateManager stateManager = dashClient.getDashClientFsmManager().getStateManager();
-            StateHandler stateHandler = dashClient.getDashClientFsmManager().getStateManager().getStateHandler(DashClientState.NAME);
-            StateUnit stateUnit = stateManager.getStateUnit(dashClient.getDashClientStateUnitId());
-            String curState = stateUnit.getCurState();
-            switch (curState) {
+            StateManager videoStateManager = dashClientVideoFsmManager.getStateManager();
+            StateHandler videoStateHandler = dashClientVideoFsmManager.getStateManager().getStateHandler(DashClientState.NAME);
+            StateUnit videoStateUnit = videoStateManager.getStateUnit(dashClient.getDashClientStateUnitId());
+            String curVideoState = videoStateUnit.getCurState();
+            switch (curVideoState) {
                 case DashClientState.MPD_DONE:
                     dashClient.getMpdManager().makeInitSegment(fileManager, dashClient.getTargetVideoInitSegPath(), data);
                     break;
-                case DashClientState.INIT_SEG_DONE:
+                case DashClientState.VIDEO_INIT_SEG_DONE:
                     String targetVideoMediaSegPath = fileManager.concatFilePath(
                             dashClient.getTargetBasePath(),
                             dashClient.getMpdManager().getVideoMediaSegmentName()
@@ -146,17 +156,33 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     break;
             }
 
-            logger.trace("[DashHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
+            logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
             if (httpContent instanceof LastHttpContent) {
-                switch (curState) {
+                switch (curVideoState) {
                     case DashClientState.MPD_DONE:
-                        stateHandler.fire(DashClientEvent.GET_INIT_SEG, stateUnit);
+                        videoStateHandler.fire(DashClientEvent.GET_VIDEO_INIT_SEG, videoStateUnit);
                         break;
-                    case DashClientState.INIT_SEG_DONE:
+                    case DashClientState.VIDEO_INIT_SEG_DONE:
                         String prevMediaSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
-                        dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
-                        String curMediaSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
-                        logger.trace("[DashHttpClientHandler({})] [+] [VIDEO] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), prevMediaSegmentName, curMediaSegmentName);
+                        if (prevMediaSegmentName == null) {
+                            logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] Previous MediaSegment name is not defined. (videoSeqNum={})",
+                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum()
+                            );
+                            return;
+                        }
+
+                        long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
+                        String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+                        if (curVideoSegmentName == null) {
+                            logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
+                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum()
+                            );
+                            return;
+                        }
+
+                        logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
+                                dashClient.getDashUnitId(), curSeqNum, prevMediaSegmentName, curVideoSegmentName
+                        );
 
                         // SegmentDuration 만큼(micro-sec) sleep
                         long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
@@ -166,8 +192,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         }*/
                         if (segmentDuration > 0) {
                             try {
+                                logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                                 timeUnit.sleep(segmentDuration);
-                                logger.trace("[DashHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                             } catch (Exception e) {
                                 //logger.warn("");
                             }
@@ -176,14 +202,14 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         dashClient.sendHttpGetRequest(
                                 fileManager.concatFilePath(
                                         dashClient.getSrcBasePath(),
-                                        curMediaSegmentName
+                                        curVideoSegmentName
                                 ),
                                 MessageType.VIDEO
                         );
                         break;
                 }
 
-                logger.trace("[DashHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
+                logger.trace("[DashVideoHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
             }
         }
     }

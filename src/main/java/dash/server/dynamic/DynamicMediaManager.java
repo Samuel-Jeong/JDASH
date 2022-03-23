@@ -17,10 +17,10 @@ import service.AppInstance;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PreProcessMediaManager {
+public class DynamicMediaManager {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(PreProcessMediaManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(DynamicMediaManager.class);
 
     public static final String MESSAGE_MAGIC_COOKIE = "PM";
 
@@ -37,7 +37,7 @@ public class PreProcessMediaManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public PreProcessMediaManager(SocketManager socketManager) {
+    public DynamicMediaManager(SocketManager socketManager) {
         this.socketManager = socketManager;
 
         this.localListenAddress = new NetAddress(
@@ -60,11 +60,11 @@ public class PreProcessMediaManager {
         socketManager.addSocket(localListenAddress, new PreProcessServerChannelHandlerInitializer());
         localGroupSocket = socketManager.getSocket(localListenAddress);
         localGroupSocket.getListenSocket().openListenChannel();
-        logger.debug("[PreProcessMediaManager] OPEN [{}]", localGroupSocket);
+        logger.debug("[DynamicMediaManager] OPEN [{}]", localGroupSocket);
 
         // ADD TARGET CHANNEL
         localGroupSocket.addDestination(targetAddress, null, sessionId, new PreProcessClientChannelHandlerInitializer());
-        logger.debug("[PreProcessMediaManager] ADD DESTINATION [{}]", targetAddress);
+        logger.debug("[DynamicMediaManager] ADD DESTINATION [{}]", targetAddress);
     }
 
     public void stop() {
@@ -76,7 +76,7 @@ public class PreProcessMediaManager {
             localGroupSocket.getListenSocket().closeListenChannel();
             socketManager.removeSocket(localListenAddress);
 
-            logger.debug("[PreProcessMediaManager] CLOSE [{}]", localGroupSocket);
+            logger.debug("[DynamicMediaManager] CLOSE [{}]", localGroupSocket);
             localGroupSocket = null;
         }
     }

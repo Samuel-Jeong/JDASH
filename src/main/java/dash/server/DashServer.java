@@ -5,9 +5,9 @@ import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.mpd.MpdManager;
 import dash.mpd.parser.mpd.MPD;
-import dash.server.dynamic.PreProcessMediaManager;
-import dash.server.dynamic.message.EndLiveMediaProcessRequest;
-import dash.server.dynamic.message.PreLiveMediaProcessRequest;
+import dash.server.dynamic.DynamicMediaManager;
+import dash.server.dynamic.message.StreamingStartRequest;
+import dash.server.dynamic.message.StreamingStopRequest;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import dash.server.handler.DashMessageHandler;
@@ -55,7 +55,7 @@ public class DashServer {
     private final SocketManager socketManager;
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
-    private final PreProcessMediaManager preProcessMediaManager;
+    private final DynamicMediaManager dynamicMediaManager;
     private LocalStreamService localStreamService = null;
 
     private final MpdManager mpdManager;
@@ -132,8 +132,8 @@ public class DashServer {
         ///////////////////////////
 
         ///////////////////////////
-        // PreProcessMediaManager 생성
-        preProcessMediaManager = new PreProcessMediaManager(socketManager);
+        // DynamicMediaManager 생성
+        dynamicMediaManager = new DynamicMediaManager(socketManager);
         ///////////////////////////
     }
     ////////////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ public class DashServer {
         ///////////////////////////
 
         httpMessageManager.start();
-        preProcessMediaManager.start();
+        dynamicMediaManager.start();
 
         if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
             if (configManager.isEnableClient()) {
@@ -179,33 +179,33 @@ public class DashServer {
         //////////////////////////////////////
         if (configManager.isEnableClient()) {
             DashServer dashServer = ServiceManager.getInstance().getDashServer();
-            PreProcessMediaManager preProcessMediaManager = dashServer.getPreProcessMediaManager();
-            GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+            DynamicMediaManager dynamicMediaManager = dashServer.getDynamicMediaManager();
+            GroupSocket listenSocket = dynamicMediaManager.getLocalGroupSocket();
             if (listenSocket != null) {
-                DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+                DestinationRecord target = listenSocket.getDestination(dynamicMediaManager.getSessionId());
                 if (target != null) {
-                    EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(
+                    StreamingStopRequest streamingStopRequest = new StreamingStopRequest(
                             new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.ENDPROCESS_REQ,
-                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.STREAMING_STOP_REQ,
+                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
-                                    PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                                    StreamingStartRequest.MIN_SIZE + configManager.getCameraPath().length()
                             ),
                             configManager.getPreprocessListenIp().length(),
                             configManager.getPreprocessListenIp(),
                             configManager.getCameraPath().length(),
                             configManager.getCameraPath()
                     );
-                    byte[] requestByteData = endLiveMediaProcessRequest.getByteData();
+                    byte[] requestByteData = streamingStopRequest.getByteData();
                     target.getNettyChannel().sendData(requestByteData, requestByteData.length);
-                    logger.debug("[CameraService] SEND EndLiveMediaProcessRequest={}", endLiveMediaProcessRequest);
+                    logger.debug("[CameraService] SEND StreamingStopRequest={}", streamingStopRequest);
                 }
             }
         }
         //////////////////////////////////////
 
-        preProcessMediaManager.stop();
+        dynamicMediaManager.stop();
         httpMessageManager.stop();
         baseEnvironment.stop();
     }
@@ -248,8 +248,8 @@ public class DashServer {
         return mediaManager;
     }
 
-    public PreProcessMediaManager getPreProcessMediaManager() {
-        return preProcessMediaManager;
+    public DynamicMediaManager getDynamicMediaManager() {
+        return dynamicMediaManager;
     }
 
     public LocalStreamService getLocalStreamService() {

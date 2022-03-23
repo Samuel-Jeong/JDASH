@@ -2,8 +2,8 @@ package stream;
 
 import config.ConfigManager;
 import dash.server.DashServer;
-import dash.server.dynamic.PreProcessMediaManager;
-import dash.server.dynamic.message.PreLiveMediaProcessRequest;
+import dash.server.dynamic.DynamicMediaManager;
+import dash.server.dynamic.message.StreamingStartRequest;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import network.definition.DestinationRecord;
@@ -215,7 +215,7 @@ public class LocalStreamService extends Job {
                             if (!isPreMediaReqSent) {
                                 if ((System.currentTimeMillis() - startTime)
                                         >= configManager.getPreprocessInitIdleTime()) {
-                                    sendPreLiveMediaProcessRequest();
+                                    sendStreamingStartRequest();
                                     isPreMediaReqSent = true;
                                 }
                             }
@@ -249,7 +249,7 @@ public class LocalStreamService extends Job {
                             if (!isPreMediaReqSent) {
                                 if ((System.currentTimeMillis() - startTime)
                                         >= configManager.getPreprocessInitIdleTime()) {
-                                    sendPreLiveMediaProcessRequest();
+                                    sendStreamingStartRequest();
                                     isPreMediaReqSent = true;
                                 }
                             }
@@ -291,22 +291,22 @@ public class LocalStreamService extends Job {
     ///////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
-    private void sendPreLiveMediaProcessRequest () {
+    private void sendStreamingStartRequest() {
         DashServer dashServer = ServiceManager.getInstance().getDashServer();
-        PreProcessMediaManager preProcessMediaManager = dashServer.getPreProcessMediaManager();
-        GroupSocket listenSocket = preProcessMediaManager.getLocalGroupSocket();
+        DynamicMediaManager dynamicMediaManager = dashServer.getDynamicMediaManager();
+        GroupSocket listenSocket = dynamicMediaManager.getLocalGroupSocket();
         if (listenSocket != null) {
-            DestinationRecord target = listenSocket.getDestination(preProcessMediaManager.getSessionId());
+            DestinationRecord target = listenSocket.getDestination(dynamicMediaManager.getSessionId());
             if (target != null) {
                 ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
-                PreLiveMediaProcessRequest preLiveMediaProcessRequest = new PreLiveMediaProcessRequest(
+                StreamingStartRequest preLiveMediaProcessRequest = new StreamingStartRequest(
                         new MessageHeader(
-                                PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                MessageType.PREPROCESS_REQ,
-                                dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                MessageType.STREAMING_START_REQ,
+                                dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                 System.currentTimeMillis(),
-                                PreLiveMediaProcessRequest.MIN_SIZE + configManager.getCameraPath().length()
+                                StreamingStartRequest.MIN_SIZE + configManager.getCameraPath().length()
                         ),
                         configManager.getPreprocessListenIp().length(),
                         configManager.getPreprocessListenIp(),

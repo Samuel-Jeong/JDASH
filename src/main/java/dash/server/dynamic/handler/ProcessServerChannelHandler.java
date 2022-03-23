@@ -2,11 +2,11 @@ package dash.server.dynamic.handler;
 
 import config.ConfigManager;
 import dash.server.DashServer;
-import dash.server.dynamic.PreProcessMediaManager;
-import dash.server.dynamic.message.EndLiveMediaProcessRequest;
-import dash.server.dynamic.message.EndLiveMediaProcessResponse;
-import dash.server.dynamic.message.PreLiveMediaProcessRequest;
-import dash.server.dynamic.message.PreLiveMediaProcessResponse;
+import dash.server.dynamic.DynamicMediaManager;
+import dash.server.dynamic.message.StreamingStartRequest;
+import dash.server.dynamic.message.StreamingStartResponse;
+import dash.server.dynamic.message.StreamingStopRequest;
+import dash.server.dynamic.message.StreamingStopResponse;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import dash.server.dynamic.message.base.ResponseType;
@@ -60,15 +60,15 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) {
         try {
             DashServer dashServer = ServiceManager.getInstance().getDashServer();
-            PreProcessMediaManager preProcessMediaManager = dashServer.getPreProcessMediaManager();
+            DynamicMediaManager dynamicMediaManager = dashServer.getDynamicMediaManager();
 
-            GroupSocket groupSocket = preProcessMediaManager.getLocalGroupSocket();
+            GroupSocket groupSocket = dynamicMediaManager.getLocalGroupSocket();
             if (groupSocket == null) {
                 logger.warn("[ProcessServerChannelHandler]Listen socket is not found... Fail to process the request.");
                 return;
             }
 
-            DestinationRecord destinationRecord = groupSocket.getDestination(preProcessMediaManager.getSessionId());
+            DestinationRecord destinationRecord = groupSocket.getDestination(dynamicMediaManager.getSessionId());
             if (destinationRecord == null) {
                 logger.warn("[ProcessServerChannelHandler] DestinationRecord is not found... Fail to process the request.");
                 return;
@@ -95,23 +95,23 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
             MessageHeader messageHeader = new MessageHeader(headerData);
 
             byte[] responseByteData;
-            if (messageHeader.getMessageType() == MessageType.PREPROCESS_REQ) {
-                PreLiveMediaProcessRequest preProcessRequest = new PreLiveMediaProcessRequest(data);
-                PreLiveMediaProcessResponse preProcessResponse;
-                String sourceIp = preProcessRequest.getSourceIp();
-                String uri = preProcessRequest.getUri();
-                long expires = preProcessRequest.getExpires();
-                logger.debug("[ProcessServerChannelHandler] RECV PreProcessRequest(sourceIp={}, uri={}, expires={})", sourceIp, uri, expires);
+            if (messageHeader.getMessageType() == MessageType.STREAMING_START_REQ) {
+                StreamingStartRequest streamingStartRequest = new StreamingStartRequest(data);
+                StreamingStartResponse streamingStartResponse;
+                String sourceIp = streamingStartRequest.getSourceIp();
+                String uri = streamingStartRequest.getUri();
+                long expires = streamingStartRequest.getExpires();
+                logger.debug("[ProcessServerChannelHandler] RECV StreamingStartRequest(sourceIp={}, uri={}, expires={})", sourceIp, uri, expires);
 
                 // CHECK URI is validated
                 if (!checkUriIsValidated(uri)) {
-                    preProcessResponse = new PreLiveMediaProcessResponse(
+                    streamingStartResponse = new StreamingStartResponse(
                             new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.PREPROCESS_RES,
-                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.STREAMING_START_RES,
+                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_NOT_FOUND.length()
+                                    StreamingStartResponse.MIN_SIZE + ResponseType.REASON_NOT_FOUND.length()
                             ),
                             ResponseType.NOT_FOUND,
                             ResponseType.REASON_NOT_FOUND.length(),
@@ -158,44 +158,44 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath);
                     ///////////////////////////
 
-                    logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, preProcessRequest);
+                    logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, streamingStartRequest);
 
-                    preProcessResponse = new PreLiveMediaProcessResponse(
+                    streamingStartResponse = new StreamingStartResponse(
                             new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.PREPROCESS_RES,
-                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.STREAMING_START_RES,
+                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
+                                    StreamingStartResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
                             ),
                             ResponseType.SUCCESS,
                             ResponseType.REASON_SUCCESS.length(),
                             ResponseType.REASON_SUCCESS
                     );
                 }
-                responseByteData = preProcessResponse.getByteData();
-                logger.debug("[ProcessServerChannelHandler] SEND PreLiveMediaProcessResponse(sourceIp={}, uri={}, preProcessResponse=\n{})", sourceIp, uri, preProcessResponse);
-            } else if (messageHeader.getMessageType() == MessageType.ENDPROCESS_REQ) {
-                EndLiveMediaProcessRequest endLiveMediaProcessRequest = new EndLiveMediaProcessRequest(data);
-                String sourceIp = endLiveMediaProcessRequest.getSourceIp();
-                String uri = endLiveMediaProcessRequest.getUri();
-                logger.debug("[ProcessServerChannelHandler] RECV EndLiveMediaProcessRequest(sourceIp={}, uri={})", sourceIp, uri);
+                responseByteData = streamingStartResponse.getByteData();
+                logger.debug("[ProcessServerChannelHandler] SEND StreamingStartResponse(sourceIp={}, uri={}, streamingStartResponse=\n{})", sourceIp, uri, streamingStartResponse);
+            } else if (messageHeader.getMessageType() == MessageType.STREAMING_STOP_REQ) {
+                StreamingStopRequest streamingStopRequest = new StreamingStopRequest(data);
+                String sourceIp = streamingStopRequest.getSourceIp();
+                String uri = streamingStopRequest.getUri();
+                logger.debug("[ProcessServerChannelHandler] RECV StreamingStopRequest(sourceIp={}, uri={})", sourceIp, uri);
 
                 String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(uri);
                 logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                 DashUnit dashUnit = dashServer.getDashUnitById(dashUnitId);
 
-                EndLiveMediaProcessResponse endLiveMediaProcessResponse;
+                StreamingStopResponse streamingStopResponse;
                 if (dashUnit == null) {
                     logger.warn("[ProcessServerChannelHandler] DashUnit is not exist! (id={})", dashUnitId);
                     
-                    endLiveMediaProcessResponse = new EndLiveMediaProcessResponse(
+                    streamingStopResponse = new StreamingStopResponse(
                             new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.ENDPROCESS_RES,
-                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.STREAMING_STOP_RES,
+                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_NOT_FOUND.length()
+                                    StreamingStartResponse.MIN_SIZE + ResponseType.REASON_NOT_FOUND.length()
                             ),
                             ResponseType.NOT_FOUND,
                             ResponseType.REASON_NOT_FOUND.length(),
@@ -206,40 +206,40 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     dashServer.deleteDashUnit(dashUnitId);
                     ///////////////////////////
 
-                    logger.debug("[ProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, endLiveMediaProcessRequest);
+                    logger.debug("[ProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, streamingStopRequest);
 
-                    endLiveMediaProcessResponse = new EndLiveMediaProcessResponse(
+                    streamingStopResponse = new StreamingStopResponse(
                             new MessageHeader(
-                                    PreProcessMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.ENDPROCESS_RES,
-                                    dashServer.getPreProcessMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                    MessageType.STREAMING_STOP_RES,
+                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
                                     System.currentTimeMillis(),
-                                    PreLiveMediaProcessResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
+                                    StreamingStartResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
                             ),
                             ResponseType.SUCCESS,
                             ResponseType.REASON_SUCCESS.length(),
                             ResponseType.REASON_SUCCESS
                     );
                 }
-                responseByteData = endLiveMediaProcessResponse.getByteData();
-                logger.debug("[ProcessServerChannelHandler] SEND EndLiveMediaProcessResponse(sourceIp={}, uri={}, endLiveMediaProcessResponse=\n{})", sourceIp, uri, endLiveMediaProcessResponse);
-            } else if (messageHeader.getMessageType() == MessageType.PREPROCESS_RES) {
-                PreLiveMediaProcessResponse preProcessResponse = new PreLiveMediaProcessResponse(data);
-                int statusCode = preProcessResponse.getStatusCode();
-                String reason = preProcessResponse.getReason();
-                logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse(statusCode={}, reason={})", statusCode, reason);
+                responseByteData = streamingStopResponse.getByteData();
+                logger.debug("[ProcessServerChannelHandler] SEND StreamingStopResponse(sourceIp={}, uri={}, streamingStopResponse=\n{})", sourceIp, uri, streamingStopResponse);
+            } else if (messageHeader.getMessageType() == MessageType.STREAMING_START_RES) {
+                StreamingStartResponse streamingStartResponse = new StreamingStartResponse(data);
+                int statusCode = streamingStartResponse.getStatusCode();
+                String reason = streamingStartResponse.getReason();
+                logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
 
                 if (statusCode == ResponseType.NOT_FOUND) {
-                    logger.debug("[ProcessClientChannelHandler] RECV PreProcessResponse [404 NOT FOUND], Fail to start service.");
+                    logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
                     //ServiceManager.getInstance().stop();
                     System.exit(1);
                 }
                 responseByteData = null;
-            } else if (messageHeader.getMessageType() == MessageType.ENDPROCESS_RES) {
-                EndLiveMediaProcessResponse endLiveMediaProcessResponse = new EndLiveMediaProcessResponse(data);
-                int statusCode = endLiveMediaProcessResponse.getStatusCode();
-                String reason = endLiveMediaProcessResponse.getReason();
-                logger.debug("[ProcessClientChannelHandler] RECV EndLiveMediaProcessResponse(statusCode={}, reason={})", statusCode, reason);
+            } else if (messageHeader.getMessageType() == MessageType.STREAMING_STOP_RES) {
+                StreamingStopResponse streamingStopResponse = new StreamingStopResponse(data);
+                int statusCode = streamingStopResponse.getStatusCode();
+                String reason = streamingStopResponse.getReason();
+                logger.debug("[ProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
                 responseByteData = null;
             } else {
                 logger.debug("[ProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);

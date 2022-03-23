@@ -99,7 +99,7 @@ public class StateEventManager {
 
             boolean result = eventMap.putIfAbsent(event, stateEvent) == null;
             if (result) {
-                logger.debug("[{}] Success to add state. (event={}, fromState={}, toState={})",
+                logger.trace("[{}] Success to add state. (event={}, fromState={}, toState={})",
                         ResultCode.SUCCESS_ADD_STATE, stateEvent, fromStateSet, toState
                 );
             } else {

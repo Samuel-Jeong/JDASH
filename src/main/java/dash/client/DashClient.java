@@ -11,6 +11,7 @@ import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import stream.StreamConfigManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
@@ -40,7 +41,8 @@ public class DashClient {
     private final AtomicInteger audioRetryCount = new AtomicInteger(0);
     private final AtomicInteger videoRetryCount = new AtomicInteger(0);
 
-    transient private final DashClientFsmManager dashClientFsmManager = new DashClientFsmManager();
+    transient private final DashClientFsmManager dashClientAudioFsmManager = new DashClientFsmManager();
+    transient private final DashClientFsmManager dashClientVideoFsmManager;
     private final String dashClientStateUnitId;
 
     transient private final DashHttpMessageSender dashHttpMessageSender;
@@ -63,6 +65,12 @@ public class DashClient {
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
         this.mpdManager = new MpdManager(dashUnitId);
 
+        if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
+            dashClientVideoFsmManager = new DashClientFsmManager();
+        } else {
+            dashClientVideoFsmManager = null;
+        }
+
         logger.debug("[DashClient({})] Created. (dashClientStateUnitId={}, srcPath={}, uriFileName={}, targetBasePath={}, targetMpdPath={})",
                 this.dashUnitId, this.dashClientStateUnitId,
                 this.srcPath, this.uriFileName,
@@ -73,15 +81,27 @@ public class DashClient {
     public void start() {
         //////////////////////////////
         // SETTING : FSM
-        this.dashClientFsmManager.init(this);
-        this.dashClientFsmManager.getStateManager().addStateUnit(
+        this.dashClientAudioFsmManager.init(this);
+        this.dashClientAudioFsmManager.getStateManager().addStateUnit(
                 dashClientStateUnitId,
-                this.dashClientFsmManager.getStateManager().getStateHandler(DashClientState.NAME).getName(),
+                this.dashClientAudioFsmManager.getStateManager().getStateHandler(DashClientState.NAME).getName(),
                 DashClientState.IDLE,
                 null
         );
-        StateUnit dashClientStateUnit = this.dashClientFsmManager.getStateManager().getStateUnit(dashClientStateUnitId);
+        StateUnit dashClientStateUnit = this.dashClientAudioFsmManager.getStateManager().getStateUnit(dashClientStateUnitId);
         dashClientStateUnit.setData(this);
+
+        if (this.dashClientVideoFsmManager != null) {
+            this.dashClientVideoFsmManager.init(this);
+            this.dashClientVideoFsmManager.getStateManager().addStateUnit(
+                    dashClientStateUnitId,
+                    this.dashClientVideoFsmManager.getStateManager().getStateHandler(DashClientState.NAME).getName(),
+                    DashClientState.IDLE,
+                    null
+            );
+            dashClientStateUnit = this.dashClientVideoFsmManager.getStateManager().getStateUnit(dashClientStateUnitId);
+            dashClientStateUnit.setData(this);
+        }
         //////////////////////////////
 
         //////////////////////////////
@@ -106,7 +126,11 @@ public class DashClient {
     }
 
     public void stop() {
-        this.dashClientFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
+        this.dashClientAudioFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
+        if (this.dashClientVideoFsmManager != null) {
+            dashClientVideoFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
+        }
+
         this.dashHttpMessageSender.stop();
 
         isStopped = true;
@@ -167,8 +191,12 @@ public class DashClient {
         isStopped = stopped;
     }
 
-    public DashClientFsmManager getDashClientFsmManager() {
-        return dashClientFsmManager;
+    public DashClientFsmManager getDashClientAudioFsmManager() {
+        return dashClientAudioFsmManager;
+    }
+
+    public DashClientFsmManager getDashClientVideoFsmManager() {
+        return dashClientVideoFsmManager;
     }
 
     public String getDashClientStateUnitId() {

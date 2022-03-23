@@ -43,10 +43,12 @@ public class LongSessionRemover extends Job {
                 }
 
                 if (!dashUnit.getType().equals(StreamType.DYNAMIC)) { continue; }
-                if (dashUnit.getExpires() > 0) { continue; }
+
+                long expires = dashUnit.getExpires();
+                if (expires <= 0) { continue; }
 
                 long curTime = System.currentTimeMillis();
-                if ((curTime - dashUnit.getInitiationTime()) >= limitTime) {
+                if ((curTime - dashUnit.getInitiationTime()) >= expires) {
                     dashUnit.clearMpdPath();
                     dashServer.deleteDashUnit(dashUnit.getId());
                     logger.warn("({}) REMOVED LONG DASH UNIT(DashUnit=\n{})", getName(), dashUnit);

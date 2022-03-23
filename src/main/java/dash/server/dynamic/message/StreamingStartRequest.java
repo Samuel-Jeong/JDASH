@@ -11,10 +11,10 @@ import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class PreLiveMediaProcessRequest extends MessageFactory {
+public class StreamingStartRequest extends MessageFactory {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(PreLiveMediaProcessRequest.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamingStartRequest.class);
 
     public static final int MIN_SIZE = MessageHeader.SIZE + ByteUtil.NUM_BYTES_IN_INT * 2 + ByteUtil.NUM_BYTES_IN_LONG;
 
@@ -28,7 +28,7 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public PreLiveMediaProcessRequest(byte[] data) throws MessageException {
+    public StreamingStartRequest(byte[] data) throws MessageException {
         //logger.debug("data.length: {}", data.length);
         if (data.length >= MIN_SIZE) {
             int index = 0;
@@ -85,7 +85,7 @@ public class PreLiveMediaProcessRequest extends MessageFactory {
         }
     }
 
-    public PreLiveMediaProcessRequest(MessageHeader messageHeader, int sourceIpLength, String sourceIp, int uriLength, String uri, long expires) {
+    public StreamingStartRequest(MessageHeader messageHeader, int sourceIpLength, String sourceIp, int uriLength, String uri, long expires) {
         this.messageHeader = messageHeader;
         this.sourceIpLength = sourceIpLength;
         this.sourceIp = sourceIp;

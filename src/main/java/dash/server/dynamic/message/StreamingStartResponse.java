@@ -12,10 +12,10 @@ import util.module.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
-public class EndLiveMediaProcessResponse extends MessageFactory {
+public class StreamingStartResponse extends MessageFactory {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(EndLiveMediaProcessResponse.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamingStartResponse.class);
 
     public static final int MIN_SIZE = MessageHeader.SIZE + ByteUtil.NUM_BYTES_IN_INT * 2;
 
@@ -27,7 +27,7 @@ public class EndLiveMediaProcessResponse extends MessageFactory {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public EndLiveMediaProcessResponse(byte[] data) throws MessageException {
+    public StreamingStartResponse(byte[] data) throws MessageException {
         if (data.length >= MIN_SIZE) {
             int index = 0;
 
@@ -61,7 +61,7 @@ public class EndLiveMediaProcessResponse extends MessageFactory {
         }
     }
 
-    public EndLiveMediaProcessResponse(MessageHeader messageHeader, int statusCode, int reasonLength, String reason) {
+    public StreamingStartResponse(MessageHeader messageHeader, int statusCode, int reasonLength, String reason) {
         this.messageHeader = messageHeader;
         this.statusCode = statusCode;
         this.reasonLength = reasonLength;
