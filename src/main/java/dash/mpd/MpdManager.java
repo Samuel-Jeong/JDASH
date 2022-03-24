@@ -502,7 +502,7 @@ public class MpdManager {
     }
 
     public double getAvailabilityTimeOffset(String contentType) {
-        List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
+        List<Representation> representations = getRepresentations(contentType);
         int representationId = getRepresentationIndex(contentType);
         Representation audioRepresentation = representations.get(representationId);
         if (audioRepresentation != null) {
@@ -511,6 +511,18 @@ public class MpdManager {
         } else {
             return 0;
         }
+    }
+
+    public long applyAtoIntoDuration(long segmentDuration, String contentType) {
+        if (segmentDuration <= 0 || contentType == null) { return segmentDuration; }
+
+        double availabilityTimeOffset = getAvailabilityTimeOffset(contentType); // 0.8
+        if (availabilityTimeOffset > 0) {
+            // 1000000 > 800000
+            segmentDuration = (long) (availabilityTimeOffset * MpdManager.MICRO_SEC);
+        }
+
+        return segmentDuration;
     }
 
     public long getAudioSegmentDuration(boolean isRaw) {

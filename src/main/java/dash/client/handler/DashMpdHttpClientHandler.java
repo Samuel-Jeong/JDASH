@@ -30,11 +30,14 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
 
     private final DashClient dashClient;
     private final FileManager fileManager = new FileManager();
+
+    private final long defaultMediaPresentationDuration;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashMpdHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
+        this.defaultMediaPresentationDuration = AppInstance.getInstance().getConfigManager().getChunkFileDeletionIntervalSeconds();
     }
     ////////////////////////////////////////////////////////////
 
@@ -184,12 +187,14 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
                 if (mediaPresentationDuration != null) {
                     try {
                         long seconds = mediaPresentationDuration.getSeconds();
-                        if (seconds > 0) {
-                            timeUnit.sleep(seconds);
-                            logger.trace("[DashMpdHttpClientHandler({})] [MPD] Waiting... ({})", dashClient.getDashUnitId(), seconds);
-
-                            dashClient.sendHttpGetRequest(dashClient.getSrcPath(), MessageType.MPD);
+                        if (seconds <= 0) {
+                            seconds = defaultMediaPresentationDuration;
                         }
+
+                        //logger.debug("[DashMpdHttpClientHandler({})] [MPD] Waiting... ({})", dashClient.getDashUnitId(), seconds);
+                        timeUnit.sleep(seconds);
+
+                        dashClient.sendHttpGetRequest(dashClient.getSrcPath(), MessageType.MPD);
                     } catch (Exception e) {
                         //logger.warn("");
                     }
