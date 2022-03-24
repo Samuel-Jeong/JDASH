@@ -81,10 +81,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
                     if (segmentDuration > 0) {
                         try {
-                            double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(MpdManager.CONTENT_VIDEO_TYPE); // 0.8
-                            if (availabilityTimeOffset > 0) {
-                                segmentDuration = (long) (availabilityTimeOffset * MpdManager.MICRO_SEC); // 800000
-                            }
+                            segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
                             segmentDuration /= 2; // 400000
                             timeUnit.sleep(segmentDuration);
                             logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);

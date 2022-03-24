@@ -26,6 +26,8 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashHttpMessageSender.class);
 
+    public static final String HTTP_PREFIX = "http";
+
     private final String dashUnitId;
     private String host = null;
     private SslContext sslContext = null;
@@ -237,11 +239,11 @@ public class DashHttpMessageSender {
         URI uri;
         try {
             uri = new URI(path);
-            String scheme = uri.getScheme() == null ? "http" : uri.getScheme();
+            String scheme = uri.getScheme() == null ? HTTP_PREFIX : uri.getScheme();
             host = uri.getHost() == null ? configManager.getHttpListenIp() : uri.getHost();
 
             // 아직 https 지원하지 않음
-            if (!"http".equalsIgnoreCase(scheme)) { // && !"https".equalsIgnoreCase(scheme)) {
+            if (!HTTP_PREFIX.equalsIgnoreCase(scheme)) { // && !"https".equalsIgnoreCase(scheme)) {
                 logger.warn("[DashHttpMessageSender({})] Only HTTP(S) is supported.", dashUnitId);
                 return null;
             }

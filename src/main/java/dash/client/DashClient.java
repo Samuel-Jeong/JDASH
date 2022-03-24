@@ -120,7 +120,7 @@ public class DashClient {
             mpdManager.makeMpd(
                     fileManager,
                     targetMpdPath,
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n".getBytes()
+                    MpdManager.XML_HEADER.getBytes()
             );
         }
         //////////////////////////////
@@ -148,7 +148,9 @@ public class DashClient {
             logger.warn("[DashClient({})] Fail to send the http request. (path={})", dashUnitId, path);
             return;
         } else {
-            logger.trace("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
+            if (logger.isTraceEnabled()) {
+                logger.trace("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
+            }
         }
 
         switch (messageType) {

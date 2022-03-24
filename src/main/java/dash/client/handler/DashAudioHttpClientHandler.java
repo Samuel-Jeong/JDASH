@@ -81,10 +81,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
                     if (segmentDuration > 0) {
                         try {
-                            double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(MpdManager.CONTENT_AUDIO_TYPE); // 0.8
-                            if (availabilityTimeOffset > 0) {
-                                segmentDuration = (long) (availabilityTimeOffset * MpdManager.MICRO_SEC); // 800000
-                            }
+                            segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_AUDIO_TYPE); // 800000
                             segmentDuration /= 2; // 400000
                             timeUnit.sleep(segmentDuration);
                             logger.trace("[DashAudioHttpClientHandler({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
