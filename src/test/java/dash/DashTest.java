@@ -60,7 +60,8 @@ public class DashTest {
         return dashServer
                 .getMpdManager()
                 .parseMpd(
-                        "/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_examples/mpd_example4.xml"
+                        "/Users/jamesj/GIT_PROJECTS/JDASH/src/test/resources/mpd_examples/mpd_example4.xml",
+                        false
                 );
     }
 

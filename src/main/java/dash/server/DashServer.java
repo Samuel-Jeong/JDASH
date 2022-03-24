@@ -29,6 +29,7 @@ import network.socket.SocketManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ObjectSupplier;
 import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import service.system.ResourceManager;
@@ -72,14 +73,18 @@ public class DashServer {
 
         ///////////////////////////
         // 인스턴스 생성
-        baseEnvironment = new BaseEnvironment(
-                new ScheduleManager(),
-                new ResourceManager(
-                        configManager.getHttpListenPort() + configManager.getHttpListenPortBeginOffset(),
-                        configManager.getHttpListenPort() + configManager.getHttpListenPortEndOffset()
-                ),
-                DebugLevel.DEBUG
+        ObjectSupplier<BaseEnvironment> baseEnvObjectSupplier = ObjectSupplier.of(
+                () -> new BaseEnvironment(
+                        new ScheduleManager(),
+                        new ResourceManager(
+                                configManager.getHttpListenPort() + configManager.getHttpListenPortBeginOffset(),
+                                configManager.getHttpListenPort() + configManager.getHttpListenPortEndOffset()
+                        ),
+                        DebugLevel.DEBUG
+                )
         );
+
+        baseEnvironment = baseEnvObjectSupplier.get(); // lazy initialization
         ///////////////////////////
 
         ///////////////////////////
@@ -90,7 +95,7 @@ public class DashServer {
                 configManager.getThreadCount(),
                 configManager.getSendBufSize(),
                 configManager.getRecvBufSize()
-        );
+        ); // eager initialization
         ///////////////////////////
 
         ///////////////////////////

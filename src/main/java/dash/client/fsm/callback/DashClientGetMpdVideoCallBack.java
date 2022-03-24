@@ -2,7 +2,6 @@ package dash.client.fsm.callback;
 
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
-import dash.mpd.MpdManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;

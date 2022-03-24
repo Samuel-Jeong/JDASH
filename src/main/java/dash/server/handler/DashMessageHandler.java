@@ -194,7 +194,7 @@ public class DashMessageHandler implements HttpMessageHandler {
 
             ///////////////////////////
             // GET MPD
-            if (!dashServer.getMpdManager().parseMpd(mpdPath)) {
+            if (!dashServer.getMpdManager().parseMpd(mpdPath, false)) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                 return null;
             }

@@ -16,6 +16,7 @@ import stream.StreamConfigManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -39,7 +40,9 @@ public class DashClient {
     private String targetVideoInitSegPath;
 
     private final AtomicInteger audioRetryCount = new AtomicInteger(0);
+    private final AtomicBoolean isAudioRetrying = new AtomicBoolean(false);
     private final AtomicInteger videoRetryCount = new AtomicInteger(0);
+    private final AtomicBoolean isVideoRetrying = new AtomicBoolean(false);
 
     transient private final DashClientFsmManager dashClientAudioFsmManager = new DashClientFsmManager();
     transient private final DashClientFsmManager dashClientVideoFsmManager;
@@ -247,12 +250,48 @@ public class DashClient {
         return mpdManager;
     }
 
+    public int getAudioRetryCount() {
+        return audioRetryCount.get();
+    }
+
+    public void setAudioRetryCount(int retryCount) {
+        int curRetryCount = audioRetryCount.get();
+        audioRetryCount.set(retryCount);
+        logger.debug("[DashClient({})] SET audioRetryCount: {} > {}", dashUnitId, curRetryCount, audioRetryCount.get());
+    }
+
     public int incAndGetAudioRetryCount() {
         return audioRetryCount.incrementAndGet();
     }
 
+    public int getVideoRetryCount() {
+        return videoRetryCount.get();
+    }
+
+    public void setVideoRetryCount(int retryCount) {
+        int curRetryCount = videoRetryCount.get();
+        videoRetryCount.set(retryCount);
+        logger.debug("[DashClient({})] SET videoRetryCount: {} > {}", dashUnitId, curRetryCount, videoRetryCount.get());
+    }
+
     public int incAndGetVideoRetryCount() {
         return videoRetryCount.incrementAndGet();
+    }
+
+    public boolean isAudioRetrying() {
+        return isAudioRetrying.get();
+    }
+
+    public void setIsAudioRetrying(boolean isRetrying) {
+        isAudioRetrying.set(isRetrying);
+    }
+
+    public boolean isVideoRetrying() {
+        return isVideoRetrying.get();
+    }
+
+    public void setIsVideoRetrying(boolean isRetrying) {
+        isVideoRetrying.set(isRetrying);
     }
     ////////////////////////////////////////////////////////////
 

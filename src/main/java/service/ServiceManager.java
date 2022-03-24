@@ -1,5 +1,6 @@
 package service;
 
+import config.ConfigManager;
 import dash.server.DashServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +63,10 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // SCHEDULE MAIN JOBS
-        if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, 10, 10 * 2)) {
+        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        int threadPoolSize = configManager.getThreadCount();
+
+        if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, threadPoolSize, threadPoolSize * 2)) {
             // FOR CHECKING the availability of this program
             scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     new HaHandler(

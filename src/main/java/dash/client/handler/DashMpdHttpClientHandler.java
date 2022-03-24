@@ -130,7 +130,7 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
 
                 ////////////////////////////
                 // GET MPD DONE > PARSE MPD & GET META DATA
-                if (!dashClient.getMpdManager().parseMpd(dashClient.getTargetMpdPath())) {
+                if (!dashClient.getMpdManager().parseMpd(dashClient.getTargetMpdPath(), true)) {
                     logger.warn("[DashMpdHttpClientHandler({})] Fail to parse the mpd. (dashClient={})", dashClient.getDashUnitId(), dashClient);
                     return;
                 }
@@ -173,6 +173,13 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
 
                 ////////////////////////////
                 // SEND MPD REQUEST again for MediaPresentationDuration
+                /**
+                 * @ mediaPresentationDuration : Refers to the duration of the media content
+                 *      It has 'PT' as prefix denoting that
+                 *          time-range is in units of seconds (S), minutes (M), hours (H) and days (D).
+                 *      In this scenario we have the value as "PT23M12.128S",
+                 *          i.e., the media content has a total duration of 23 minutes 12.128 seconds
+                 */
                 Duration mediaPresentationDuration = dashClient.getMpdManager().getMediaPresentationDuration();
                 if (mediaPresentationDuration != null) {
                     try {
