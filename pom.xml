@@ -300,7 +300,7 @@
                             <filemode>644</filemode>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/src/main/resources/media_info/video_list.txt</location>
+                                    <location>${project.basedir}/src/main/resources/media_info/white_list.txt</location>
                                 </source>
                             </sources>
                         </mapping>

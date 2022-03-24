@@ -75,7 +75,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     channelHandlerContext.close();
                 } else {
                     // SegmentDuration 의 절반 만큼(micro-sec) sleep
-                    long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+                    long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
                     if (segmentDuration > 0) {
                         try {
                             segmentDuration /= 2; // 500000
@@ -165,7 +165,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     case DashClientState.AUDIO_INIT_SEG_DONE:
                         String prevMediaSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
                         if (prevMediaSegmentName == null) {
-                            logger.debug("[DashVideoHttpClientHandler({})] [+] [AUDIO] Previous MediaSegment name is not defined. (audioSeqNum={})",
+                            logger.warn("[DashVideoHttpClientHandler({})] [+] [AUDIO] Previous MediaSegment name is not defined. (audioSeqNum={})",
                                     dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNum()
                             );
                             return;
@@ -174,25 +174,25 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         long curSeqNum = dashClient.getMpdManager().incAndGetAudioSegmentSeqNum();
                         String curAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
                         if (curAudioSegmentName == null) {
-                            logger.debug("[DashVideoHttpClientHandler({})] [+] [AUDIO] Current MediaSegment name is not defined. (audioSeqNum={})",
-                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getAudioSegmentSeqNum()
+                            logger.warn("[DashVideoHttpClientHandler({})] [+] [AUDIO] Current MediaSegment name is not defined. (audioSeqNum={})",
+                                    dashClient.getDashUnitId(), curSeqNum
                             );
                             return;
                         }
 
-                        logger.trace("[DashAudioHttpClientHandler({})] [+] [AUDIO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
+                        /*logger.trace("[DashAudioHttpClientHandler({})] [+] [AUDIO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
                                 dashClient.getDashUnitId(), curSeqNum, prevMediaSegmentName, curAudioSegmentName
-                        );
+                        );*/
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
                         /*double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(); // 0.8
                         if (availabilityTimeOffset > 0) {
                             segmentDuration *= availabilityTimeOffset; // 800000
                         }*/
                         if (segmentDuration > 0) {
                             try {
-                                logger.trace("[DashAudioHttpClientHandler({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                                //logger.debug("[DashAudioHttpClientHandler({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                                 timeUnit.sleep(segmentDuration);
                             } catch (Exception e) {
                                 //logger.warn("");

@@ -37,7 +37,7 @@ public class DashClientGetAudioInitSegCallBack extends CallBack {
         DashClient dashClient = (DashClient) stateUnit.getData();
         if (dashClient == null) { return null; }
 
-        long audioSegmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+        long audioSegmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
         if (audioSegmentDuration > 0) {
             try {
                 timeUnit.sleep(audioSegmentDuration);

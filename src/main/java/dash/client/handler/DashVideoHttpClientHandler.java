@@ -75,7 +75,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     channelHandlerContext.close();
                 } else {
                     // SegmentDuration 의 절반 만큼(micro-sec) sleep
-                    long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+                    long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
                     if (segmentDuration > 0) {
                         try {
                             segmentDuration /= 2; // 500000
@@ -165,7 +165,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     case DashClientState.VIDEO_INIT_SEG_DONE:
                         String prevMediaSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
                         if (prevMediaSegmentName == null) {
-                            logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] Previous MediaSegment name is not defined. (videoSeqNum={})",
+                            logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] Previous MediaSegment name is not defined. (videoSeqNum={})",
                                     dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum()
                             );
                             return;
@@ -174,25 +174,25 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
                         String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
                         if (curVideoSegmentName == null) {
-                            logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
-                                    dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum()
+                            logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
+                                    dashClient.getDashUnitId(), curSeqNum
                             );
                             return;
                         }
 
-                        logger.trace("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
+                        /*logger.trace("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])",
                                 dashClient.getDashUnitId(), curSeqNum, prevMediaSegmentName, curVideoSegmentName
-                        );
+                        );*/
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
                         /*double availabilityTimeOffset = dashClient.getMpdManager().getAvailabilityTimeOffset(); // 0.8
                         if (availabilityTimeOffset > 0) {
                             segmentDuration *= availabilityTimeOffset; // 800000
                         }*/
                         if (segmentDuration > 0) {
                             try {
-                                logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                                //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                                 timeUnit.sleep(segmentDuration);
                             } catch (Exception e) {
                                 //logger.warn("");

@@ -128,7 +128,7 @@ public class DashServer {
                 fileManager.concatFilePath(configManager.getMediaBasePath(), uri)
         );
 
-        this.mpdManager = new MpdManager(localDashUnit.getId());
+        this.mpdManager = new MpdManager(localDashUnit.getId(), localDashUnit.getOutputFilePath());
         ///////////////////////////
 
         ///////////////////////////

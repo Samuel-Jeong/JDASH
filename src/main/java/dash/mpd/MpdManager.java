@@ -1,11 +1,14 @@
 package dash.mpd;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.mpd.parser.MPDParser;
 import dash.mpd.parser.mpd.*;
 import dash.mpd.validator.MPDValidator;
 import dash.mpd.validator.ManifestValidationException;
+import org.opencv.video.Video;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -34,6 +37,7 @@ public class MpdManager {
     private final MPDParser mpdParser;
     private MPDValidator mpdValidator = null;
     private MPD mpd = null;
+    private final String targetMpdPath;
     private final AtomicBoolean isMpdDone = new AtomicBoolean(false);
 
     private List<AtomicLong> videoSegmentSeqNumList;
@@ -48,13 +52,17 @@ public class MpdManager {
     private boolean isVideoFirst = false;
     private int curAudioRepresentationCount = 0;
     private int curVideoRepresentationCount = 0;
+
+    transient private final ConfigManager configManager;
+    transient private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public MpdManager(String dashUnitId) {
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    public MpdManager(String dashUnitId, String targetMpdPath) {
+        configManager = AppInstance.getInstance().getConfigManager();
 
         this.dashUnitId = dashUnitId;
+        this.targetMpdPath = targetMpdPath;
         this.mpdParser = new MPDParser();
         try {
             mpdValidator = new MPDValidator(mpdParser, configManager.getValidationXsdPath());
@@ -108,8 +116,16 @@ public class MpdManager {
         return mpd.getMediaPresentationDuration();
     }
 
-    public Long getDurationOfTemplate(Representation representation) {
-        return representation.getSegmentTemplate().getDuration(); // micro-sec
+    public Long getDurationOfTemplate(Representation representation, boolean isRaw) {
+        long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
+        if (isRaw) {
+            double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
+            if (segmentDurationOffsetSec > 0) {
+                long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * 1000000); // to micro-seconds;
+                curSegmentDuration -= segmentDurationOffsetMicroSec; // 파싱될 때 설정된 offset 만큼 다시 빼서 원본 duration 을 얻는다.
+            }
+        }
+        return curSegmentDuration; // micro-sec
     }
 
     public Long getTimeScale(Representation representation) {
@@ -127,17 +143,17 @@ public class MpdManager {
         }
     }
 
-    public long getAudioSegmentDuration() {
+    public long getAudioSegmentDuration(boolean isRaw) {
         List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
         Representation audioRepresentation = representations.get(0);
         if (audioRepresentation != null) {
             // GET from SegmentTemplate
-            Long duration = getDurationOfTemplate(audioRepresentation);
+            Long duration = getDurationOfTemplate(audioRepresentation, isRaw);
             if (duration == null) {
                 // GET from SegmentTimeline
                 duration = audioRepresentation.getSegmentTemplate()
                         .getSegmentTimeline()
-                        .get((int) getAudioSegmentDuration())
+                        .get((int) getAudioSegmentSeqNum())
                         .getD(); // micro-sec
             }
             return duration;
@@ -146,17 +162,17 @@ public class MpdManager {
         }
     }
 
-    public long getVideoSegmentDuration() {
+    public long getVideoSegmentDuration(boolean isRaw) {
         List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
         Representation audioRepresentation = representations.get(0);
         if (audioRepresentation != null) {
             // GET from SegmentTemplate
-            Long duration = getDurationOfTemplate(audioRepresentation);
+            Long duration = getDurationOfTemplate(audioRepresentation, isRaw);
             if (duration == null) {
                 // GET from SegmentTimeline
                 duration = audioRepresentation.getSegmentTemplate()
                         .getSegmentTimeline()
-                        .get((int) getVideoSegmentDuration())
+                        .get((int) getVideoSegmentSeqNum())
                         .getD(); // micro-sec
             }
             return duration;
@@ -184,6 +200,8 @@ public class MpdManager {
 
     ////////////////////////////////////////////////////////////
     public boolean parseMpd(String targetMpdPath) {
+        if (targetMpdPath == null) { return false; }
+
         try {
             /////////////////////////////////////////
             // 1) CHECK FILE STREAM
@@ -467,6 +485,7 @@ public class MpdManager {
                 }
 
                 setCustomMpdOptions();
+                writeMpd();
             }
             /////////////////////////////////////////
 
@@ -505,6 +524,21 @@ public class MpdManager {
         );
         if (isMpdDone) {
             setIsMpdDone(false);
+        }
+    }
+
+    private void writeMpd() {
+        try {
+            String mpdString = writeAsString();
+            if (mpdString == null) { return; }
+
+            fileManager.writeBytes(
+                    targetMpdPath,
+                    mpdString.getBytes(),
+                    false
+            );
+        } catch (Exception e) {
+            logger.warn("[MpdManager({})] Fail to write the mpd. (path={})", dashUnitId, targetMpdPath);
         }
     }
 
@@ -695,6 +729,7 @@ public class MpdManager {
 
         ////////////////////////////////
         // 1) SET Representation
+        // @ Order correction
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         if (isVideoFirst) {
             if (contentType.equals(CONTENT_AUDIO_TYPE)) {
@@ -720,23 +755,29 @@ public class MpdManager {
         }
 
         // 1-1) SET Media segment duration & availabilityTimeOffset
-        double segmentDurationSec = AppInstance.getInstance().getConfigManager().getSegmentDuration(); // seconds
-        long segmentDurationMicroSec = (long) (segmentDurationSec * 1000000); // to micro-seconds;
-        //logger.debug("curSegmentDuration: {}", (long) segmentDurationSec);
+        double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
+        long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * 1000000); // to micro-seconds;
+
+        long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
+        long newSegmentDuration = curSegmentDuration + segmentDurationOffsetMicroSec; // micro-seconds
 
         SegmentTemplate newSegmentTemplate = representation.getSegmentTemplate().buildUpon()
-                .withDuration(segmentDurationMicroSec) // duration
-                .withAvailabilityTimeOffset(segmentDurationSec - StreamConfigManager.AVAILABILITY_TIME_OFFSET_FACTOR) // availabilityTimeOffset
+                .withDuration(newSegmentDuration) // duration
+                .withAvailabilityTimeOffset(
+                        (((double) newSegmentDuration) / 1000000)
+                                - StreamConfigManager.AVAILABILITY_TIME_OFFSET_FACTOR
+                ) // availabilityTimeOffset
                 .build();
         representation = representation.buildUpon().withSegmentTemplate(newSegmentTemplate).build();
-        logger.trace("[MpdManager({})] [{}] Representation > [duration: {}, ato: {}]",
+        /*logger.debug("[MpdManager({})] [{}] Representation > [duration: {}, ato: {}]",
                 dashUnitId, contentType,
                 representation.getSegmentTemplate().getDuration(),
                 representation.getSegmentTemplate().getAvailabilityTimeOffset()
-        );
+        );*/
 
         List<Representation> newVideoRepresentations = new ArrayList<>(representations);
         newVideoRepresentations.set(representationId, representation);
+
         ////////////////////////////////
 
         ////////////////////////////////
@@ -789,10 +830,14 @@ public class MpdManager {
     }
 
     private void setCustomMpdOptions() {
+        Duration curMpdMaxSegmentDuration = mpd.getMaxSegmentDuration();
+        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
+        curMpdMaxSegmentDuration = curMpdMaxSegmentDuration.plusSeconds(segmentDurationOffsetSec);
+
         mpd = mpd.buildUpon()
                 .withMediaPresentationDuration(Duration.ofSeconds(StreamConfigManager.MEDIA_PRESENTATION_DURATION))
                 .withMinBufferTime(Duration.ofSeconds(StreamConfigManager.MIN_BUFFER_TIME))
-                .withMaxSegmentDuration(Duration.ofSeconds((long) AppInstance.getInstance().getConfigManager().getSegmentDuration()))
+                .withMaxSegmentDuration(curMpdMaxSegmentDuration)
                 .build();
     }
 

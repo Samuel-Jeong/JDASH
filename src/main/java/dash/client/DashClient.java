@@ -63,7 +63,7 @@ public class DashClient {
         this.targetMpdPath = fileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
-        this.mpdManager = new MpdManager(dashUnitId);
+        this.mpdManager = new MpdManager(dashUnitId, targetMpdPath);
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
             dashClientVideoFsmManager = new DashClientFsmManager();
