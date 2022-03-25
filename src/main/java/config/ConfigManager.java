@@ -81,8 +81,8 @@ public class ConfigManager {
     public static final String FIELD_CHUNK_NUMBER_FORMAT = "CHUNK_NUMBER_FORMAT";
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
-    public static final String FIELD_SEGMENT_DURATION_OFFSET = "SEGMENT_DURATION_OFFSET";
     public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
+    public static final String FIELD_TIME_OFFSET = "TIME_OFFSET";
 
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
@@ -140,7 +140,7 @@ public class ConfigManager {
     private String chunkNumberFormat = null;
     private String validationXsdPath = null;
     private double segmentDuration = 0.0d;
-    private double segmentDurationOffset = 0.0d;
+    private double timeOffset = 0.0d;
     private int windowSize = 0;
 
     // RTMP
@@ -568,14 +568,14 @@ public class ConfigManager {
             }
         }
 
-        String segmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_SEGMENT_DURATION_OFFSET);
+        String segmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_TIME_OFFSET);
         if (segmentDurationOffsetString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION_OFFSET);
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_TIME_OFFSET);
             System.exit(1);
         } else {
-            this.segmentDurationOffset = Double.parseDouble(segmentDurationOffsetString);
-            if (this.segmentDurationOffset < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION_OFFSET);
+            this.timeOffset = Double.parseDouble(segmentDurationOffsetString);
+            if (this.timeOffset < 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_TIME_OFFSET);
                 System.exit(1);
             }
         }
@@ -832,7 +832,7 @@ public class ConfigManager {
         return remoteAudioSampleRate;
     }
 
-    public double getSegmentDurationOffset() {
-        return segmentDurationOffset;
+    public double getTimeOffset() {
+        return timeOffset;
     }
 }

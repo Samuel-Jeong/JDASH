@@ -15,6 +15,7 @@ import util.module.FileManager;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -346,7 +347,7 @@ public class MpdManager {
             // 4) DYNAMIC STREAM 인 경우 MPD 수정
             if (isRemote) {
                 if (mpd.getType().equals(PresentationType.DYNAMIC)) {
-                    int adaptationId = 0;
+                    /*int adaptationId = 0;
                     if (!configManager.isAudioOnly()) {
                         for (int curVideoId : videoRepresentationIdList) {
                             setCustomRepresentationOptions(adaptationId, curVideoId, CONTENT_VIDEO_TYPE);
@@ -356,7 +357,7 @@ public class MpdManager {
 
                     for (int curAudioId : audioRepresentationIdList) {
                         setCustomRepresentationOptions(adaptationId, curAudioId, CONTENT_AUDIO_TYPE);
-                    }
+                    }*/
 
                     setCustomMpdOptions();
                     writeMpd();
@@ -488,13 +489,13 @@ public class MpdManager {
 
     public Long getDurationOfTemplate(Representation representation, boolean isRaw) {
         long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
-        if (isRaw) {
+        /*if (isRaw) {
             double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
             if (segmentDurationOffsetSec > 0) {
                 long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * MICRO_SEC); // to micro-seconds;
                 curSegmentDuration -= segmentDurationOffsetMicroSec; // 파싱될 때 설정된 offset 만큼 다시 빼서 원본 duration 을 얻는다.
             }
-        }
+        }*/
         return curSegmentDuration; // micro-sec
     }
 
@@ -774,7 +775,7 @@ public class MpdManager {
         }
 
         // 1-1) SET Media segment duration & availabilityTimeOffset
-        double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
+        double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getTimeOffset(); // seconds
         long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * MICRO_SEC); // to micro-seconds;
 
         long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
@@ -848,14 +849,23 @@ public class MpdManager {
     }
 
     private void setCustomMpdOptions() {
-        Duration curMpdMaxSegmentDuration = getMaxSegmentDuration();
-        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getSegmentDurationOffset(); // seconds
-        curMpdMaxSegmentDuration = curMpdMaxSegmentDuration.plusSeconds(segmentDurationOffsetSec);
+        //Duration curMpdMaxSegmentDuration = getMaxSegmentDuration();
+        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getTimeOffset(); // seconds
+        //curMpdMaxSegmentDuration = curMpdMaxSegmentDuration.plusSeconds(segmentDurationOffsetSec);
+
+        OffsetDateTime curAst = mpd.getAvailabilityStartTime();
+        OffsetDateTime newAst = curAst.plusSeconds(segmentDurationOffsetSec);
+        logger.debug("[MpdManager({})] AvailabilityStartTime has changed. ({} > {}, offset={})",
+                dashUnitId,
+                curAst, newAst,
+                segmentDurationOffsetSec
+        );
 
         mpd = mpd.buildUpon()
+                .withAvailabilityStartTime(newAst)
                 .withMediaPresentationDuration(Duration.ofSeconds(configManager.getChunkFileDeletionIntervalSeconds()))
                 //.withMinBufferTime(Duration.ofSeconds(StreamConfigManager.MIN_BUFFER_TIME))
-                .withMaxSegmentDuration(curMpdMaxSegmentDuration)
+                //.withMaxSegmentDuration(curMpdMaxSegmentDuration)
                 .build();
     }
     ////////////////////////////////////////////////////////////
