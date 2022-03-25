@@ -12,6 +12,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import stream.StreamConfigManager;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
@@ -27,6 +28,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
 
     private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
+    private final int retryCount;
+
     private final DashClient dashClient;
     private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
@@ -34,6 +37,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
     ////////////////////////////////////////////////////////////
     public DashVideoHttpClientHandler(DashClient dashClient) {
         this.dashClient = dashClient;
+        this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
     }
     ////////////////////////////////////////////////////////////
 
@@ -70,8 +74,10 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             if (!response.status().equals(HttpResponseStatus.OK)) {
                 // 재시도 로직
                 int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
-                if (curVideoRetryCount > StreamConfigManager.VIDEO_RETRY_LIMIT) {
-                    logger.warn("[DashVideoHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
+                if (curVideoRetryCount > retryCount) {
+                    logger.warn("[DashVideoHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={}, retryCount={})",
+                            dashClient.getDashUnitId(), response.status(), retryCount
+                    );
                     dashClient.stop();
                     channelHandlerContext.close();
                 } else {

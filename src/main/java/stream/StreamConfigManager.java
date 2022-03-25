@@ -31,9 +31,6 @@ public class StreamConfigManager {
     public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 2;
 
-    public static final int AUDIO_RETRY_LIMIT = 5;
-    public static final int VIDEO_RETRY_LIMIT = 5;
-
     public static final int DEFAULT_SEGMENT_START_NUMBER = 1;
     public static final int MIN_BUFFER_TIME = 6; // seconds
     public static final double AVAILABILITY_TIME_OFFSET_FACTOR = 0.033; // seconds

@@ -59,6 +59,7 @@ public class ConfigManager {
     public static final String FIELD_PREPROCESS_INIT_IDLE_TIME = "PREPROCESS_INIT_IDLE_TIME";
     public static final String FIELD_PREPROCESS_TARGET_IP = "PREPROCESS_TARGET_IP";
     public static final String FIELD_PREPROCESS_TARGET_PORT = "PREPROCESS_TARGET_PORT";
+    public static final String FIELD_DOWNLOAD_CHUNK_RETRY_COUNT = "DOWNLOAD_CHUNK_RETRY_COUNT";
 
     // MEDIA
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
@@ -113,11 +114,12 @@ public class ConfigManager {
     // CLIENT
     private boolean enableGui = false;
     private String cameraPath = null;
+    private String httpTargetIp = null;
+    private int httpTargetPort = 0;
     private long preprocessInitIdleTime = 0; // ms
     private String preprocessTargetIp = null;
     private int preprocessTargetPort = 0;
-    private String httpTargetIp = null;
-    private int httpTargetPort = 0;
+    private int downloadChunkRetryCount = 0;
 
     // MEDIA
     private String mediaBasePath = null;
@@ -376,6 +378,18 @@ public class ConfigManager {
             this.preprocessTargetPort = Integer.parseInt(preprocessTargetPort);
             if (this.preprocessTargetPort <= 0 || this.preprocessTargetPort > 65535) {
                 logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+                System.exit(1);
+            }
+        }
+
+        String downloadChunkRetryCountString = getIniValue(SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
+        if (downloadChunkRetryCountString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
+            System.exit(1);
+        } else {
+            this.downloadChunkRetryCount = Integer.parseInt(downloadChunkRetryCountString);
+            if (this.downloadChunkRetryCount < 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
                 System.exit(1);
             }
         }
@@ -660,6 +674,7 @@ public class ConfigManager {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+
     public String getId() {
         return id;
     }
@@ -676,66 +691,6 @@ public class ConfigManager {
         return enableClient;
     }
 
-    public String getStreaming() {
-        return streaming;
-    }
-
-    public String getMediaBasePath() {
-        return mediaBasePath;
-    }
-
-    public String getMediaListPath() {
-        return mediaListPath;
-    }
-
-    public String getCameraPath() {
-        return cameraPath;
-    }
-
-    public String getValidationXsdPath() {
-        return validationXsdPath;
-    }
-
-    public boolean isEnableGui() {
-        return enableGui;
-    }
-
-    public boolean isClearDashDataIfSessionClosed() {
-        return clearDashDataIfSessionClosed;
-    }
-
-    public double getSegmentDuration() {
-        return segmentDuration;
-    }
-
-    public int getWindowSize() {
-        return windowSize;
-    }
-
-    public boolean isAudioOnly() {
-        return audioOnly;
-    }
-
-    public String getPreprocessListenIp() {
-        return preprocessListenIp;
-    }
-
-    public int getPreprocessListenPort() {
-        return preprocessListenPort;
-    }
-
-    public String getPreprocessTargetIp() {
-        return preprocessTargetIp;
-    }
-
-    public int getPreprocessTargetPort() {
-        return preprocessTargetPort;
-    }
-
-    public long getPreprocessInitIdleTime() {
-        return preprocessInitIdleTime;
-    }
-
     public int getThreadCount() {
         return threadCount;
     }
@@ -748,48 +703,20 @@ public class ConfigManager {
         return recvBufSize;
     }
 
-    public String getHttpListenIp() {
-        return httpListenIp;
-    }
-
-    public int getHttpListenPort() {
-        return httpListenPort;
-    }
-
-    public String getHttpTargetIp() {
-        return httpTargetIp;
-    }
-
-    public int getHttpTargetPort() {
-        return httpTargetPort;
-    }
-
-    public String getRtmpPublishIp() {
-        return rtmpPublishIp;
-    }
-
-    public int getRtmpPublishPort() {
-        return rtmpPublishPort;
+    public String getStreaming() {
+        return streaming;
     }
 
     public boolean isEnablePreloadWithDash() {
         return enablePreloadWithDash;
     }
 
-    public String getRepresentationIdFormat() {
-        return representationIdFormat;
+    public String getHttpListenIp() {
+        return httpListenIp;
     }
 
-    public String getChunkNumberFormat() {
-        return chunkNumberFormat;
-    }
-
-    public boolean isEnableValidation() {
-        return enableValidation;
-    }
-
-    public int getChunkFileDeletionIntervalSeconds() {
-        return chunkFileDeletionIntervalSeconds;
+    public int getHttpListenPort() {
+        return httpListenPort;
     }
 
     public int getHttpListenPortBeginOffset() {
@@ -800,8 +727,72 @@ public class ConfigManager {
         return httpListenPortEndOffset;
     }
 
+    public String getPreprocessListenIp() {
+        return preprocessListenIp;
+    }
+
+    public int getPreprocessListenPort() {
+        return preprocessListenPort;
+    }
+
+    public boolean isEnableGui() {
+        return enableGui;
+    }
+
+    public String getCameraPath() {
+        return cameraPath;
+    }
+
+    public String getHttpTargetIp() {
+        return httpTargetIp;
+    }
+
+    public int getHttpTargetPort() {
+        return httpTargetPort;
+    }
+
+    public long getPreprocessInitIdleTime() {
+        return preprocessInitIdleTime;
+    }
+
+    public String getPreprocessTargetIp() {
+        return preprocessTargetIp;
+    }
+
+    public int getPreprocessTargetPort() {
+        return preprocessTargetPort;
+    }
+
+    public int getDownloadChunkRetryCount() {
+        return downloadChunkRetryCount;
+    }
+
+    public String getMediaBasePath() {
+        return mediaBasePath;
+    }
+
+    public String getMediaListPath() {
+        return mediaListPath;
+    }
+
+    public boolean isClearDashDataIfSessionClosed() {
+        return clearDashDataIfSessionClosed;
+    }
+
+    public int getChunkFileDeletionIntervalSeconds() {
+        return chunkFileDeletionIntervalSeconds;
+    }
+
+    public boolean isAudioOnly() {
+        return audioOnly;
+    }
+
     public int getLocalAudioCodec() {
         return localAudioCodec;
+    }
+
+    public int getLocalAudioSampleRate() {
+        return localAudioSampleRate;
     }
 
     public int getLocalVideoCodec() {
@@ -816,6 +807,10 @@ public class ConfigManager {
         return remoteAudioCodec;
     }
 
+    public int getRemoteAudioSampleRate() {
+        return remoteAudioSampleRate;
+    }
+
     public int getRemoteVideoCodec() {
         return remoteVideoCodec;
     }
@@ -824,15 +819,40 @@ public class ConfigManager {
         return remoteVideoPixelFormat;
     }
 
-    public int getLocalAudioSampleRate() {
-        return localAudioSampleRate;
+    public boolean isEnableValidation() {
+        return enableValidation;
     }
 
-    public int getRemoteAudioSampleRate() {
-        return remoteAudioSampleRate;
+    public String getRepresentationIdFormat() {
+        return representationIdFormat;
+    }
+
+    public String getChunkNumberFormat() {
+        return chunkNumberFormat;
+    }
+
+    public String getValidationXsdPath() {
+        return validationXsdPath;
+    }
+
+    public double getSegmentDuration() {
+        return segmentDuration;
     }
 
     public double getTimeOffset() {
         return timeOffset;
     }
+
+    public int getWindowSize() {
+        return windowSize;
+    }
+
+    public String getRtmpPublishIp() {
+        return rtmpPublishIp;
+    }
+
+    public int getRtmpPublishPort() {
+        return rtmpPublishPort;
+    }
+
 }
