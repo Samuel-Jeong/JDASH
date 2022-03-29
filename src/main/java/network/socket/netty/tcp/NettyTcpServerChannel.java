@@ -48,8 +48,8 @@ public class NettyTcpServerChannel extends NettyChannel {
     public void stop () {
         getRecvBuf().clear();
         closeListenChannel();
-        bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
+        bossGroup.shutdownGracefully();
     }
 
     @Override
@@ -75,8 +75,15 @@ public class NettyTcpServerChannel extends NettyChannel {
             getBaseEnvironment().printMsg("Channel is opened. (ip=%s, port=%s)", address, port);
 
             return this.listenChannel;
-        } catch (Exception e) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
+        } catch (Exception e1) {
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is interrupted. (address=%s:%s) (%s)", ip, port, e1.toString());
+            if (listenChannel != null) {
+                try {
+                    listenChannel.closeFuture().sync();
+                } catch (Exception e2) {
+                    // ignore
+                }
+            }
             return null;
         }
     }

@@ -113,13 +113,10 @@ public class DashServer {
 
         ///////////////////////////
         // MpdManager 생성
-        String dashUnitId = configManager.getHttpListenIp()
-                + ":" + configManager.getCameraPath();
+        String dashUnitId = configManager.getHttpListenIp() + ":" + configManager.getCameraPath();
         DashUnit localDashUnit = addDashUnit(
-                StreamType.DYNAMIC,
-                dashUnitId,
-                null,
-                0
+                StreamType.DYNAMIC, dashUnitId,
+                null, 0, false
         );
 
         FileManager fileManager = new FileManager();
@@ -271,13 +268,13 @@ public class DashServer {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd, long expires) {
+    public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd, long expires, boolean isDynamic) {
         if (getDashUnitById(dashUnitId) != null) { return null; }
 
         try {
             dashUnitMapLock.lock();
 
-            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd, expires);
+            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd, expires, isDynamic);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
             logger.debug("[DashServer] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;
@@ -297,6 +294,7 @@ public class DashServer {
             dashUnitMapLock.lock();
 
             dashUnit.finishLiveStreaming();
+            dashUnit.stop();
             logger.debug("[DashServer] [(-)DELETED] \n{}", dashUnit);
 
             dashUnitMap.remove(dashUnitId);

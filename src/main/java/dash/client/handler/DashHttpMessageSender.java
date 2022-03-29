@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
+import service.system.ResourceManager;
 
 import java.net.URI;
 
@@ -45,6 +46,11 @@ public class DashHttpMessageSender {
         this.dashUnitId = dashUnitId;
         configManager = AppInstance.getInstance().getConfigManager();
 
+        ResourceManager resourceManager = ServiceManager.getInstance()
+                .getDashServer()
+                .getBaseEnvironment()
+                .getPortResourceManager();
+
         socketManager = new SocketManager(
                 baseEnvironment,
                 false, false,
@@ -56,11 +62,7 @@ public class DashHttpMessageSender {
         // AUDIO
         localAudioListenAddress = new NetAddress(
                 configManager.getHttpListenIp(),
-                ServiceManager.getInstance()
-                        .getDashServer()
-                        .getBaseEnvironment()
-                        .getPortResourceManager()
-                        .takePort(),
+                resourceManager.takePort(),
                 true, SocketProtocol.TCP
         );
 
@@ -68,11 +70,7 @@ public class DashHttpMessageSender {
         if (!configManager.isAudioOnly()) {
             localVideoListenAddress = new NetAddress(
                     configManager.getHttpListenIp(),
-                    ServiceManager.getInstance()
-                            .getDashServer()
-                            .getBaseEnvironment()
-                            .getPortResourceManager()
-                            .takePort(),
+                    resourceManager.takePort(),
                     true, SocketProtocol.TCP
             );
         }
@@ -80,11 +78,7 @@ public class DashHttpMessageSender {
         // MPD
         localMpdListenAddress = new NetAddress(
                 configManager.getHttpListenIp(),
-                ServiceManager.getInstance()
-                        .getDashServer()
-                        .getBaseEnvironment()
-                        .getPortResourceManager()
-                        .takePort(),
+                resourceManager.takePort(),
                 true, SocketProtocol.TCP
         );
 
@@ -109,78 +103,128 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void start(DashClient dashClient) {
+    public boolean start(DashClient dashClient) {
+        ResourceManager resourceManager = ServiceManager.getInstance()
+                .getDashServer()
+                .getBaseEnvironment()
+                .getPortResourceManager();
+
         // AUDIO
         GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
-        localAudioGroupSocket.getListenSocket().openListenChannel();
-        localAudioGroupSocket.addDestination(
+        if (!localAudioGroupSocket.getListenSocket().openListenChannel()) {
+            resourceManager.restorePort(localAudioListenAddress.getPort());
+            logger.warn("[DashHttpMessageSender({})] Fail to open the local audio listen channel.", dashUnitId);
+            return false;
+        }
+
+        if (!localAudioGroupSocket.addDestination(
                 targetAddress,
                 null,
                 dashUnitId.hashCode(),
-                new HttpAudioMessageClientInitializer(sslContext, dashClient)
-        );
+                new HttpAudioMessageClientInitializer(sslContext, dashClient))) {
+            localAudioGroupSocket.removeAllDestinations();
+            localAudioGroupSocket.getListenSocket().stop();
+            resourceManager.restorePort(localAudioListenAddress.getPort());
+            logger.warn("[DashHttpMessageSender({})] Fail to open the local audio connect channel.", dashUnitId);
+            return false;
+        }
 
         // VIDEO
         if (!configManager.isAudioOnly() && localVideoListenAddress != null) {
             GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-            localVideoGroupSocket.getListenSocket().openListenChannel();
-            localVideoGroupSocket.addDestination(
+            if (!localVideoGroupSocket.getListenSocket().openListenChannel()) {
+                localAudioGroupSocket.removeAllDestinations();
+                localAudioGroupSocket.getListenSocket().stop();
+                resourceManager.restorePort(localAudioListenAddress.getPort());
+
+                resourceManager.restorePort(localVideoListenAddress.getPort());
+                return false;
+            }
+
+            if (!localVideoGroupSocket.addDestination(
                     targetAddress,
                     null,
                     dashUnitId.hashCode(),
-                    new HttpVideoMessageClientInitializer(sslContext, dashClient)
-            );
-        }
+                    new HttpVideoMessageClientInitializer(sslContext, dashClient))) {
+                localAudioGroupSocket.removeAllDestinations();
+                localAudioGroupSocket.getListenSocket().stop();
+                resourceManager.restorePort(localAudioListenAddress.getPort());
 
-        // MPD
-        GroupSocket localMpdGroupSocket = socketManager.getSocket(localMpdListenAddress);
-        localMpdGroupSocket.getListenSocket().openListenChannel();
-        localMpdGroupSocket.addDestination(
-                targetAddress,
-                null,
-                dashUnitId.hashCode(),
-                new HttpMpdMessageClientInitializer(sslContext, dashClient)
-        );
-    }
-
-    public void stop() {
-        // AUDIO
-        GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
-        localAudioGroupSocket.getListenSocket().closeListenChannel();
-
-        DestinationRecord audioDestinationRecord = localAudioGroupSocket.getDestination(dashUnitId.hashCode());
-        if (audioDestinationRecord == null) { return; }
-
-        NettyChannel audioTargetNettyChannel = audioDestinationRecord.getNettyChannel();
-        if (audioTargetNettyChannel != null) {
-            audioTargetNettyChannel.closeConnectChannel();
-        }
-
-        // VIDEO
-        if (!configManager.isAudioOnly() && localVideoListenAddress != null) {
-            GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-            localVideoGroupSocket.getListenSocket().closeListenChannel();
-
-            DestinationRecord destinationRecord = localVideoGroupSocket.getDestination(dashUnitId.hashCode());
-            if (destinationRecord == null) { return; }
-
-            NettyChannel videoTargetNettyChannel = destinationRecord.getNettyChannel();
-            if (videoTargetNettyChannel != null) {
-                videoTargetNettyChannel.closeConnectChannel();
+                localVideoGroupSocket.removeAllDestinations();
+                localVideoGroupSocket.getListenSocket().stop();
+                resourceManager.restorePort(localVideoListenAddress.getPort());
+                return false;
             }
         }
 
         // MPD
         GroupSocket localMpdGroupSocket = socketManager.getSocket(localMpdListenAddress);
-        localMpdGroupSocket.getListenSocket().closeListenChannel();
+        if (!localMpdGroupSocket.getListenSocket().openListenChannel()) {
+            localAudioGroupSocket.removeAllDestinations();
+            localAudioGroupSocket.getListenSocket().stop();
+            resourceManager.restorePort(localAudioListenAddress.getPort());
 
-        DestinationRecord destinationRecord = localMpdGroupSocket.getDestination(dashUnitId.hashCode());
-        if (destinationRecord == null) { return; }
+            if (localVideoListenAddress != null) {
+                GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
+                localVideoGroupSocket.removeAllDestinations();
+                localVideoGroupSocket.getListenSocket().stop();
+                resourceManager.restorePort(localVideoListenAddress.getPort());
+            }
 
-        NettyChannel mpdTargetNettyChannel = destinationRecord.getNettyChannel();
-        if (mpdTargetNettyChannel != null) {
-            mpdTargetNettyChannel.closeConnectChannel();
+            resourceManager.restorePort(localMpdListenAddress.getPort());
+            return false;
         }
+
+        if (!localMpdGroupSocket.addDestination(
+                targetAddress,
+                null,
+                dashUnitId.hashCode(),
+                new HttpMpdMessageClientInitializer(sslContext, dashClient))) {
+            localAudioGroupSocket.removeAllDestinations();
+            localAudioGroupSocket.getListenSocket().stop();
+            resourceManager.restorePort(localAudioListenAddress.getPort());
+
+            if (localVideoListenAddress != null) {
+                GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
+                localVideoGroupSocket.removeAllDestinations();
+                localVideoGroupSocket.getListenSocket().stop();
+                resourceManager.restorePort(localVideoListenAddress.getPort());
+            }
+
+            localMpdGroupSocket.removeAllDestinations();
+            localMpdGroupSocket.getListenSocket().stop();
+            resourceManager.restorePort(localMpdListenAddress.getPort());
+            return false;
+        }
+
+        return true;
+    }
+
+    public void stop() {
+        ResourceManager resourceManager = ServiceManager.getInstance()
+                .getDashServer()
+                .getBaseEnvironment()
+                .getPortResourceManager();
+
+        // AUDIO
+        GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
+        localAudioGroupSocket.removeAllDestinations();
+        localAudioGroupSocket.getListenSocket().closeListenChannel();
+        resourceManager.restorePort(localAudioListenAddress.getPort());
+
+        // VIDEO
+        if (!configManager.isAudioOnly() && localVideoListenAddress != null) {
+            GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
+            localVideoGroupSocket.removeAllDestinations();
+            localVideoGroupSocket.getListenSocket().closeListenChannel();
+            resourceManager.restorePort(localVideoListenAddress.getPort());
+        }
+
+        // MPD
+        GroupSocket localMpdGroupSocket = socketManager.getSocket(localMpdListenAddress);
+        localMpdGroupSocket.removeAllDestinations();
+        localMpdGroupSocket.getListenSocket().closeListenChannel();
+        resourceManager.restorePort(localMpdListenAddress.getPort());
     }
     ////////////////////////////////////////////////////////////
 

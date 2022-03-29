@@ -51,7 +51,7 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashUnit(StreamType type, String id, MPD mpd, long expires) {
+    public DashUnit(StreamType type, String id, MPD mpd, long expires, boolean isDynamic) {
         this.type = type;
         this.id = id;
         this.initiationTime = System.currentTimeMillis();
@@ -59,13 +59,15 @@ public class DashUnit {
         this.expires = expires;
 
         this.REMOTE_CAMERA_SERVICE_SCHEDULE_KEY = "REMOTE_CAMERA_SERVICE_SCHEDULE_KEY:" + id;
-        if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
-            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
-        }
-
         this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
-        if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
-            logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
+        if (isDynamic) {
+            if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
+                logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
+            }
+
+            if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
+                logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
+            }
         }
     }
     ////////////////////////////////////////////////////////////
@@ -107,7 +109,10 @@ public class DashUnit {
                         sourceUri,
                         fileManager.getParentPathFromUri(mpdPath)
                 );
-                dashClient.start();
+                if (!dashClient.start()) {
+                    logger.warn("[DashUnit(id={})] [-RUN FAIL] Dash client streaming", id);
+                    return;
+                }
                 dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
 
                 //////////////////////////////
@@ -179,6 +184,11 @@ public class DashUnit {
 
             isLiveStreaming.set(false);
         }
+    }
+
+    public void stop() {
+        scheduleManager.stopAll(OLD_FILE_CONTROL_SCHEDULE_KEY);
+        scheduleManager.stopAll(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
     }
 
     public void clearMpdPath() {

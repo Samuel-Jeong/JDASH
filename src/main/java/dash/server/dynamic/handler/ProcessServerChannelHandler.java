@@ -121,10 +121,8 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(uri);
                     logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                     DashUnit dashUnit = dashServer.addDashUnit(
-                            StreamType.DYNAMIC,
-                            dashUnitId,
-                            null,
-                            expires
+                            StreamType.DYNAMIC, dashUnitId,
+                            null, expires, true
                     );
 
                     if (dashUnit == null) {
@@ -143,13 +141,13 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     File mpdPathFile = new File(mpdPath);
                     if (!mpdPathFile.exists()) {
                         if (mpdPathFile.mkdirs()) {
-                            logger.debug("[DashMessageHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
+                            logger.debug("[ProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, sourceUri={})", mpdPath, uri, sourceUri);
                         }
                     }
 
                     String uriFileName = fileManager.getFileNameFromUri(uri);
                     mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
-                    logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, rtmpUri={})", mpdPath, uri, sourceUri);
+                    logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, sourceUri={})", mpdPath, uri, sourceUri);
 
                     dashUnit.setInputFilePath(sourceUri);
                     dashUnit.setOutputFilePath(mpdPath);
@@ -257,11 +255,13 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         logger.warn("ProcessServerChannelHandler is inactive.");
+        ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.warn("ProcessServerChannelHandler.Exception", cause);
+        ctx.close();
     }
 
     ////////////////////////////////////////////////////////////////////////////////

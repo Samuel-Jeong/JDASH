@@ -47,6 +47,14 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
         cause.printStackTrace();
         ctx.close();
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        if (dashClient != null) {
+            logger.warn("DashAudioHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
+        }
+        ctx.close();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

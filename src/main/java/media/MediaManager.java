@@ -96,7 +96,7 @@ public class MediaManager {
                             streamType,
                              AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
                                      fileManager.getFilePathWithoutExtensionFromUri(fullPath),
-                            null, 0
+                            null, 0, false
                     );
 
                     if (dashUnit != null) {
@@ -121,9 +121,10 @@ public class MediaManager {
                                             fileManager.getFileNameFromUri(mpdPath)
                                     )
                             );
-                            dashClient.start();
-                            dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
-                            dashUnit.setDashClient(dashClient);
+                            if (dashClient.start()) {
+                                dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
+                                dashUnit.setDashClient(dashClient);
+                            }
                         }
                     }
                 }

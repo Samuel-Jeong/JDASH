@@ -81,7 +81,14 @@ public class DashClient {
         );
     }
 
-    public void start() {
+    public boolean start() {
+        //////////////////////////////
+        // SETTING : HTTP
+        if (!this.dashHttpMessageSender.start(this)) {
+            return false;
+        }
+        //////////////////////////////
+
         //////////////////////////////
         // SETTING : FSM
         this.dashClientAudioFsmManager.init(this);
@@ -108,11 +115,6 @@ public class DashClient {
         //////////////////////////////
 
         //////////////////////////////
-        // SETTING : HTTP
-        this.dashHttpMessageSender.start(this);
-        //////////////////////////////
-
-        //////////////////////////////
         // SETTING : TARGET PATH
         if (!fileManager.isExist(targetBasePath)) {
             //FileManager.deleteFile(targetBasePath);
@@ -126,6 +128,7 @@ public class DashClient {
         //////////////////////////////
 
         logger.debug("[DashClient({})] START", dashUnitId);
+        return true;
     }
 
     public void stop() {

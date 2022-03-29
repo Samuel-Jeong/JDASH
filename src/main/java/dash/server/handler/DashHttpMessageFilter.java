@@ -184,6 +184,11 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     public void channelReadComplete(final ChannelHandlerContext ctx) {
         ctx.flush();
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        ctx.close();
+    }
     ////////////////////////////////////////////////////////////
 
 }

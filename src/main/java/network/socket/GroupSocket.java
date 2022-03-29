@@ -91,7 +91,10 @@ public class GroupSocket { // SEND-ONLY
                 }
             }
         }
-        if (isSameDestination == 2) { return false; }
+        if (isSameDestination == 2) {
+            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to add the channel. Duplicated destination is detected. (key=%s)", sessionId);
+            return false;
+        }
 
         NettyChannel nettyChannel;
         if (netAddress.getSocketProtocol().equals(SocketProtocol.TCP)) {

@@ -47,6 +47,14 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
         cause.printStackTrace();
         ctx.close();
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        if (dashClient != null) {
+            logger.warn("DashVideoHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
+        }
+        ctx.close();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

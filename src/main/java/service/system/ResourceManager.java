@@ -72,6 +72,7 @@ public class ResourceManager {
         if (!channelQueues.contains(port)) {
             try {
                 channelQueues.offer(port);
+                logger.debug("Success to restore port(={}) resource in Queue.", port);
             } catch (Exception e) {
                 logger.warn("Exception to restore port(={}) resource in Queue.", port, e);
             }
@@ -81,6 +82,7 @@ public class ResourceManager {
     public void removePort (int port) {
         try {
             channelQueues.remove(port);
+            logger.debug("Success to remove port(={}) resource in Queue.", port);
         } catch (Exception e) {
             logger.warn("Exception to remove to port(={}) resource in Queue.", port, e);
         }

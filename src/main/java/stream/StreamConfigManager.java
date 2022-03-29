@@ -43,25 +43,15 @@ public class StreamConfigManager {
                                       String uriFileName, double segmentDuration, int windowSize) {
         if (fFmpegFrameRecorder == null) { return; }
 
-        /*if (!configManager.isAudioOnly()) {
-            fFmpegFrameRecorder.setOption("-map", "0");
-            fFmpegFrameRecorder.setOption("-map", "0");
-            fFmpegFrameRecorder.setOption("-map", "0");
-
+        if (!configManager.isAudioOnly()) {
             fFmpegFrameRecorder.setOption("b:v:0", "800k");
             fFmpegFrameRecorder.setOption("s:v:0", V_SIZE_5);
-            fFmpegFrameRecorder.setOption("profile:v:0", "main");
+            fFmpegFrameRecorder.setOption("profile:v:0", "high");
 
             fFmpegFrameRecorder.setOption("b:v:1", "500k");
             fFmpegFrameRecorder.setOption("s:v:1", V_SIZE_3);
-            fFmpegFrameRecorder.setOption("profile:v:1", "main");
-
-            fFmpegFrameRecorder.setOption("b:v:2", "300k");
-            fFmpegFrameRecorder.setOption("s:v:2", V_SIZE_2);
-            fFmpegFrameRecorder.setOption("profile:v:2", "baseline");
-
-            fFmpegFrameRecorder.setOption("bf", "1");
-        }*/
+            fFmpegFrameRecorder.setOption("profile:v:1", "baseline");
+        }
 
         fFmpegFrameRecorder.setFormat("dash");
         fFmpegFrameRecorder.setOption("init_seg_name", uriFileName + INIT_SEGMENT_POSTFIX);

@@ -71,7 +71,8 @@ public class DynamicMediaManager {
         // CLOSE LISTEN CHANNEL
         if (localGroupSocket != null) {
             // REMOVE TARGET CHANNEL
-            localGroupSocket.removeDestination(sessionId);
+            //localGroupSocket.removeDestination(sessionId);
+            localGroupSocket.removeAllDestinations();
 
             localGroupSocket.getListenSocket().closeListenChannel();
             socketManager.removeSocket(localListenAddress);

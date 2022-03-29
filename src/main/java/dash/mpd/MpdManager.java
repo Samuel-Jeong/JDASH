@@ -22,6 +22,22 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * @ Adaptation-Sets attributes
+ *
+ *      Segment alignment
+ *          - Permits non-overlapping decoding and presentation of segments from different representations
+ *          (중복되지 않는 디코딩 및 다양한 representations 세그먼트 표시 가능)
+ *
+ *      Stream Access Points (SAPs)
+ *          - Presentation time and position in segments at which random access and switching can occur
+ *          (랜덤 액세스 및 전환이 발생할 수 있는 세그먼트에서의 프레젠테이션 시간과 위치)
+ *
+ *      BitstreamSwitching
+ *          - Concatenation of segments from different representations results in conforming bitstream
+ *          (하나의 비트스트림에 서로 다른 representations 의 세그먼트를 연결할 수 있게 하는 옵션)
+ *
+ */
 public class MpdManager {
 
     ////////////////////////////////////////////////////////////

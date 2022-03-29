@@ -81,6 +81,13 @@ public class NettyUdpChannel extends NettyChannel {
             return this.listenChannel;
         } catch (Exception e) {
             getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
+            if (listenChannel != null) {
+                try {
+                    listenChannel.closeFuture().sync();
+                } catch (Exception e2) {
+                    // ignore
+                }
+            }
             return null;
         }
     }
@@ -103,6 +110,13 @@ public class NettyUdpChannel extends NettyChannel {
             return channel;
         } catch (Exception e) {
             getBaseEnvironment().printMsg(DebugLevel.WARN, "[UDP] Connect Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
+            if (connectChannel != null) {
+                try {
+                    connectChannel.closeFuture().sync();
+                } catch (Exception e2) {
+                    // ignore
+                }
+            }
             return null;
         }
     }

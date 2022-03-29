@@ -30,10 +30,6 @@ public class NetInterface {
 
     ////////////////////////////////////////////////////////////
     // FUNCTIONS
-    public void addSocket() {
-
-    }
-
     public int getThreadCount() {
         return threadCount;
     }

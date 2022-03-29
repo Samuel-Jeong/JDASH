@@ -47,6 +47,14 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
         cause.printStackTrace();
         ctx.close();
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        if (dashClient != null) {
+            logger.warn("DashMpdHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
+        }
+        ctx.close();
+    }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
