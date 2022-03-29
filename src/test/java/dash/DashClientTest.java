@@ -8,6 +8,7 @@ import instance.DebugLevel;
 import org.junit.Test;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
+import service.system.ResourceManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,25 +25,28 @@ public class DashClientTest {
 
         BaseEnvironment baseEnvironment = new BaseEnvironment(
                 new ScheduleManager(),
-                null,
+                new ResourceManager(5000, 7000),
                 DebugLevel.DEBUG
         );
+        baseEnvironment.start();
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
-        String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/outdoor_market_ambiance_Dolby";
+        //String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/outdoor_market_ambiance_Dolby";
+        String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/jamesj";
         DashClient dashClient = new DashClient(
                 "TEST_1", baseEnvironment,
                 "http://" + configManager.getHttpTargetIp() +
                         ":" + configManager.getHttpTargetPort() +
-                        "/test/outdoor_market_ambiance_Dolby/outdoor_market_ambiance_Dolby.mpd",
+                        "/live/jamesj/jamesj.mpd",
+                        //"/test/outdoor_market_ambiance_Dolby/outdoor_market_ambiance_Dolby.mpd",
                 targetBasePath
         );
         dashClient.start();
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
-        dashClient.sendHttpGetRequest("http://192.168.7.33:5858/test/outdoor_market_ambiance_Dolby.mpd", MessageType.MPD);
+        dashClient.sendHttpGetRequest("http://192.168.7.33:5858/live/jamesj", MessageType.MPD);
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////

@@ -13,6 +13,7 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
@@ -74,9 +75,12 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
 
             if (!response.status().equals(HttpResponseStatus.OK)) {
                 logger.warn("[DashMpdHttpClientHandler({})] [-] [MPD] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), response.status());
-                dashClient.stop();
+                //dashClient.stop();
+                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
                 channelHandlerContext.close();
                 return;
+            } else {
+                dashClient.stopMpdTimeout();
             }
 
             if (logger.isTraceEnabled()) {

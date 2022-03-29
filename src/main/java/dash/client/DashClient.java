@@ -9,13 +9,19 @@ import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import stream.StreamConfigManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,6 +44,14 @@ public class DashClient {
 
     private String targetAudioInitSegPath;
     private String targetVideoInitSegPath;
+
+    private static final long TIMEOUT = 10000; // ms
+    transient private final Timer mpdTimer = new HashedWheelTimer();
+    transient private Timeout mpdTimeout = null;
+    transient private final Timer audioTimer = new HashedWheelTimer();
+    transient private Timeout audioTimeout = null;
+    transient private final Timer videoTimer = new HashedWheelTimer();
+    transient private Timeout videoTimeout = null;
 
     private final AtomicInteger audioRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isAudioRetrying = new AtomicBoolean(false);
@@ -132,6 +146,10 @@ public class DashClient {
     }
 
     public void stop() {
+        stopMpdTimeout();
+        stopAudioTimeout();
+        stopVideoTimeout();
+
         this.dashClientAudioFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
         if (this.dashClientVideoFsmManager != null) {
             dashClientVideoFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
@@ -159,12 +177,15 @@ public class DashClient {
         switch (messageType) {
             case MPD:
                 dashHttpMessageSender.sendMessageForMpd(httpRequest);
-                break;
-            case VIDEO:
-                dashHttpMessageSender.sendMessageForVideo(httpRequest);
+                startMpdTimeout();
                 break;
             case AUDIO:
                 dashHttpMessageSender.sendMessageForAudio(httpRequest);
+                startAudioTimeout();
+                break;
+            case VIDEO:
+                dashHttpMessageSender.sendMessageForVideo(httpRequest);
+                startVideoTimeout();
                 break;
             default:
                 break;
@@ -297,6 +318,80 @@ public class DashClient {
 
     public void setIsVideoRetrying(boolean isRetrying) {
         isVideoRetrying.set(isRetrying);
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    public Timeout getMpdTimeout() {
+        return mpdTimeout;
+    }
+
+    public void startMpdTimeout() {
+        if (mpdTimeout != null) { return; }
+
+        mpdTimeout = mpdTimer.newTimeout(
+                timeout -> {
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    logger.warn("[DashClient({})] MPD REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
+                }, TIMEOUT, TimeUnit.MILLISECONDS
+        );
+        //logger.debug("[DashClient({})] MPD REQUEST TIMER ON.", dashUnitId);
+    }
+
+    public void stopMpdTimeout() {
+        if (mpdTimeout != null) {
+            mpdTimeout.cancel();
+            mpdTimeout = null;
+            //logger.debug("[DashClient({})] MPD REQUEST TIMER OFF.", dashUnitId);
+        }
+    }
+
+    public Timeout getAudioTimeout() {
+        return audioTimeout;
+    }
+
+    public void startAudioTimeout() {
+        if (audioTimeout != null) { return; }
+
+        audioTimeout = audioTimer.newTimeout(
+                timeout -> {
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    logger.warn("[DashClient({})] AUDIO REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
+                }, TIMEOUT, TimeUnit.MILLISECONDS
+        );
+        //logger.debug("[DashClient({})] AUDIO REQUEST TIMER ON.", dashUnitId);
+    }
+
+    public void stopAudioTimeout() {
+        if (audioTimeout != null) {
+            audioTimeout.cancel();
+            audioTimeout = null;
+            //logger.debug("[DashClient({})] AUDIO REQUEST TIMER OFF.", dashUnitId);
+        }
+    }
+
+    public Timeout getVideoTimeout() {
+        return videoTimeout;
+    }
+
+    public void startVideoTimeout() {
+        if (videoTimeout != null) { return; }
+
+        videoTimeout = videoTimer.newTimeout(
+                timeout -> {
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    logger.warn("[DashClient({})] VIDEO REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
+                }, TIMEOUT, TimeUnit.MILLISECONDS
+        );
+        //logger.debug("[DashClient({})] VIDEO REQUEST TIMER ON.", dashUnitId);
+    }
+
+    public void stopVideoTimeout() {
+        if (videoTimeout != null) {
+            videoTimeout.cancel();
+            videoTimeout = null;
+            //logger.debug("[DashClient({})] VIDEO REQUEST TIMER OFF.", dashUnitId);
+        }
     }
     ////////////////////////////////////////////////////////////
 

@@ -17,7 +17,6 @@ import network.socket.netty.NettyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.ServiceManager;
 import service.system.ResourceManager;
 
 import java.net.URI;
@@ -29,27 +28,33 @@ public class DashHttpMessageSender {
 
     public static final String HTTP_PREFIX = "http";
 
+    private final BaseEnvironment baseEnvironment;
+    private final ConfigManager configManager;
+
     private final String dashUnitId;
     private String host = null;
+
+    private final boolean isSsl;
     private SslContext sslContext = null;
 
-    private final ConfigManager configManager;
-    private final SocketManager socketManager;
-    private final NetAddress localAudioListenAddress;
+    private SocketManager socketManager = null;
+    private NetAddress localAudioListenAddress = null;
     private NetAddress localVideoListenAddress = null;
-    private final NetAddress localMpdListenAddress;
-    private final NetAddress targetAddress;
+    private NetAddress localMpdListenAddress = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashHttpMessageSender(String dashUnitId, BaseEnvironment baseEnvironment, boolean isSsl) {
         this.dashUnitId = dashUnitId;
-        configManager = AppInstance.getInstance().getConfigManager();
+        this.baseEnvironment = baseEnvironment;
+        this.isSsl = isSsl;
+        this.configManager = AppInstance.getInstance().getConfigManager();
+    }
+    ////////////////////////////////////////////////////////////
 
-        ResourceManager resourceManager = ServiceManager.getInstance()
-                .getDashServer()
-                .getBaseEnvironment()
-                .getPortResourceManager();
+    ////////////////////////////////////////////////////////////
+    public boolean start(DashClient dashClient) {
+        ResourceManager resourceManager = baseEnvironment.getPortResourceManager();
 
         socketManager = new SocketManager(
                 baseEnvironment,
@@ -82,7 +87,7 @@ public class DashHttpMessageSender {
                 true, SocketProtocol.TCP
         );
 
-        targetAddress = new NetAddress(
+        NetAddress targetAddress = new NetAddress(
                 configManager.getHttpTargetIp(),
                 configManager.getHttpTargetPort(),
                 true, SocketProtocol.TCP
@@ -99,15 +104,6 @@ public class DashHttpMessageSender {
         socketManager.addSocket(localAudioListenAddress, new HttpMessageServerInitializer());
         if (localVideoListenAddress != null) { socketManager.addSocket(localVideoListenAddress, new HttpMessageServerInitializer()); }
         socketManager.addSocket(localMpdListenAddress, new HttpMessageServerInitializer());
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    public boolean start(DashClient dashClient) {
-        ResourceManager resourceManager = ServiceManager.getInstance()
-                .getDashServer()
-                .getBaseEnvironment()
-                .getPortResourceManager();
 
         // AUDIO
         GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
@@ -201,10 +197,11 @@ public class DashHttpMessageSender {
     }
 
     public void stop() {
-        ResourceManager resourceManager = ServiceManager.getInstance()
-                .getDashServer()
-                .getBaseEnvironment()
-                .getPortResourceManager();
+        if (socketManager == null || localAudioListenAddress == null || localMpdListenAddress == null) {
+            return;
+        }
+
+        ResourceManager resourceManager = baseEnvironment.getPortResourceManager();
 
         // AUDIO
         GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
@@ -248,19 +245,19 @@ public class DashHttpMessageSender {
     }
 
     public void sendMessageForMpd(HttpRequest httpRequest) {
-        if (httpRequest == null) { return; }
+        if (httpRequest == null || socketManager == null || localMpdListenAddress == null) { return; }
 
         sendMessage(socketManager.getSocket(localMpdListenAddress), httpRequest);
     }
 
     public void sendMessageForVideo(HttpRequest httpRequest) {
-        if (httpRequest == null || localVideoListenAddress == null) { return; }
+        if (httpRequest == null || socketManager == null || localVideoListenAddress == null) { return; }
 
         sendMessage(socketManager.getSocket(localVideoListenAddress), httpRequest);
     }
 
     public void sendMessageForAudio(HttpRequest httpRequest) {
-        if (httpRequest == null) { return; }
+        if (httpRequest == null || socketManager == null || localAudioListenAddress == null) { return; }
 
         sendMessage(socketManager.getSocket(localAudioListenAddress), httpRequest);
     }

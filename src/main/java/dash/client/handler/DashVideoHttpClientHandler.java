@@ -13,6 +13,7 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.ServiceManager;
 import stream.StreamConfigManager;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
@@ -86,7 +87,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     logger.warn("[DashVideoHttpClientHandler({})] [-] [VIDEO] !!! RECV NOT OK. DashClient will be stopped. (status={}, retryCount={})",
                             dashClient.getDashUnitId(), response.status(), retryCount
                     );
-                    dashClient.stop();
+                    //dashClient.stop();
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
                     channelHandlerContext.close();
                 } else {
                     dashClient.setIsVideoRetrying(true);
@@ -119,6 +121,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 }
                 return;
             } else {
+                dashClient.stopVideoTimeout();
+
                 if (dashClient.getVideoRetryCount() > 0) {
                     dashClient.setVideoRetryCount(0);
                     dashClient.setIsVideoRetrying(false);
