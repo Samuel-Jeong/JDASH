@@ -801,8 +801,14 @@ public class MpdManager {
     public void setSegmentStartNumber(String contentType) {
         if (contentType == null) { return; }
 
-        int representationId = getRepresentationIndex(contentType);
+        // MPD 최초 수신할 때만 경과 시간에 따라 Segment start number 를 설정한다.
+        if (contentType.equals(CONTENT_VIDEO_TYPE)) {
+            if (getVideoSegmentSeqNum() > 1) { return; }
+        } else {
+            if (getAudioSegmentSeqNum() > 1) { return; }
+        }
 
+        int representationId = getRepresentationIndex(contentType);
         List<Representation> representations = getRepresentations(contentType);
         if (representations == null || representations.isEmpty()) {
             logger.warn("[MpdManager({})] [{}] Fail to set segment start number. Representations is not defined.", dashUnitId, contentType);
