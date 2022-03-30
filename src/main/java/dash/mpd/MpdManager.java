@@ -780,9 +780,6 @@ public class MpdManager {
         }
 
         calculateSegmentNumber(contentType);
-        logger.debug("[MpdManager({})] [{}] Media Segment's start number is [{}].",
-                dashUnitId, contentType, getStartNumber(representation)
-        );
     }
     ////////////////////////////////////////////////////////////
 
