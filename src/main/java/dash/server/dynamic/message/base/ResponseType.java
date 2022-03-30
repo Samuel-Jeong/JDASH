@@ -4,6 +4,7 @@ public class ResponseType {
 
     public static final String REASON_SUCCESS = "SUCCESS";
     public static final String REASON_NOT_FOUND = "NOT FOUND";
+    public static final String REASON_RESOURCE_FULL = "RESOURCE FULL";
     public static final String REASON_ALREADY_EXIST = "ALREADY EXIST";
 
     public static final int UNKNOWN = 0;

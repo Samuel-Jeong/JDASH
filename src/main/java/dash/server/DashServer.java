@@ -63,6 +63,7 @@ public class DashServer {
 
     private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
+    private final int maxDashUnitLimit;
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     ////////////////////////////////////////////////////////////
@@ -70,6 +71,7 @@ public class DashServer {
     ////////////////////////////////////////////////////////////
     public DashServer() {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+        maxDashUnitLimit = configManager.getMaxDashUnitLimit();
 
         ///////////////////////////
         // 인스턴스 생성
@@ -118,6 +120,11 @@ public class DashServer {
                 StreamType.DYNAMIC, dashUnitId,
                 null, 0, false
         );
+
+        if (localDashUnit == null) {
+            logger.error("[DashServer] Fail to add a local dash unit. Fail to initiate service. Please check config.");
+            System.exit(1);
+        }
 
         FileManager fileManager = new FileManager();
         localDashUnit.setInputFilePath(
@@ -269,17 +276,22 @@ public class DashServer {
 
     ////////////////////////////////////////////////////////////
     public DashUnit addDashUnit(StreamType type, String dashUnitId, MPD mpd, long expires, boolean isDynamic) {
-        if (getDashUnitById(dashUnitId) != null) { return null; }
+        DashUnit dashUnit = getDashUnitById(dashUnitId);
+        if (dashUnit != null) { return dashUnit; }
+        if (dashUnitMap.size() == maxDashUnitLimit) {
+            logger.warn("[DashServer] Fail to add a dash unit. List is full. (id={})", dashUnitId);
+            return null;
+        }
 
         try {
             dashUnitMapLock.lock();
 
-            DashUnit dashUnit = new DashUnit(type, dashUnitId, mpd, expires, isDynamic);
+            dashUnit = new DashUnit(type, dashUnitId, mpd, expires, isDynamic);
             dashUnitMap.putIfAbsent(dashUnitId, dashUnit);
             logger.debug("[DashServer] [(+)CREATED] \n{}", dashUnit);
             return dashUnit;
         } catch (Exception e) {
-            logger.warn("Fail to open the dash unit. (id={})", dashUnitId, e);
+            logger.warn("[DashServer] Fail to open the dash unit. (id={})", dashUnitId, e);
             return null;
         } finally {
             dashUnitMapLock.unlock();

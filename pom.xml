@@ -10,6 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <service.home>/home/uangel</service.home>
         <rpm.release.version>1</rpm.release.version>
         <rpm.binary.dir>target/rpm/${project.artifactId}/RPMS/noarch</rpm.binary.dir>
         <rpm.binary.name>${project.artifactId}-${project.version}-${rpm.release.version}.noarch.rpm</rpm.binary.name>
@@ -246,11 +247,11 @@
                     <defaultGroupname>uangel</defaultGroupname>
                     <mappings>
                         <mapping>
-                            <directory>/home/uangel/udash/</directory>
+                            <directory>${service.home}/udash/</directory>
                         </mapping>
 
                         <mapping>
-                            <directory>/home/uangel/udash/lib/</directory>
+                            <directory>${service.home}/udash/lib/</directory>
                             <filemode>644</filemode>
                             <sources>
                                 <source>
@@ -260,7 +261,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>/home/uangel/udash/bin/</directory>
+                            <directory>${service.home}/udash/bin/</directory>
                             <filemode>755</filemode>
                             <directoryIncluded>false</directoryIncluded>
                             <sources>
@@ -272,7 +273,7 @@
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>/home/uangel/udash/config/</directory>
+                            <directory>${service.home}/udash/config/</directory>
                             <filemode>644</filemode>
                             <sources>
                                 <source>
@@ -285,18 +286,18 @@
                         </mapping>
 
                         <mapping>
-                            <directory>/home/uangel/udash/logs/</directory>
+                            <directory>${service.home}/udash/logs/</directory>
                             <filemode>644</filemode>
                         </mapping>
 
                         <mapping>
-                            <directory>/home/uangel/udash/media/</directory>
+                            <directory>${service.home}/udash/media/</directory>
                             <filemode>644</filemode>
                         </mapping>
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>/home/uangel/udash/media_info/</directory>
+                            <directory>${service.home}/udash/media_info/</directory>
                             <filemode>644</filemode>
                             <sources>
                                 <source>
@@ -319,7 +320,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>/home/uangel/udash/validation_xsd/</directory>
+                            <directory>${service.home}/udash/validation_xsd/</directory>
                             <filemode>644</filemode>
                             <sources>
                                 <source>

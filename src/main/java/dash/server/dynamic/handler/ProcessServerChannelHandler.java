@@ -125,51 +125,62 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                             null, expires, true
                     );
 
-                    if (dashUnit == null) {
-                        dashUnit = dashServer.getDashUnitById(dashUnitId);
-                    }
-
-                    String networkPath = "";
-                    if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-                        networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
-                    } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
-                        networkPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
-                    }
-
-                    String sourceUri = fileManager.concatFilePath(networkPath, uri);
-                    String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), uri);
-                    File mpdPathFile = new File(mpdPath);
-                    if (!mpdPathFile.exists()) {
-                        if (mpdPathFile.mkdirs()) {
-                            logger.debug("[ProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, sourceUri={})", mpdPath, uri, sourceUri);
+                    if (dashUnit != null) {
+                        String networkPath = "";
+                        if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
+                            networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+                        } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
+                            networkPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
                         }
+
+                        String sourceUri = fileManager.concatFilePath(networkPath, uri);
+                        String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), uri);
+                        File mpdPathFile = new File(mpdPath);
+                        if (!mpdPathFile.exists()) {
+                            if (mpdPathFile.mkdirs()) {
+                                logger.debug("[ProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, uri={}, sourceUri={})", mpdPath, uri, sourceUri);
+                            }
+                        }
+
+                        String uriFileName = fileManager.getFileNameFromUri(uri);
+                        mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
+                        logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, sourceUri={})", mpdPath, uri, sourceUri);
+
+                        dashUnit.setInputFilePath(sourceUri);
+                        dashUnit.setOutputFilePath(mpdPath);
+
+                        ///////////////////////////
+                        dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath);
+                        ///////////////////////////
+
+                        logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, streamingStartRequest);
+
+                        streamingStartResponse = new StreamingStartResponse(
+                                new MessageHeader(
+                                        DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                        MessageType.STREAMING_START_RES,
+                                        dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                        System.currentTimeMillis(),
+                                        StreamingStartResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
+                                ),
+                                ResponseType.SUCCESS,
+                                ResponseType.REASON_SUCCESS.length(),
+                                ResponseType.REASON_SUCCESS
+                        );
+                    } else {
+                        streamingStartResponse = new StreamingStartResponse(
+                                new MessageHeader(
+                                        DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
+                                        MessageType.STREAMING_START_RES,
+                                        dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
+                                        System.currentTimeMillis(),
+                                        StreamingStartResponse.MIN_SIZE + ResponseType.REASON_RESOURCE_FULL.length()
+                                ),
+                                ResponseType.FORBIDDEN,
+                                ResponseType.REASON_RESOURCE_FULL.length(),
+                                ResponseType.REASON_RESOURCE_FULL
+                        );
                     }
-
-                    String uriFileName = fileManager.getFileNameFromUri(uri);
-                    mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
-                    logger.debug("[ProcessServerChannelHandler] Final mpd path: {} (uri={}, sourceUri={})", mpdPath, uri, sourceUri);
-
-                    dashUnit.setInputFilePath(sourceUri);
-                    dashUnit.setOutputFilePath(mpdPath);
-
-                    ///////////////////////////
-                    dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath);
-                    ///////////////////////////
-
-                    logger.debug("[ProcessServerChannelHandler] DashUnit is created successfully. (id={}, request={})", dashUnitId, streamingStartRequest);
-
-                    streamingStartResponse = new StreamingStartResponse(
-                            new MessageHeader(
-                                    DynamicMediaManager.MESSAGE_MAGIC_COOKIE,
-                                    MessageType.STREAMING_START_RES,
-                                    dashServer.getDynamicMediaManager().getRequestSeqNumber().getAndIncrement(),
-                                    System.currentTimeMillis(),
-                                    StreamingStartResponse.MIN_SIZE + ResponseType.REASON_SUCCESS.length()
-                            ),
-                            ResponseType.SUCCESS,
-                            ResponseType.REASON_SUCCESS.length(),
-                            ResponseType.REASON_SUCCESS
-                    );
                 }
                 responseByteData = streamingStartResponse.getByteData();
                 logger.debug("[ProcessServerChannelHandler] SEND StreamingStartResponse(sourceIp={}, uri={}, streamingStartResponse=\n{})", sourceIp, uri, streamingStartResponse);
