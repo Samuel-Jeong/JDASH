@@ -401,20 +401,22 @@ public class MpdManager {
     public void calculateSegmentNumber(String contentType) {
         // [Current Time] - [MPD.ast] = [미디어 스트림 생성 후 경과 시간] = T
         // T / [segment.timescale * segment.duration] = segment number
-        long segmentTimeScale = getVideoSegmentTimeScale() / 1000; // milli-sec
         long segmentDuration = getVideoSegmentDuration() / 1000; // milli-sec
-        long segmentTime = segmentTimeScale * segmentDuration; // milli-sec
-        logger.debug("[MpdManager({})] segmentTimeScale: {}, segmentDuration: {}, segmentTime: {}", dashUnitId, segmentTimeScale, segmentDuration, segmentTime);
+        long segmentTimeScale = getVideoSegmentTimeScale() / 1000; // milli-sec
+        long segmentTime = segmentDuration / segmentTimeScale; // sec
+        if (segmentTime <= 0) { segmentTime = 1; }
+        logger.debug("[MpdManager({})] segmentTimeScale: [{}]ms, segmentDuration: [{}]ms, segmentTime: [{}]s", dashUnitId, segmentTimeScale, segmentDuration, segmentTime);
 
         OffsetDateTime mpdAvailabilityStartTime = mpd.getAvailabilityStartTime(); // OffsetDateTime
-        long mediaStartTime = mpdAvailabilityStartTime.toInstant().toEpochMilli();
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = currentTime - mediaStartTime;
-        logger.debug("[MpdManager({})] mediaStartTime: {}, currentTime: {}, elapsedTime: {}", dashUnitId, mediaStartTime, currentTime, elapsedTime);
+        long mediaStartTime = mpdAvailabilityStartTime.toInstant().toEpochMilli(); // milli-sec
+        long currentTime = System.currentTimeMillis(); // milli-sec
+        long elapsedTime = (currentTime - mediaStartTime) / 1000; // sec
+        if (elapsedTime <= 0) { elapsedTime = 1; }
+        logger.debug("[MpdManager({})] mediaStartTime: [{}]ms, currentTime: [{}]ms, elapsedTime: [{}]s", dashUnitId, mediaStartTime, currentTime, elapsedTime);
 
         int segmentNumber = (int) (elapsedTime / segmentTime);
         if (segmentNumber != 0) {
-            logger.debug("[MpdManager({})] [{}] Segment Start Number: {}", dashUnitId, contentType, segmentNumber);
+            logger.debug("[MpdManager({})] [{}] Segment Start Number: [{}]", dashUnitId, contentType, segmentNumber);
             if (contentType.equals(CONTENT_VIDEO_TYPE)) {
                 setVideoSegmentSeqNum(segmentNumber);
             } else {
