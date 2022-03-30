@@ -7,6 +7,8 @@ import dash.client.fsm.DashClientState;
 import dash.client.handler.DashHttpMessageSender;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
+import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.HashedWheelTimer;
@@ -131,13 +133,7 @@ public class DashClient {
         //////////////////////////////
         // SETTING : TARGET PATH
         if (!fileManager.isExist(targetBasePath)) {
-            //FileManager.deleteFile(targetBasePath);
             fileManager.mkdirs(targetBasePath);
-            mpdManager.makeMpd(
-                    fileManager,
-                    targetMpdPath,
-                    MpdManager.XML_HEADER.getBytes()
-            );
         }
         //////////////////////////////
 
@@ -331,7 +327,14 @@ public class DashClient {
 
         mpdTimeout = mpdTimer.newTimeout(
                 timeout -> {
-                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
+                    if (dashUnit != null) {
+                        if (dashUnit.getType().equals(StreamType.STATIC)) {
+                            stop();
+                        } else {
+                            ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                        }
+                    }
                     logger.warn("[DashClient({})] MPD REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
                 }, TIMEOUT, TimeUnit.MILLISECONDS
         );
@@ -355,7 +358,14 @@ public class DashClient {
 
         audioTimeout = audioTimer.newTimeout(
                 timeout -> {
-                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
+                    if (dashUnit != null) {
+                        if (dashUnit.getType().equals(StreamType.STATIC)) {
+                            stop();
+                        } else {
+                            ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                        }
+                    }
                     logger.warn("[DashClient({})] AUDIO REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
                 }, TIMEOUT, TimeUnit.MILLISECONDS
         );
@@ -379,7 +389,14 @@ public class DashClient {
 
         videoTimeout = videoTimer.newTimeout(
                 timeout -> {
-                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
+                    if (dashUnit != null) {
+                        if (dashUnit.getType().equals(StreamType.STATIC)) {
+                            stop();
+                        } else {
+                            ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                        }
+                    }
                     logger.warn("[DashClient({})] VIDEO REQUEST TIMEOUT. ({})", dashUnitId, TIMEOUT);
                 }, TIMEOUT, TimeUnit.MILLISECONDS
         );

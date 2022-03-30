@@ -6,6 +6,8 @@ import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
+import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -14,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
-import stream.StreamConfigManager;
 import util.fsm.StateManager;
 import util.fsm.module.StateHandler;
 import util.fsm.unit.StateUnit;
@@ -87,8 +88,14 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     logger.warn("[DashAudioHttpClientHandler({})] [-] [AUDIO] !!! RECV NOT OK. DashClient will be stopped. (status={}, retryCount={})",
                             dashClient.getDashUnitId(), response.status(), retryCount
                     );
-                    //dashClient.stop();
-                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
+                    if (dashUnit != null) {
+                        if (dashUnit.getType().equals(StreamType.STATIC)) {
+                            dashClient.stop();
+                        } else {
+                            ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                        }
+                    }
                     channelHandlerContext.close();
                 } else {
                     dashClient.setIsAudioRetrying(true);

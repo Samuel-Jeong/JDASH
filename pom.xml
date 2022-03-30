@@ -11,6 +11,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <service.home>/home/uangel</service.home>
+        <service.group>uangel</service.group>
+        <service.user>uangel</service.user>
         <rpm.release.version>1</rpm.release.version>
         <rpm.binary.dir>target/rpm/${project.artifactId}/RPMS/noarch</rpm.binary.dir>
         <rpm.binary.name>${project.artifactId}-${project.version}-${rpm.release.version}.noarch.rpm</rpm.binary.name>
@@ -243,8 +245,8 @@
                     <targetOS>linux</targetOS>
                     <defaultDirmode>755</defaultDirmode>
                     <defaultFilemode>644</defaultFilemode>
-                    <defaultUsername>uangel</defaultUsername>
-                    <defaultGroupname>uangel</defaultGroupname>
+                    <defaultUsername>${service.user}</defaultUsername>
+                    <defaultGroupname>${service.group}</defaultGroupname>
                     <mappings>
                         <mapping>
                             <directory>${service.home}/udash/</directory>

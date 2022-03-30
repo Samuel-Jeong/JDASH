@@ -50,7 +50,7 @@ public class MediaManager {
             ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
             // CLEAR ALL STATIC DASH UNIT
-            ServiceManager.getInstance().getDashServer().deleteDashUnitsByType(StreamType.STATIC);
+            //ServiceManager.getInstance().getDashServer().deleteDashUnitsByType(StreamType.STATIC);
             mediaInfoList.clear();
 
             int mediaInfoListIndex = 0;
@@ -80,8 +80,10 @@ public class MediaManager {
                     streamType = StreamType.DYNAMIC;
                 }
 
-                String uri = elements[1];
-                String fullPath = fileManager.concatFilePath(mediaBasePath, uri);
+                String uri = elements[1]; // test/stream1.mpd
+                String localUri = fileManager.concatFilePath(fileManager.getParentPathFromUri(uri), fileManager.getFileNameFromUri(uri)); // test/stream1
+                localUri = fileManager.concatFilePath(localUri, fileManager.getFileNameWithExtensionFromUri(uri)); // test/stream1/stream1.mpd
+                String fullPath = fileManager.concatFilePath(mediaBasePath, localUri); // /home/udash/udash/media/test/stream1/stream1.mpd
 
                 // ADD MediaInfo
                 addMediaInfo(mediaInfoListIndex, streamType, fullPath);
@@ -92,10 +94,15 @@ public class MediaManager {
                     if (!streamType.equals(StreamType.STATIC)) { continue; }
                     if (!uri.endsWith(StreamConfigManager.MP4_POSTFIX) && !uri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
 
-                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
-                            streamType,
-                             AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" +
-                                     fileManager.getFilePathWithoutExtensionFromUri(fullPath),
+                    String dashUnitId = AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" + fileManager.getFilePathWithoutExtensionFromUri(fullPath);
+                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
+                    if (dashUnit != null) {
+                        logger.debug("[MediaManager] DashUnit({}) is already exist. ({})", dashUnitId, dashUnit);
+                        continue;
+                    }
+
+                    dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
+                            streamType, dashUnitId,
                             null, 0, false
                     );
 
@@ -116,10 +123,7 @@ public class MediaManager {
                                     dashUnit.getId(),
                                     ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                                     httpPath,
-                                    fileManager.concatFilePath(
-                                            fileManager.getParentPathFromUri(mpdPath),
-                                            fileManager.getFileNameFromUri(mpdPath)
-                                    )
+                                    fileManager.getParentPathFromUri(mpdPath)
                             );
                             if (dashClient.start()) {
                                 dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);

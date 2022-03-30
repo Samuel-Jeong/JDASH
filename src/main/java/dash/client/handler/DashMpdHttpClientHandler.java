@@ -6,6 +6,8 @@ import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
+import dash.unit.DashUnit;
+import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -155,7 +157,14 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
                         logger.debug("[DashMpdHttpClientHandler({})] Success to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
                     } else {
                         logger.warn("[DashMpdHttpClientHandler({})] Fail to validate the mpd. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
-                        dashClient.stop();
+                        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
+                        if (dashUnit != null) {
+                            if (dashUnit.getType().equals(StreamType.STATIC)) {
+                                dashClient.stop();
+                            } else {
+                                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                            }
+                        }
                         return;
                     }
                 }
