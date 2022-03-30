@@ -55,6 +55,7 @@ public class MpdManager {
     private MPD mpd = null;
     private final String targetMpdPath;
     private final AtomicBoolean isMpdDone = new AtomicBoolean(false);
+    private final AtomicLong lastMpdParsedTime = new AtomicLong(0); // milli-sec
 
     private List<AtomicLong> videoSegmentSeqNumList;
     private List<AtomicLong> audioSegmentSeqNumList;
@@ -389,6 +390,7 @@ public class MpdManager {
             }
             /////////////////////////////////////////
 
+            setLastMpdParsedTime(System.currentTimeMillis());
             //logger.debug("[MpdManager({})] MPD PARSE DONE (path={})", dashUnitId, targetMpdPath);
         } catch (Exception e) {
             logger.warn("[MpdManager({})] (targetMpdPath={}) parseMpd.Exception", dashUnitId, targetMpdPath, e);
@@ -401,15 +403,25 @@ public class MpdManager {
     public void calculateSegmentNumber(String contentType) {
         // [Current Time] - [MPD.ast] = [미디어 스트림 생성 후 경과 시간] = T
         // T / [segment.timescale * segment.duration] = segment number
-        long segmentDuration = getVideoSegmentDuration() / 1000; // milli-sec
-        long segmentTimeScale = getVideoSegmentTimeScale() / 1000; // milli-sec
+        long segmentDuration;
+        long segmentTimeScale;
+        if (contentType.equals(CONTENT_VIDEO_TYPE)) {
+            segmentDuration = getVideoSegmentDuration(); // micro-sec
+            segmentTimeScale = getVideoSegmentTimeScale(); // micro-sec
+        } else {
+            segmentDuration = getAudioSegmentDuration(); // micro-sec
+            segmentTimeScale = getAudioSegmentTimeScale(); // micro-sec
+        }
+        segmentDuration /= 1000; // milli-sec
+        segmentTimeScale /= 1000; // milli-sec
+
         long segmentTime = segmentDuration / segmentTimeScale; // sec
         if (segmentTime <= 0) { segmentTime = 1; }
         logger.debug("[MpdManager({})] segmentTimeScale: [{}]ms, segmentDuration: [{}]ms, segmentTime: [{}]s", dashUnitId, segmentTimeScale, segmentDuration, segmentTime);
 
         OffsetDateTime mpdAvailabilityStartTime = mpd.getAvailabilityStartTime(); // OffsetDateTime
         long mediaStartTime = mpdAvailabilityStartTime.toInstant().toEpochMilli(); // milli-sec
-        long currentTime = System.currentTimeMillis(); // milli-sec
+        long currentTime = getLastMpdParsedTime(); // milli-sec
         long elapsedTime = (currentTime - mediaStartTime) / 1000; // sec
         if (elapsedTime <= 0) { elapsedTime = 1; }
         logger.debug("[MpdManager({})] mediaStartTime: [{}]ms, currentTime: [{}]ms, elapsedTime: [{}]s", dashUnitId, mediaStartTime, currentTime, elapsedTime);
@@ -502,6 +514,14 @@ public class MpdManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
+    public long getLastMpdParsedTime() {
+        return lastMpdParsedTime.get();
+    }
+
+    public void setLastMpdParsedTime(long lastMpdParsedTime) {
+        this.lastMpdParsedTime.set(lastMpdParsedTime);
+    }
+
     public List<Long> getBitRates(List<Representation> representations) {
         List<Long> bitRates = new ArrayList<>();
 
@@ -590,9 +610,9 @@ public class MpdManager {
         }
     }
 
-    public long getAudioSegmentTimeTimeScale() {
-        List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
-        int representationId = getRepresentationIndex(CONTENT_VIDEO_TYPE);
+    public long getAudioSegmentTimeScale() {
+        List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
+        int representationId = getRepresentationIndex(CONTENT_AUDIO_TYPE);
         Representation audioRepresentation = representations.get(representationId);
         if (audioRepresentation != null) {
             // GET from SegmentTemplate

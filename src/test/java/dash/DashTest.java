@@ -26,10 +26,21 @@ public class DashTest {
 
         /////////////////////////////////////////////
         // 1) MPD PARSING TEST
-        Assert.assertTrue(parseMpdTest(new DashServer()));
+        //Assert.assertTrue(parseMpdTest(new DashServer()));
 
-        logger.debug("Audio segment start number : {}", calculateMediaSegmentNumberTest(MpdManager.CONTENT_AUDIO_TYPE));
-        logger.debug("Video segment start number : {}", calculateMediaSegmentNumberTest(MpdManager.CONTENT_VIDEO_TYPE));
+        DashServer dashServer = new DashServer();
+        MpdManager mpdManager = dashServer.getMpdManager();
+        mpdManager.parseMpd(
+                "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/test/jamesj2.mpd",
+                false
+        );
+
+        logger.debug("Audio segment start number : {}",
+                calculateMediaSegmentNumberTest(mpdManager, MpdManager.CONTENT_AUDIO_TYPE)
+        );
+        logger.debug("Video segment start number : {}",
+                calculateMediaSegmentNumberTest(mpdManager, MpdManager.CONTENT_VIDEO_TYPE)
+        );
         /////////////////////////////////////////////
 
         /////////////////////////////////////////////
@@ -94,14 +105,7 @@ public class DashTest {
         return true;
     }
 
-    public long calculateMediaSegmentNumberTest(String contentType) {
-        DashServer dashServer = new DashServer();
-        MpdManager mpdManager = dashServer.getMpdManager();
-        mpdManager.parseMpd(
-                "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/test/jamesj2.mpd",
-                false
-        );
-
+    public long calculateMediaSegmentNumberTest(MpdManager mpdManager, String contentType) {
         mpdManager.calculateSegmentNumber(contentType);
         if (contentType.equals(MpdManager.CONTENT_VIDEO_TYPE)) {
             return mpdManager.getVideoSegmentSeqNum();

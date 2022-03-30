@@ -1,5 +1,7 @@
 package dash.unit;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
@@ -23,7 +25,7 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
-    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    transient private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
     private final StreamType type;
     private final long initiationTime;
@@ -45,8 +47,8 @@ public class DashUnit {
     transient private final ScheduleManager scheduleManager = new ScheduleManager();
     transient private RemoteStreamService remoteCameraService = null;
 
-    private DashClient dashClient = null;
-    private OldFileController oldFileController = null;
+    transient private DashClient dashClient = null;
+    transient private OldFileController oldFileController = null;
     transient private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
@@ -270,15 +272,8 @@ public class DashUnit {
 
     @Override
     public String toString() {
-        return "DashUnit{" +
-                "type=" + type.name() +
-                ", initiationTime=" + initiationTime +
-                ", id='" + id + '\'' +
-                ", inputFilePath='" + inputFilePath + '\'' +
-                ", outputFilePath='" + outputFilePath + '\'' +
-                ", curSegmentName='" + curSegmentName + '\'' +
-                ", isLiveStreaming=" + isLiveStreaming.get() +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 
