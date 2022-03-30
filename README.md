@@ -10,7 +10,7 @@
 2. DASH 서버로 동작할 때, 
     1) 미디어 스트림을 가져올 때 현재는 [RTMP, DASH] 방식을 사용 가능
     2) DASH 방식을 사용하여 static media stream 을 미리 가져오기 가능 (DASH 클라이언트로 동작)
-        > dynamic media stream 은 rtmp 서버에 publish 했다는 가정에 하에, 
+        > dynamic media stream 은 rtmp 서버에 publish 했다는 가정 하에, 
           published media stream 을 사용자가 요청하기 전에 미리 가져오도록 구현되어있음
           (RTMP 클라이언트로 동작)
 
