@@ -101,7 +101,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     dashClient.setIsAudioRetrying(true);
 
                     // SegmentDuration 의 절반 만큼(micro-sec) sleep
-                    long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
+                    long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
                     if (segmentDuration > 0) {
                         try {
                             segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_AUDIO_TYPE); // 800000
@@ -219,7 +219,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         //logger.debug("[DashAudioHttpClientHandler({})] [+] [AUDIO] [seq={}] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), curSeqNum, curAudioSegmentName, curAudioSegmentName);
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(true); // 1000000
+                        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
                         if (segmentDuration > 0) {
                             try {
                                 segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_AUDIO_TYPE);

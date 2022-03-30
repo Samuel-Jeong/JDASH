@@ -39,7 +39,7 @@ public class DashClientGetVideoInitSegCallBack extends CallBack {
         if (dashClient == null) { return null; }
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
-            long videoSegmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
+            long videoSegmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
             if (videoSegmentDuration > 0) {
                 try {
                     timeUnit.sleep(videoSegmentDuration);

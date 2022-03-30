@@ -101,7 +101,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     dashClient.setIsVideoRetrying(true);
 
                     // SegmentDuration 의 절반 만큼(micro-sec) sleep
-                    long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
+                    long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
                     if (segmentDuration > 0) {
                         try {
                             segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
@@ -219,7 +219,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         //logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), curSeqNum, curVideoSegmentName, newVideoSegmentName);
 
                         // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(true); // 1000000
+                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
                         if (segmentDuration > 0) {
                             try {
                                 segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE);
