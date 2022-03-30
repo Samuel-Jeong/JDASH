@@ -218,14 +218,14 @@ public class StreamConfigManager {
          * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
          * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
          */
-        //fFmpegFrameRecorder.setFormat("flv");
+        fFmpegFrameRecorder.setFormat("flv");
         /**
          * 2. Matroska (wp, .mkv/.mka/.mks)
          * - Owner : CoreCodec
          * [Video] : H.264, Realvideo, DivX, XviD, HEVC
          * [Audio] : AAC, Vorbis, Dolby AC3, MP3
          */
-        fFmpegFrameRecorder.setFormat("matroska");
+        //fFmpegFrameRecorder.setFormat("matroska");
 
         /**
          * The range of the CRF scale is 0–51,
