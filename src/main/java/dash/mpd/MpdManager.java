@@ -413,13 +413,26 @@ public class MpdManager {
             segmentTimeScale = getAudioSegmentTimeScale(); // micro-sec
         }
         segmentDuration /= 1000; // milli-sec
+        if (segmentDuration <= 0) {
+            logger.debug("[MpdManager({})] [{}] Fail to get the segment duration. Fail to calculate the segment number. ({})", dashUnitId, contentType, segmentDuration);
+            return;
+        }
         segmentTimeScale /= 1000; // milli-sec
+        if (segmentTimeScale <= 0) {
+            logger.debug("[MpdManager({})] [{}] Fail to get the segment time scale. Fail to calculate the segment number. ({})", dashUnitId, contentType, segmentTimeScale);
+            return;
+        }
 
         long segmentTime = segmentDuration / segmentTimeScale; // sec
         if (segmentTime <= 0) { segmentTime = 1; }
         logger.debug("[MpdManager({})] segmentTimeScale: [{}]ms, segmentDuration: [{}]ms, segmentTime: [{}]s", dashUnitId, segmentTimeScale, segmentDuration, segmentTime);
 
         OffsetDateTime mpdAvailabilityStartTime = mpd.getAvailabilityStartTime(); // OffsetDateTime
+        if (mpdAvailabilityStartTime == null) {
+            logger.debug("[MpdManager({})] [{}] Fail to get the mpd availability start time. Fail to calculate the segment number.", dashUnitId, contentType);
+            return;
+        }
+
         long mediaStartTime = mpdAvailabilityStartTime.toInstant().toEpochMilli(); // milli-sec
         long currentTime = getLastMpdParsedTime(); // milli-sec
         long elapsedTime = (currentTime - mediaStartTime) / 1000; // sec
@@ -427,7 +440,7 @@ public class MpdManager {
         logger.debug("[MpdManager({})] mediaStartTime: [{}]ms, currentTime: [{}]ms, elapsedTime: [{}]s", dashUnitId, mediaStartTime, currentTime, elapsedTime);
 
         int segmentNumber = (int) (elapsedTime / segmentTime);
-        if (segmentNumber != 0) {
+        if (segmentNumber > 0) {
             logger.debug("[MpdManager({})] [{}] Segment Start Number: [{}]", dashUnitId, contentType, segmentNumber);
             if (contentType.equals(CONTENT_VIDEO_TYPE)) {
                 setVideoSegmentSeqNum(segmentNumber);
