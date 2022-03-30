@@ -81,9 +81,14 @@ public class MediaManager {
                 }
 
                 String uri = elements[1]; // test/stream1.mpd
-                String localUri = fileManager.concatFilePath(fileManager.getParentPathFromUri(uri), fileManager.getFileNameFromUri(uri)); // test/stream1
-                localUri = fileManager.concatFilePath(localUri, fileManager.getFileNameWithExtensionFromUri(uri)); // test/stream1/stream1.mpd
-                String fullPath = fileManager.concatFilePath(mediaBasePath, localUri); // /home/udash/udash/media/test/stream1/stream1.mpd
+                String fullPath;
+                if (streamType == StreamType.DYNAMIC) {
+                    fullPath = fileManager.concatFilePath(mediaBasePath, uri);
+                } else {
+                    String localUri = fileManager.concatFilePath(fileManager.getParentPathFromUri(uri), fileManager.getFileNameFromUri(uri)); // test/stream1
+                    localUri = fileManager.concatFilePath(localUri, fileManager.getFileNameWithExtensionFromUri(uri)); // test/stream1/stream1.mpd
+                    fullPath = fileManager.concatFilePath(mediaBasePath, localUri); // /home/udash/udash/media/test/stream1/stream1.mpd
+                }
 
                 // ADD MediaInfo
                 addMediaInfo(mediaInfoListIndex, streamType, fullPath);

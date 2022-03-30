@@ -10,9 +10,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <service.home>/home/uangel</service.home>
-        <service.group>uangel</service.group>
-        <service.user>uangel</service.user>
+        <service.home>/home/atmos</service.home>
+        <service.group>atmos</service.group>
+        <service.user>atmos</service.user>
         <rpm.release.version>1</rpm.release.version>
         <rpm.binary.dir>target/rpm/${project.artifactId}/RPMS/noarch</rpm.binary.dir>
         <rpm.binary.name>${project.artifactId}-${project.version}-${rpm.release.version}.noarch.rpm</rpm.binary.name>
@@ -237,7 +237,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <copyright>2022, UANGEL</copyright>
+                    <copyright>2022, JAMESJ</copyright>
                     <group>DASH</group>
                     <description>dash</description>
                     <release>${rpm.release.version}</release>
@@ -249,12 +249,11 @@
                     <defaultGroupname>${service.group}</defaultGroupname>
                     <mappings>
                         <mapping>
-                            <directory>${service.home}/udash/</directory>
+                            <directory>${service.home}/jdash/</directory>
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/udash/lib/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/lib/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/out/artifacts/JDASH_jar/</location>
@@ -263,7 +262,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/udash/bin/</directory>
+                            <directory>${service.home}/jdash/bin/</directory>
                             <filemode>755</filemode>
                             <directoryIncluded>false</directoryIncluded>
                             <sources>
@@ -275,8 +274,7 @@
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>${service.home}/udash/config/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/config/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/config/user_conf.ini</location>
@@ -288,19 +286,16 @@
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/udash/logs/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/logs/</directory>
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/udash/media/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/media/</directory>
                         </mapping>
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>${service.home}/udash/media_info/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/media_info/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/white_list.txt</location>
@@ -309,8 +304,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>/home/udash/udash/media_info/</directory>
-                            <filemode>644</filemode>
+                            <directory>/home/jdash/jdash/media_info/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/codec_list.txt</location>
@@ -322,8 +316,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/udash/validation_xsd/</directory>
-                            <filemode>644</filemode>
+                            <directory>${service.home}/jdash/validation_xsd/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/validation_xsd/DASH-MPD.xsd</location>

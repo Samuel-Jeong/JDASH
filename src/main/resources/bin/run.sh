@@ -1,7 +1,7 @@
 #!/bin/sh
 
-SERVICE_HOME=/home/uangel/udash
-SERVICE_NAME=udash
+SERVICE_HOME=/home/uangel/jdash
+SERVICE_NAME=jdash
 #LD_LIBRARY_PATH=$SERVICE_HOME/lib
 #export LD_LIBRARY_PATH
 #PATH_TO_JAR=$SERVICE_HOME/lib/JDASH-1.0.0.jar
