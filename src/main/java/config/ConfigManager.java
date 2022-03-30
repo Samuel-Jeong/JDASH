@@ -34,7 +34,6 @@ public class ConfigManager {
     public static final String SECTION_MEDIA = "MEDIA"; // MEDIA Section 이름
     public static final String SECTION_MPD = "MPD"; // MPD Section 이름
     public static final String SECTION_RTMP = "RTMP"; // RTMP Section 이름
-    public static final String SECTION_KAFKA = "KAFKA"; // KAFKA Section 이름
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -97,15 +96,6 @@ public class ConfigManager {
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
     public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
-
-    // KAFKA
-    public static final String FIELD_BOOTSTRAP_SERVER_ADDRESS = "BOOTSTRAP_SERVER_ADDRESS";
-    public static final String FIELD_GROUP_ID = "GROUP_ID";
-    public static final String FIELD_A2S_TOPIC = "A2S_TOPIC";
-    public static final String FIELD_DASH_TOPIC = "DASH_TOPIC";
-    public static final String FIELD_CDN_TOPIC = "CDN_TOPIC";
-    public static final String FIELD_KAFKA_THREAD_SIZE = "KAFKA_THREAD_SIZE";
-    public static final String FIELD_KAFKA_HB_INTERVAL = "KAFKA_HB_INTERVAL";
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -168,15 +158,6 @@ public class ConfigManager {
     // RTMP
     private String rtmpPublishIp = null;
     private int rtmpPublishPort = 0;
-
-    // KAFKA
-    private String boostrapServerAddress = null;
-    private String groupId = null;
-    private String a2sTopic = null;
-    private String dashTopic = null;
-    private String cdnTopic = null;
-    private int kafkaThreadSize = 0;
-    private long kafkaHbInterval = 0;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +183,6 @@ public class ConfigManager {
             loadMediaConfig();
             loadMpdConfig();
             loadRtmpConfig();
-            loadKafkaConfig();
 
             logger.info("Load config [{}]", configPath);
         } catch (IOException e) {
@@ -687,68 +667,6 @@ public class ConfigManager {
         logger.debug("Load [{}] config...(OK)", SECTION_RTMP);
     }
 
-    /**
-     * @fn private void loadKafkaConfig()
-     * @brief KAFKA Section 을 로드하는 함수
-     */
-    private void loadKafkaConfig() {
-        this.boostrapServerAddress = getIniValue(SECTION_KAFKA, FIELD_BOOTSTRAP_SERVER_ADDRESS);
-        if (this.boostrapServerAddress == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_BOOTSTRAP_SERVER_ADDRESS);
-            System.exit(1);
-        }
-
-        this.groupId = getIniValue(SECTION_KAFKA, FIELD_GROUP_ID);
-        if (this.groupId == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_GROUP_ID);
-            System.exit(1);
-        }
-
-        this.a2sTopic = getIniValue(SECTION_KAFKA, FIELD_A2S_TOPIC);
-        if (this.a2sTopic == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_A2S_TOPIC);
-            System.exit(1);
-        }
-
-        this.dashTopic = getIniValue(SECTION_KAFKA, FIELD_DASH_TOPIC);
-        if (this.dashTopic == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_DASH_TOPIC);
-            System.exit(1);
-        }
-
-        this.cdnTopic = getIniValue(SECTION_KAFKA, FIELD_CDN_TOPIC);
-        if (this.cdnTopic == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_CDN_TOPIC);
-            System.exit(1);
-        }
-
-        String kafkaThreadSizeString = getIniValue(SECTION_KAFKA, FIELD_KAFKA_THREAD_SIZE);
-        if (kafkaThreadSizeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_KAFKA_THREAD_SIZE);
-            System.exit(1);
-        } else {
-            this.kafkaThreadSize = Integer.parseInt(kafkaThreadSizeString);
-            if (this.kafkaThreadSize <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_KAFKA_THREAD_SIZE);
-                System.exit(1);
-            }
-        }
-
-        String kafkaHbIntervalString = getIniValue(SECTION_KAFKA, FIELD_KAFKA_HB_INTERVAL);
-        if (kafkaHbIntervalString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_KAFKA_HB_INTERVAL);
-            System.exit(1);
-        } else {
-            this.kafkaHbInterval = Long.parseLong(kafkaHbIntervalString);
-            if (this.kafkaHbInterval <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_KAFKA, FIELD_KAFKA_HB_INTERVAL);
-                System.exit(1);
-            }
-        }
-
-        logger.debug("Load [{}] config...(OK)", SECTION_KAFKA);
-    }
-
     ////////////////////////////////////////////////////////////////////////////////
 
     /**
@@ -886,7 +804,6 @@ public class ConfigManager {
     public int getPreprocessTargetPort() {
         return preprocessTargetPort;
     }
-
     public int getDownloadChunkRetryCount() {
         return downloadChunkRetryCount;
     }
@@ -979,32 +896,5 @@ public class ConfigManager {
         return rtmpPublishPort;
     }
 
-    public String getBoostrapServerAddress() {
-        return boostrapServerAddress;
-    }
-
-    public String getGroupId() {
-        return groupId;
-    }
-
-    public String getA2sTopic() {
-        return a2sTopic;
-    }
-
-    public String getDashTopic() {
-        return dashTopic;
-    }
-
-    public String getCdnTopic() {
-        return cdnTopic;
-    }
-
-    public int getKafkaThreadSize() {
-        return kafkaThreadSize;
-    }
-
-    public long getKafkaHbInterval() {
-        return kafkaHbInterval;
-    }
 
 }
