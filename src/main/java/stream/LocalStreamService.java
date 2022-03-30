@@ -206,7 +206,7 @@ public class LocalStreamService extends Job {
             /////////////////////////////////
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)
                     && configManager.isAudioOnly()) {
-                //TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+                TimeUnit timeUnit = TimeUnit.MILLISECONDS;
                 while(audioService.record(fFmpegFrameRecorder)) {
                     try {
                         if (startTime == 0) {
@@ -227,7 +227,7 @@ public class LocalStreamService extends Job {
                             fFmpegFrameRecorder.setTimestamp(audioTs);
                         }
 
-                        //timeUnit.sleep(1);
+                        timeUnit.sleep(1);
                     } catch (Exception e) {
                         //logger.warn("");
                     }

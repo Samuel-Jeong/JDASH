@@ -1,8 +1,8 @@
 package dash;
 
-import stream.RemoteStreamService;
 import org.junit.Test;
 import service.scheduler.schedule.ScheduleManager;
+import stream.RemoteStreamService;
 
 import java.util.concurrent.TimeUnit;
 
