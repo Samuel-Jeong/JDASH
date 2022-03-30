@@ -15,7 +15,7 @@ public class ResourceManager {
     private final ConcurrentLinkedQueue<Integer> channelQueues = new ConcurrentLinkedQueue<>();
     private final int targetPortMin;
     private final int targetPortMax;
-    private final int portGap = 2;
+    private final int portGap = 1;
 
     ////////////////////////////////////////////////////////////////////////////////
 
