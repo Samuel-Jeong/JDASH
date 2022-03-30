@@ -117,6 +117,8 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
             int readBytes = buf.readableBytes();
             if (buf.readableBytes() <= 0) {
                 logger.warn("[ProcessClientChannelHandler] Message is null.");
+                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                channelHandlerContext.close();
                 return;
             }
 

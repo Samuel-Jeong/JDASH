@@ -363,20 +363,27 @@ public class MpdManager {
             // 4) DYNAMIC STREAM 인 경우 MPD 수정
             if (isRemote) {
                 if (mpd.getType().equals(PresentationType.DYNAMIC)) {
-                    /*int adaptationId = 0;
-                    if (!configManager.isAudioOnly()) {
+                    ///////////////////////////////////
+                    // 현재 세그먼트 번호 명시 (비디오 & 오디오)
+                    int adaptationId = 0;
+                    if (!configManager.isAudioOnly() && getVideoSegmentSeqNum() != 1) {
                         for (int curVideoId : videoRepresentationIdList) {
                             setCustomRepresentationOptions(adaptationId, curVideoId, CONTENT_VIDEO_TYPE);
                         }
                         adaptationId++;
                     }
 
-                    for (int curAudioId : audioRepresentationIdList) {
-                        setCustomRepresentationOptions(adaptationId, curAudioId, CONTENT_AUDIO_TYPE);
-                    }*/
+                    if (getAudioSegmentSeqNum() != 1) {
+                        for (int curAudioId : audioRepresentationIdList) {
+                            setCustomRepresentationOptions(adaptationId, curAudioId, CONTENT_AUDIO_TYPE);
+                        }
+                    }
+                    ///////////////////////////////////
 
+                    ///////////////////////////////////
                     setCustomMpdOptions();
                     writeMpd();
+                    ///////////////////////////////////
                 }
             }
             /////////////////////////////////////////
@@ -791,24 +798,27 @@ public class MpdManager {
         }
 
         // 1-1) SET Media segment duration & availabilityTimeOffset
-        double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getTimeOffset(); // seconds
-        long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * MICRO_SEC); // to micro-seconds;
+        //double segmentDurationOffsetSec = AppInstance.getInstance().getConfigManager().getTimeOffset(); // seconds
+        //long segmentDurationOffsetMicroSec = (long) (segmentDurationOffsetSec * MICRO_SEC); // to micro-seconds;
 
-        long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
-        long newSegmentDuration = curSegmentDuration + segmentDurationOffsetMicroSec; // micro-seconds
+        //long curSegmentDuration = representation.getSegmentTemplate().getDuration(); // micro-seconds
+        //long newSegmentDuration = curSegmentDuration + segmentDurationOffsetMicroSec; // micro-seconds
 
         SegmentTemplate newSegmentTemplate = representation.getSegmentTemplate().buildUpon()
-                .withDuration(newSegmentDuration) // duration
-                .withAvailabilityTimeOffset(
+                //.withDuration(newSegmentDuration) // duration
+                .withStartNumber(contentType.equals(CONTENT_VIDEO_TYPE)? getVideoSegmentSeqNum() : getAudioSegmentSeqNum())
+                /*.withAvailabilityTimeOffset(
                         (((double) newSegmentDuration) / MICRO_SEC)
                                 - StreamConfigManager.AVAILABILITY_TIME_OFFSET_FACTOR
-                ) // availabilityTimeOffset
+                )*/ // availabilityTimeOffset
                 .build();
         representation = representation.buildUpon().withSegmentTemplate(newSegmentTemplate).build();
-        logger.debug("[MpdManager({})] [{}] Representation({}) > [duration: {}, ato: {}]",
+        //logger.debug("[MpdManager({})] [{}] Representation({}) > [duration: {}, ato: {}]",
+        logger.debug("[MpdManager({})] [{}] Representation({}) > [startNumber: {}]",
                 dashUnitId, contentType, contentType.equals(CONTENT_AUDIO_TYPE)? curAudioIndex : curVideoIndex,
-                representation.getSegmentTemplate().getDuration(),
-                representation.getSegmentTemplate().getAvailabilityTimeOffset()
+                representation.getSegmentTemplate().getStartNumber()
+                //representation.getSegmentTemplate().getDuration(),
+                //representation.getSegmentTemplate().getAvailabilityTimeOffset()
         );
 
         List<Representation> newVideoRepresentations = new ArrayList<>(representations);
