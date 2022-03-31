@@ -40,8 +40,7 @@ import util.module.FileManager;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -57,6 +56,7 @@ public class DashServer {
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
     private final DynamicMediaManager dynamicMediaManager;
+    private final FileManager fileManager = new FileManager();
     private LocalStreamService localStreamService = null;
 
     private final MpdManager mpdManager;
@@ -343,6 +343,32 @@ public class DashServer {
         } finally {
             dashUnitMapLock.unlock();
         }
+    }
+
+    public List<String> getDynamicStreamPathList() {
+        List<String> streamKeys = new ArrayList<>();
+
+        try {
+            dashUnitMapLock.lock();
+            for (Map.Entry<String, DashUnit> entry : dashUnitMap.entrySet()) {
+                if (entry == null) { continue; }
+
+                DashUnit dashUnit = entry.getValue();
+                if (dashUnit == null) { continue; }
+                if (!dashUnit.getType().equals(StreamType.DYNAMIC)) { continue; }
+
+                String path = fileManager.getParentPathFromUri(dashUnit.getOutputFilePath());
+                if (path != null && !path.isEmpty()) {
+                    streamKeys.add(path);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("[DashServer] Fail to get the stream keys.", e);
+        } finally {
+            dashUnitMapLock.unlock();
+        }
+
+        return streamKeys;
     }
 
     public void deleteDashUnitsByType(StreamType type) {

@@ -27,6 +27,7 @@ public class ServiceManager {
 
     private final ScheduleManager scheduleManager = new ScheduleManager();
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
+    public static final String LONG_SESSION_REMOVE_SCHEDULE_JOB = "LONG_SESSION_REMOVE_JOB";
     public static final int DELAY = 1000;
 
     private final DashServer dashServer = new DashServer();
@@ -77,16 +78,6 @@ public class ServiceManager {
                     )
             );
 
-            // FOR REMOVING the old session for this service
-            scheduleManager.startJob(MAIN_SCHEDULE_JOB,
-                    new LongSessionRemover(
-                            scheduleManager,
-                            LongSessionRemover.class.getSimpleName(),
-                            0, DELAY, TimeUnit.MILLISECONDS,
-                            3, 0, true
-                    )
-            );
-
             // FOR CHECKING [~/media_info/~]
             FileKeeper fileKeeper = new FileKeeper(
                     scheduleManager,
@@ -97,6 +88,18 @@ public class ServiceManager {
             if (fileKeeper.init()) {
                 scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
             }
+        }
+
+        if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
+            // FOR REMOVING the old session & folder for this service
+            scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
+                    new LongSessionRemover(
+                            scheduleManager,
+                            LongSessionRemover.class.getSimpleName(),
+                            0, DELAY, TimeUnit.MILLISECONDS,
+                            3, 0, true
+                    )
+            );
         }
         ////////////////////////////////////////
 
