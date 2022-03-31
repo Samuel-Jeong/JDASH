@@ -73,7 +73,10 @@ public class Socket {
         }
         if (channel == null) {
             nettyChannel.closeListenChannel();
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to add the listen channel.");
+            baseEnvironment.printMsg(DebugLevel.WARN, "[Socket(%s:%s)] Fail to add the listen channel.",
+                    netAddress.isIpv4()? netAddress.getInet4Address() : netAddress.getInet6Address(),
+                    netAddress.getPort()
+            );
             return false;
         }
         return true;

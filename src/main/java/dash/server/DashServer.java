@@ -117,7 +117,7 @@ public class DashServer {
         // MpdManager 생성
         String dashUnitId = configManager.getHttpListenIp() + ":" + configManager.getCameraPath();
         DashUnit localDashUnit = addDashUnit(
-                StreamType.DYNAMIC, dashUnitId,
+                StreamType.NONE, dashUnitId,
                 null, 0, false
         );
 

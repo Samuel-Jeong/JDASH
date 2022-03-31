@@ -92,7 +92,11 @@ public class GroupSocket { // SEND-ONLY
             }
         }
         if (isSameDestination == 2) {
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to add the channel. Duplicated destination is detected. (key=%s)", sessionId);
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to add the channel. Duplicated destination is detected. (key=%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(),
+                    sessionId
+            );
             return false;
         }
 
@@ -134,7 +138,11 @@ public class GroupSocket { // SEND-ONLY
         }
         if (channel == null) {
             nettyChannel.closeConnectChannel();
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to add the channel. (key=%s)", sessionId);
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to add the channel. (key=%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(),
+                    sessionId
+            );
             return false;
         }
 
@@ -149,7 +157,11 @@ public class GroupSocket { // SEND-ONLY
                     )
             );
         } catch (Exception e) {
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to add the channel. (key=%s) (%s)", sessionId, e.toString());
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to add the channel. (key=%s) (%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(),
+                    sessionId, e.toString()
+            );
             return false;
         } finally {
             destinationMapLock.unlock();
@@ -167,7 +179,11 @@ public class GroupSocket { // SEND-ONLY
         try {
             destinationMap.remove(sessionId);
         } catch (Exception e) {
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to remove the channel. (key=%s) (%s)", sessionId, e.toString());
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to remove the channel. (key=%s) (%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(),
+                    sessionId, e.toString()
+            );
         } finally {
             destinationMapLock.unlock();
         }
@@ -178,6 +194,8 @@ public class GroupSocket { // SEND-ONLY
             destinationMapLock.lock();
 
             if (!destinationMap.isEmpty()) {
+                int totalEntryCount = 0;
+
                 for (Map.Entry<Long, DestinationRecord> entry : getCloneDestinationMap().entrySet()) {
                     DestinationRecord destinationRecord = entry.getValue();
                     if (destinationRecord == null) {
@@ -191,12 +209,19 @@ public class GroupSocket { // SEND-ONLY
 
                     destinationMap.remove(entry.getKey());
                     nettyChannel.stop();
+                    totalEntryCount++;
                 }
 
-                baseEnvironment.printMsg("Success to close all channel(s).");
+                baseEnvironment.printMsg("[GroupSocket(%s:%s)] Success to close all destination channel(s). (totalEntryCount={})",
+                        listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                        listenSocket.getNetAddress().getPort(),
+                        totalEntryCount);
             }
         } catch (Exception e) {
-            baseEnvironment.printMsg(DebugLevel.WARN, "Fail to close all destination(s). (%s)", e.toString());
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to close all destination(s). (%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(), e.toString()
+            );
         } finally {
             destinationMapLock.unlock();
         }
@@ -213,11 +238,17 @@ public class GroupSocket { // SEND-ONLY
             try {
                 cloneMap = (HashMap<Long, DestinationRecord>) destinationMap.clone();
             } catch (Exception e) {
-                baseEnvironment.printMsg(DebugLevel.WARN, "Fail to clone the destination map.");
+                baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] Fail to clone the destination map.",
+                        listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                        listenSocket.getNetAddress().getPort()
+                );
                 cloneMap = destinationMap;
             }
         } catch (Exception e) {
-            baseEnvironment.printMsg(DebugLevel.WARN, "GroupSocket.getCloneDestinationMap.Exception (%s)", e.toString());
+            baseEnvironment.printMsg(DebugLevel.WARN, "[GroupSocket(%s:%s)] getCloneDestinationMap.Exception (%s)",
+                    listenSocket.getNetAddress().isIpv4()? listenSocket.getNetAddress().getInet4Address() : listenSocket.getNetAddress().getInet6Address(),
+                    listenSocket.getNetAddress().getPort(), e.toString()
+            );
             return null;
         } finally {
             destinationMapLock.unlock();

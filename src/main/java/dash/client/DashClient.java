@@ -142,8 +142,13 @@ public class DashClient {
 
     public void stop() {
         stopMpdTimeout();
+        mpdTimer.stop();
+
         stopAudioTimeout();
+        audioTimer.stop();
+
         stopVideoTimeout();
+        videoTimer.stop();
 
         this.dashClientAudioFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
         if (this.dashClientVideoFsmManager != null) {

@@ -55,7 +55,7 @@ public class NettyTcpServerChannel extends NettyChannel {
     @Override
     public Channel openListenChannel(String ip, int port) {
         if (listenChannel != null) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is already opened.");
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpServerChannel(%s:%s)] Channel is already opened.", ip, port);
             return null;
         }
 
@@ -65,18 +65,18 @@ public class NettyTcpServerChannel extends NettyChannel {
         try {
             address = InetAddress.getByName(ip);
         } catch (UnknownHostException e) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "UnknownHostException is occurred. (ip=%s) (%s)", ip, e.toString());
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpServerChannel(%s:%s)] UnknownHostException is occurred. (%s)", ip, port, e.toString());
             return null;
         }
 
         try {
             channelFuture = serverBootstrap.bind(address, port).sync();
             this.listenChannel = channelFuture.channel();
-            getBaseEnvironment().printMsg("Channel is opened. (ip=%s, port=%s)", address, port);
+            getBaseEnvironment().printMsg("[NettyTcpServerChannel(%s:%s)] Channel is opened", address, port);
 
             return this.listenChannel;
         } catch (Exception e1) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is interrupted. (address=%s:%s) (%s)", ip, port, e1.toString());
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpServerChannel(%s:%s)] Channel is interrupted. (%s)", ip, port, e1.toString());
             if (listenChannel != null) {
                 try {
                     listenChannel.closeFuture().sync();

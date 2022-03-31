@@ -58,7 +58,7 @@ public class NettyTcpClientChannel extends NettyChannel {
     @Override
     public Channel openListenChannel(String ip, int port) {
         if (listenChannel != null) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is already opened.");
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpClientChannel(%s:%s)] Channel is already opened.", ip, port);
             return null;
         }
 
@@ -68,18 +68,18 @@ public class NettyTcpClientChannel extends NettyChannel {
         try {
             address = InetAddress.getByName(ip);
         } catch (UnknownHostException e) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "UnknownHostException is occurred. (ip=%s) (%s)", ip, e.toString());
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpClientChannel(%s:%s)] UnknownHostException is occurred.", ip, port, e.toString());
             return null;
         }
 
         try {
             channelFuture = bootstrap.bind(address, port).sync();
             this.listenChannel = channelFuture.channel();
-            getBaseEnvironment().printMsg("Channel is opened. (ip=%s, port=%s)", address, port);
+            getBaseEnvironment().printMsg("[NettyTcpClientChannel(%s:%s)] Channel is opened.", address, port);
 
             return this.listenChannel;
         } catch (Exception e) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpClientChannel(%s:%s)] Channel is interrupted. (%s)", ip, port, e.toString());
             if (listenChannel != null) {
                 try {
                     listenChannel.closeFuture().sync();
@@ -114,7 +114,7 @@ public class NettyTcpClientChannel extends NettyChannel {
 
             return channel;
         } catch (Exception e) {
-            getBaseEnvironment().printMsg(DebugLevel.WARN, "[TCP] Connect Channel is interrupted. (address=%s:%s) (%s)", ip, port, e.toString());
+            getBaseEnvironment().printMsg(DebugLevel.WARN, "[NettyTcpClientChannel(%s:%s)] Connect Channel is interrupted. (%s)", ip, port, e.toString());
             if (connectChannel != null) {
                 try {
                     connectChannel.closeFuture().sync();
