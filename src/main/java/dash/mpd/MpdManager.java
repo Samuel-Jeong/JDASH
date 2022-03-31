@@ -15,6 +15,7 @@ import util.module.FileManager;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -725,7 +726,7 @@ public class MpdManager {
             );
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
-                    String.format("%05d", getAudioSegmentSeqNum())
+                    String.format(configManager.getSegmentNumberFormat(), getAudioSegmentSeqNum())
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             return mediaSegmentName;
@@ -769,7 +770,7 @@ public class MpdManager {
             );
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
-                    String.format("%05d", getVideoSegmentSeqNum())
+                    String.format(configManager.getSegmentNumberFormat(), getVideoSegmentSeqNum())
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             return mediaSegmentName;

@@ -88,6 +88,7 @@ public class ConfigManager {
     public static final String FIELD_ENABLE_VALIDATION = "ENABLE_VALIDATION";
     public static final String FIELD_REPRESENTATION_ID_FORMAT = "REPRESENTATION_ID_FORMAT";
     public static final String FIELD_CHUNK_NUMBER_FORMAT = "CHUNK_NUMBER_FORMAT";
+    public static final String FIELD_SEGMENT_NUMBER_FORMAT = "SEGMENT_NUMBER_FORMAT";
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
     public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
@@ -150,6 +151,7 @@ public class ConfigManager {
     private boolean enableValidation = false;
     private String representationIdFormat = null;
     private String chunkNumberFormat = null;
+    private String segmentNumberFormat = null;
     private String validationXsdPath = null;
     private double segmentDuration = 0.0d;
     private double timeOffset = 0.0d;
@@ -597,6 +599,12 @@ public class ConfigManager {
             logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
             System.exit(1);
         }
+        
+        this.segmentNumberFormat = getIniValue(SECTION_MPD, FIELD_SEGMENT_NUMBER_FORMAT);
+        if (segmentNumberFormat == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_NUMBER_FORMAT);
+            System.exit(1);
+        }
 
         this.validationXsdPath = getIniValue(SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
         if (validationXsdPath == null) {
@@ -872,6 +880,10 @@ public class ConfigManager {
         return chunkNumberFormat;
     }
 
+    public String getSegmentNumberFormat() {
+        return segmentNumberFormat;
+    }
+    
     public String getValidationXsdPath() {
         return validationXsdPath;
     }
