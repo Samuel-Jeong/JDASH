@@ -30,6 +30,7 @@ public class ServiceManager {
     public static final String LONG_SESSION_REMOVE_SCHEDULE_JOB = "LONG_SESSION_REMOVE_JOB";
     public static final int DELAY = 1000;
 
+    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     private final DashServer dashServer = new DashServer();
 
     private final String tmpdir = System.getProperty("java.io.tmpdir");
@@ -64,7 +65,6 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // SCHEDULE MAIN JOBS
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         int threadPoolSize = configManager.getThreadCount();
 
         if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, threadPoolSize, threadPoolSize * 2)) {
@@ -90,16 +90,18 @@ public class ServiceManager {
             }
         }
 
-        if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
-            // FOR REMOVING the old session & folder for this service
-            scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
-                    new LongSessionRemover(
-                            scheduleManager,
-                            LongSessionRemover.class.getSimpleName(),
-                            0, DELAY, TimeUnit.MILLISECONDS,
-                            3, 0, true
-                    )
-            );
+        if (configManager.isEnableAutoDeleteUselessSession() && configManager.isEnableAutoDeleteUselessDir()) {
+            if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
+                // FOR REMOVING the old session & folder for this service
+                scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
+                        new LongSessionRemover(
+                                scheduleManager,
+                                LongSessionRemover.class.getSimpleName(),
+                                0, DELAY, TimeUnit.MILLISECONDS,
+                                3, 0, true
+                        )
+                );
+            }
         }
         ////////////////////////////////////////
 
@@ -120,7 +122,9 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // FINISH ALL MAIN JOBS
-        scheduleManager.stopAll(LONG_SESSION_REMOVE_SCHEDULE_JOB);
+        if (configManager.isEnableAutoDeleteUselessSession() && configManager.isEnableAutoDeleteUselessDir()) {
+            scheduleManager.stopAll(LONG_SESSION_REMOVE_SCHEDULE_JOB);
+        }
         scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
         ////////////////////////////////////////
 

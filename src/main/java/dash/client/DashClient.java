@@ -54,6 +54,8 @@ public class DashClient {
     transient private final Timer videoTimer = new HashedWheelTimer();
     transient private Timeout videoTimeout = null;
 
+    private final AtomicInteger mpdRetryCount = new AtomicInteger(0);
+    private final AtomicBoolean isMpdRetrying = new AtomicBoolean(false);
     private final AtomicInteger audioRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isAudioRetrying = new AtomicBoolean(false);
     private final AtomicInteger videoRetryCount = new AtomicInteger(0);
@@ -274,6 +276,28 @@ public class DashClient {
 
     public MpdManager getMpdManager() {
         return mpdManager;
+    }
+
+    public int getMpdRetryCount() {
+        return mpdRetryCount.get();
+    }
+
+    public void setMpdRetryCount(int retryCount) {
+        int curRetryCount = mpdRetryCount.get();
+        mpdRetryCount.set(retryCount);
+        logger.debug("[DashClient({})] SET mpdRetryCount: {} > {}", dashUnitId, curRetryCount, mpdRetryCount.get());
+    }
+
+    public int incAndGetMpdRetryCount() {
+        return mpdRetryCount.incrementAndGet();
+    }
+
+    public boolean isMpdRetrying() {
+        return isMpdRetrying.get();
+    }
+
+    public void setIsMpdRetrying(boolean isRetrying) {
+        isMpdRetrying.set(isRetrying);
     }
 
     public int getAudioRetryCount() {

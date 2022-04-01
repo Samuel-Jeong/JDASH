@@ -42,7 +42,6 @@ public class ConfigManager {
     public static final String FIELD_ID = "ID";
     public static final String FIELD_REMOTE_ID = "REMOTE_ID";
     public static final String FIELD_SERVICE_NAME = "SERVICE_NAME";
-    public static final String FIELD_LONG_SESSION_LIMIT_TIME = "LONG_SESSION_LIMIT_TIME";
     public static final String FIELD_ENABLE_CLIENT = "ENABLE_CLIENT";
     public static final String FIELD_THREAD_COUNT = "THREAD_COUNT";
     public static final String FIELD_SEND_BUF_SIZE = "SEND_BUF_SIZE";
@@ -58,6 +57,10 @@ public class ConfigManager {
     public static final String FIELD_PREPROCESS_LISTEN_IP = "PREPROCESS_LISTEN_IP";
     public static final String FIELD_PREPROCESS_LISTEN_PORT = "PREPROCESS_LISTEN_PORT";
     public static final String FIELD_MAX_DASH_UNIT_LIMIT = "MAX_DASH_UNIT_LIMIT";
+    public static final String FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION = "ENABLE_AUTO_DELETE_USELESS_SESSION";
+    public static final String FIELD_AUTO_DELETE_SESSION_LIMIT_TIME = "AUTO_DELETE_SESSION_LIMIT_TIME";
+    public static final String FIELD_ENABLE_AUTO_DELETE_USELESS_DIR = "ENABLE_AUTO_DELETE_USELESS_DIR";
+    public static final String FIELD_AUTO_DELETE_DIR_LIMIT_TIME = "AUTO_DELETE_DIR_LIMIT_TIME";
 
     // CLIENT
     public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
@@ -105,7 +108,6 @@ public class ConfigManager {
     private String id = null;
     private String remoteId = null;
     private String serviceName = null;
-    private long localSessionLimitTime = 0; // ms
     private boolean enableClient = false;
     private int threadCount = 0;
     private int sendBufSize = 0;
@@ -121,6 +123,10 @@ public class ConfigManager {
     private String preprocessListenIp = null;
     private int preprocessListenPort = 0;
     private int maxDashUnitLimit = 0;
+    private boolean enableAutoDeleteUselessSession = false;
+    private long autoDeleteSessionLimitTime = 0; // ms
+    private boolean enableAutoDeleteUselessDir = false;
+    private long autoDeleteDirLimitTime = 0; // ms
 
     // CLIENT
     private boolean enableGui = false;
@@ -220,12 +226,6 @@ public class ConfigManager {
             logger.error("MUST CHECK SERVICE NAME (given: {}, expected: {} or {})",
                     serviceName, CONSTANT_SERVICE_DASH, CONSTANT_SERVICE_CDN
             );
-            System.exit(1);
-        }
-
-        this.localSessionLimitTime = Long.parseLong(getIniValue(SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME));
-        if (this.localSessionLimitTime < 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_LONG_SESSION_LIMIT_TIME, localSessionLimitTime);
             System.exit(1);
         }
 
@@ -355,6 +355,46 @@ public class ConfigManager {
                 System.exit(1);
             }
         }
+
+        String enableAutoDeleteUselessSessionString = getIniValue(SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION);
+        if (enableAutoDeleteUselessSessionString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION);
+            System.exit(1);
+        } else {
+            this.enableAutoDeleteUselessSession = Boolean.parseBoolean(enableAutoDeleteUselessSessionString);
+        }
+
+        String autoDeleteSessionLimitTimeString = getIniValue(SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
+        if (autoDeleteSessionLimitTimeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
+            System.exit(1);
+        } else {
+            this.autoDeleteSessionLimitTime = Long.parseLong(autoDeleteSessionLimitTimeString);
+            if (this.autoDeleteSessionLimitTime < 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
+                System.exit(1);
+            }
+        }
+
+        String enableAutoDeleteUselessDirString = getIniValue(SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_DIR);
+        if (enableAutoDeleteUselessDirString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_DIR);
+            System.exit(1);
+        } else {
+            this.enableAutoDeleteUselessDir = Boolean.parseBoolean(enableAutoDeleteUselessDirString);
+        }
+
+        String autoDeleteDirLimitTimeString = getIniValue(SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+        if (autoDeleteDirLimitTimeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+            System.exit(1);
+        } else {
+            this.autoDeleteDirLimitTime = Long.parseLong(autoDeleteDirLimitTimeString);
+            if (this.autoDeleteDirLimitTime < 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+                System.exit(1);
+            }
+        }
     }
 
     /**
@@ -394,10 +434,16 @@ public class ConfigManager {
             }
         }
 
-        this.preprocessInitIdleTime = Long.parseLong(getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME));
-        if (this.preprocessInitIdleTime < 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME, preprocessInitIdleTime);
+        String preprocessInitIdleTimeSring = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
+        if (preprocessInitIdleTimeSring == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
             System.exit(1);
+        } else {
+            this.preprocessInitIdleTime = Long.parseLong(preprocessInitIdleTimeSring);
+            if (this.preprocessInitIdleTime < 0) {
+                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
+                System.exit(1);
+            }
         }
 
         this.preprocessTargetIp = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
@@ -729,10 +775,6 @@ public class ConfigManager {
         return serviceName;
     }
 
-    public long getLocalSessionLimitTime() {
-        return localSessionLimitTime;
-    }
-
     public boolean isEnableClient() {
         return enableClient;
     }
@@ -812,6 +854,7 @@ public class ConfigManager {
     public int getPreprocessTargetPort() {
         return preprocessTargetPort;
     }
+
     public int getDownloadChunkRetryCount() {
         return downloadChunkRetryCount;
     }
@@ -908,5 +951,20 @@ public class ConfigManager {
         return rtmpPublishPort;
     }
 
+    public boolean isEnableAutoDeleteUselessSession() {
+        return enableAutoDeleteUselessSession;
+    }
+
+    public long getAutoDeleteSessionLimitTime() {
+        return autoDeleteSessionLimitTime;
+    }
+
+    public boolean isEnableAutoDeleteUselessDir() {
+        return enableAutoDeleteUselessDir;
+    }
+
+    public long getAutoDeleteDirLimitTime() {
+        return autoDeleteDirLimitTime;
+    }
 
 }
