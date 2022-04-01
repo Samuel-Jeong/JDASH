@@ -165,7 +165,7 @@ public class ScheduleManager {
             return 0;
         }
 
-        return scheduleUnit.getJobKeyListSize();
+        return scheduleUnit.getJobListSize();
     }
 
     ////////////////////////////////////////////////////////////////////////////////

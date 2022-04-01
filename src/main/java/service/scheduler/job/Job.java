@@ -3,9 +3,7 @@ package service.scheduler.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.schedule.ScheduleManager;
-import service.scheduler.schedule.handler.JobScheduler;
 
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,7 +23,6 @@ public abstract class Job implements Runnable {
     private final int totalRunCount;
     private final AtomicInteger curRemainRunCount = new AtomicInteger(0);
     private final boolean isLasted;
-    private final AtomicBoolean isInitialFinished = new AtomicBoolean(false);
     private final AtomicBoolean isFinished = new AtomicBoolean(false);
 
     private String scheduleUnitKey;
@@ -98,20 +95,16 @@ public abstract class Job implements Runnable {
         return isLasted;
     }
 
-    public boolean getIsInitialFinished() {
-        return isInitialFinished.get();
-    }
-
-    public void setIsInitialFinished(boolean isInitialFinished) {
-        this.isInitialFinished.set(isInitialFinished);
-    }
-
     public boolean getIsFinished() {
         return isFinished.get();
     }
 
     public void setIsFinished(boolean isFinished) {
         this.isFinished.set(isFinished);
+    }
+
+    public ScheduleManager getScheduleManager() {
+        return scheduleManager;
     }
 
     @Override
@@ -125,7 +118,6 @@ public abstract class Job implements Runnable {
                 ", totalRunCount=" + totalRunCount +
                 ", curRemainRunCount=" + curRemainRunCount.get() +
                 ", isLasted=" + isLasted +
-                ", isInitialFinished=" + isInitialFinished.get() +
                 ", isFinished=" + isFinished.get() +
                 ", scheduleUnitKey=" + scheduleUnitKey +
                 '}';
