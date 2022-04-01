@@ -127,9 +127,36 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
             int readBytes = buf.readableBytes();
             if (buf.readableBytes() <= 0) {
                 logger.warn("[ProcessClientChannelHandler] Message is null.");
-                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
-                channelHandlerContext.close();
+
+                int curMpdRetryCount = dashClient.incAndGetMpdRetryCount();
+                if (curMpdRetryCount > retryCount) {
+                    logger.warn("[DashMpdHttpClientHandler({})] [MPD] Fail to get the mpd. ({})",
+                            dashClient.getDashUnitId(), dashClient.getSrcPath()
+                    );
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                    channelHandlerContext.close();
+                    return;
+                }
+
+                try {
+                    timeUnitSec.sleep((long) AppInstance.getInstance().getConfigManager().getTimeOffset());
+                    //logger.trace("[DashAudioHttpClientHandler({})] [MPD] Waiting... ({}sec)", dashClient.getDashUnitId(), 1);
+                } catch (Exception e) {
+                    //logger.warn("");
+                }
+
+                dashClient.sendHttpGetRequest(dashClient.getSrcPath(), MessageType.MPD);
+                logger.warn("[DashMpdHttpClientHandler({})] [MPD] [count={}] Retrying... ({})",
+                        dashClient.getDashUnitId(), curMpdRetryCount, dashClient.getSrcPath()
+                );
+
                 return;
+            } else {
+                dashClient.stopMpdTimeout();
+
+                if (dashClient.getMpdRetryCount() > 0) {
+                    dashClient.setMpdRetryCount(0);
+                }
             }
 
             byte[] data = new byte[readBytes];
