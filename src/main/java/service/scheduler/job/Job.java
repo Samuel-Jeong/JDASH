@@ -3,8 +3,7 @@ package service.scheduler.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.schedule.ScheduleManager;
-import service.scheduler.schedule.unit.FutureScheduler;
-import service.scheduler.schedule.unit.ScheduleUnit;
+import service.scheduler.schedule.handler.JobScheduler;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +14,7 @@ public abstract class Job implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(Job.class);
 
+    ////////////////////////////////////////////////////////////////////////////////
     private final ScheduleManager scheduleManager;
     private final String name;
     private final int initialDelay;
@@ -28,14 +28,10 @@ public abstract class Job implements Runnable {
     private final AtomicBoolean isInitialFinished = new AtomicBoolean(false);
     private final AtomicBoolean isFinished = new AtomicBoolean(false);
 
-    //
-    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
     private String scheduleUnitKey;
-    private FutureScheduler futureScheduler;
-    //
-
     ////////////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////////////
     public Job(ScheduleManager scheduleManager, String name, int initialDelay, int interval, TimeUnit timeUnit, int priority, int totalRunCount, boolean isLasted) {
         this.scheduleManager = scheduleManager;
         this.name = name;
@@ -47,30 +43,9 @@ public abstract class Job implements Runnable {
         this.curRemainRunCount.set(totalRunCount);
         this.isLasted = isLasted;
     }
-
     ////////////////////////////////////////////////////////////////////////////////
 
-    public void initialSchedule() {
-        ScheduleUnit scheduleUnit = scheduleManager.getScheduleUnit(scheduleUnitKey);
-        if (scheduleUnit != null && this.futureScheduler == null) {
-            this.futureScheduler = new FutureScheduler(scheduleManager, this);
-        }
-
-        scheduledThreadPoolExecutor.schedule(futureScheduler, initialDelay, timeUnit);
-    }
-
-    public void schedule() {
-        scheduledThreadPoolExecutor.scheduleAtFixedRate(this, 0, interval, timeUnit);
-    }
-
-    public FutureScheduler getFutureScheduler() {
-        return futureScheduler;
-    }
-
-    public void setFutureScheduler(FutureScheduler futureScheduler) {
-        this.futureScheduler = futureScheduler;
-    }
-
+    ////////////////////////////////////////////////////////////////////////////////
     public String getScheduleUnitKey() {
         return scheduleUnitKey;
     }
@@ -137,12 +112,7 @@ public abstract class Job implements Runnable {
 
     public void setIsFinished(boolean isFinished) {
         this.isFinished.set(isFinished);
-        if (isFinished) {
-            scheduledThreadPoolExecutor.shutdown();
-        }
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public String toString() {
@@ -160,4 +130,5 @@ public abstract class Job implements Runnable {
                 ", scheduleUnitKey=" + scheduleUnitKey +
                 '}';
     }
+    ////////////////////////////////////////////////////////////////////////////////
 }

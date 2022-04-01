@@ -49,7 +49,7 @@ public class DashServer {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashServer.class);
 
-    public static final String DASH_SCHEDULE_JOB = "DASH";
+    public static final String DASH_SCHEDULE_JOB = "DASH_SCHEDULE_JOB";
 
     private final BaseEnvironment baseEnvironment;
     private final SocketManager socketManager;
@@ -162,8 +162,8 @@ public class DashServer {
         httpMessageManager.start();
         dynamicMediaManager.start();
 
-        if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
-            if (configManager.isEnableClient()) {
+        if (configManager.isEnableClient()) {
+            if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
                 localStreamService = new LocalStreamService(
                         baseEnvironment.getScheduleManager(),
                         LocalStreamService.class.getSimpleName(),

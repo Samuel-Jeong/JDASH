@@ -120,6 +120,7 @@ public class ServiceManager {
 
         ////////////////////////////////////////
         // FINISH ALL MAIN JOBS
+        scheduleManager.stopAll(LONG_SESSION_REMOVE_SCHEDULE_JOB);
         scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
         ////////////////////////////////////////
 

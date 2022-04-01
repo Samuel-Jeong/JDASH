@@ -114,6 +114,7 @@ public class ScheduleManager {
 
         ScheduleUnit scheduleUnit = getScheduleUnit(scheduleUnitKey);
         if (scheduleUnit == null) {
+            logger.warn("Fail to start the job. Fail to find the scheduleUnit. (scheduleUnitKey={})", scheduleUnitKey);
             return false;
         }
 

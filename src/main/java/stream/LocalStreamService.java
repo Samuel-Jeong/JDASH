@@ -102,14 +102,14 @@ public class LocalStreamService extends Job {
             if (configManager.isEnableGui()
                     && openCVFrameGrabber != null
                     && !configManager.isAudioOnly()) {
-                if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 1)) {
+                if (scheduleManager.initJob(LOCAL_STREAM_SCHEDULE_KEY, 1, 5)) {
                     logger.debug("[LocalStreamService] Success to init [{}]", LOCAL_STREAM_SCHEDULE_KEY);
 
                     localCameraCanvasController = new CameraCanvasController(
                             scheduleManager,
                             CameraCanvasController.class.getSimpleName(),
                             0, 1, TimeUnit.MILLISECONDS,
-                            1, 1, true,
+                            1, 0, true,
                             true, frameQueue, openCVFrameGrabber.getGamma()
                     );
                     scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
