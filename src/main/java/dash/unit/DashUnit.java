@@ -36,10 +36,9 @@ public class DashUnit {
 
     private String inputFilePath = null;
     private String outputFilePath = null;
-    private String curSegmentName = null;
 
+    private final AtomicBoolean isRegistered = new AtomicBoolean(false);
     private final AtomicBoolean isLiveStreaming = new AtomicBoolean(false);
-    private boolean isRegistered = false;
 
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
     public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
@@ -246,24 +245,16 @@ public class DashUnit {
         this.outputFilePath = outputFilePath;
     }
 
-    public String getCurSegmentName() {
-        return curSegmentName;
+    public boolean getIsRegistered() {
+        return isRegistered.get();
     }
 
-    public void setCurSegmentName(String curSegmentName) {
-        this.curSegmentName = curSegmentName;
+    public void setIsRegistered(boolean isRegistered) {
+        this.isRegistered.set(isRegistered);
     }
 
     public boolean isLiveStreaming() {
         return isLiveStreaming.get();
-    }
-
-    public boolean isRegistered() {
-        return isRegistered;
-    }
-
-    public void setRegistered(boolean registered) {
-        isRegistered = registered;
     }
 
     public long getExpires() {

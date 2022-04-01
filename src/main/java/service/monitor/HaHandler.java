@@ -1,5 +1,6 @@
 package service.monitor;
 
+import dash.unit.StreamType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.ServiceManager;
@@ -36,9 +37,10 @@ public class HaHandler extends Job {
         String cpuUsageStr = systemManager.getCpuUsage();
         String memoryUsageStr = systemManager.getHeapMemoryUsage();
 
-        logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | DashUnitCount=[{}]",
+        logger.debug("| cpu=[{}], mem=[{}], thread=[{}] | DashUnitCount=[S:{}/D:{}]",
                 cpuUsageStr, memoryUsageStr, Thread.activeCount(),
-                ServiceManager.getInstance().getDashServer().getDashUnitMapSize()
+                ServiceManager.getInstance().getDashServer().getDashUnitMapSizeWithStreamType(StreamType.STATIC),
+                ServiceManager.getInstance().getDashServer().getDashUnitMapSizeWithStreamType(StreamType.DYNAMIC)
         );
     }
 

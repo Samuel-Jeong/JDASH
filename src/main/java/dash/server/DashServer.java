@@ -382,6 +382,13 @@ public class DashServer {
         }
     }
 
+    public long getDashUnitMapSizeWithStreamType(StreamType streamType) {
+        return dashUnitMap.values().stream().filter(
+                dashUnit -> (dashUnit != null) && (dashUnit.getType() == streamType)
+                        && (!dashUnit.getId().equals(AppInstance.getInstance().getConfigManager().getId()))
+        ).count();
+    }
+
     public DashUnit getDashUnitById(String dashUnitId) { // dashUnitId > MEDIA URI
         return dashUnitMap.get(dashUnitId);
     }

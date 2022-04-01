@@ -7,6 +7,8 @@ import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import network.definition.NetAddress;
+import network.socket.SocketProtocol;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,123 +29,143 @@ public class MediaManager {
     private final String mediaListFilePath;
     private final List<MediaInfo> mediaInfoList = new ArrayList<>();
 
+    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
     public MediaManager(String mediaListFilePath) {
         this.mediaListFilePath = mediaListFilePath;
-
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         this.mediaBasePath = configManager.getMediaBasePath();
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public boolean loadUriList() {
-        ////////////////////////////////
         // 1) GET RAW FILE LIST
         List<String> fileLines = fileManager.readAllLines(mediaListFilePath);
-        ////////////////////////////////
 
-        ////////////////////////////////
         // 2) APPLY BASE PATH IN FRONT OF THE RAW FILE PATH
         if (fileLines != null) {
-            ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-
-            // CLEAR ALL STATIC DASH UNIT
-            //ServiceManager.getInstance().getDashServer().deleteDashUnitsByType(StreamType.STATIC);
             mediaInfoList.clear();
 
             int mediaInfoListIndex = 0;
             for (String rawUri : fileLines) {
-                if (rawUri == null || rawUri.isEmpty()) {
-                    continue;
-                }
+                String[] elements = parseRawUri(rawUri);
+                if (elements == null) { continue; }
 
-                rawUri = rawUri.trim();
-                // 앞에 '#' 이 있으면 주석으로 처리
-                if (rawUri.startsWith("#")) { continue; }
+                // GET StreamType
+                StreamType streamType = getStreamTypeFromString(elements[0]);
 
-                // ex) D,live/jamesj
-                String[] elements = rawUri.split(",");
-                if (elements.length != 2) { continue; }
+                // GET StreamUri
+                String streamUri = elements[1]; // test/stream1.mpd
+                String localStreamPath = getLocalStreamPath(streamType, streamUri);
 
-                /**
-                 * Stream Type
-                 * S: Static stream
-                 * D: Dynamic stream
-                 */
-                String streamTypeStr = elements[0];
-                StreamType streamType = StreamType.NONE;
-                if (streamTypeStr.equals("S")) {
-                    streamType = StreamType.STATIC;
-                } else if (streamTypeStr.equals("D")) {
-                    streamType = StreamType.DYNAMIC;
-                }
-
-                String uri = elements[1]; // test/stream1.mpd
-                String fullPath;
-                if (streamType == StreamType.DYNAMIC) {
-                    fullPath = fileManager.concatFilePath(mediaBasePath, uri);
-                } else {
-                    String localUri = fileManager.concatFilePath(fileManager.getParentPathFromUri(uri), fileManager.getFileNameFromUri(uri)); // test/stream1
-                    localUri = fileManager.concatFilePath(localUri, fileManager.getFileNameWithExtensionFromUri(uri)); // test/stream1/stream1.mpd
-                    fullPath = fileManager.concatFilePath(mediaBasePath, localUri); // /home/udash/udash/media/test/stream1/stream1.mpd
+                // ADD Static DashUnit only
+                String dashPathExtension = FileUtils.getExtension(streamUri);
+                if (dashPathExtension.length() != 0) {
+                    if (!streamType.equals(StreamType.STATIC)) { continue; }
+                    if (!streamUri.endsWith(StreamConfigManager.MP4_POSTFIX) && !streamUri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
+                    if (!startDownloadStream(streamType, streamUri, localStreamPath)) { continue; }
                 }
 
                 // ADD MediaInfo
-                addMediaInfo(mediaInfoListIndex, streamType, fullPath);
-
-                // ADD STATIC DASH UNIT
-                String dashPathExtension = FileUtils.getExtension(uri);
-                if (dashPathExtension.length() != 0) {
-                    if (!streamType.equals(StreamType.STATIC)) { continue; }
-                    if (!uri.endsWith(StreamConfigManager.MP4_POSTFIX) && !uri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
-
-                    String dashUnitId = AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" + fileManager.getFilePathWithoutExtensionFromUri(fullPath);
-                    DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
-                    if (dashUnit != null) {
-                        logger.debug("[MediaManager] DashUnit({}) is already exist. ({})", dashUnitId, dashUnit);
-                        continue;
-                    }
-
-                    dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
-                            streamType, dashUnitId,
-                            null, 0, false
-                    );
-
-                    if (dashUnit != null) {
-                        dashUnit.setInputFilePath(fullPath);
-
-                        String mpdPath = fullPath;
-                        if (mpdPath.endsWith(StreamConfigManager.MP4_POSTFIX)) {
-                            mpdPath = mpdPath.replace(StreamConfigManager.MP4_POSTFIX, StreamConfigManager.DASH_POSTFIX);
-                        }
-                        dashUnit.setOutputFilePath(mpdPath);
-
-                        if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
-                            // GET STATIC MEDIA SOURCE from remote dash server
-                            String httpPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
-                            httpPath = fileManager.concatFilePath(httpPath, uri);
-                            DashClient dashClient = new DashClient(
-                                    dashUnit.getId(),
-                                    ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
-                                    httpPath,
-                                    fileManager.getParentPathFromUri(mpdPath)
-                            );
-                            if (dashClient.start()) {
-                                dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
-                                dashUnit.setDashClient(dashClient);
-                            }
-                        }
-                    }
-                }
-
-                mediaInfoListIndex++;
+                addMediaInfo(mediaInfoListIndex++, streamType, localStreamPath);
             }
         }
-        ////////////////////////////////
 
         return !mediaInfoList.isEmpty();
+    }
+
+    private String[] parseRawUri(String rawUri) {
+        if (rawUri == null || rawUri.isEmpty()) { return null; }
+
+        rawUri = rawUri.trim();
+        // 앞에 '#' 이 있으면 주석으로 처리
+        if (rawUri.startsWith("#")) { return null; }
+
+        // ex) D,live/jamesj
+        String[] elements = rawUri.split(",");
+        if (elements.length != 2) { return null; }
+        return elements;
+    }
+
+    private StreamType getStreamTypeFromString(String streamTypeString) {
+        /**
+         * Stream Type
+         * S: Static stream
+         * D: Dynamic stream
+         */
+        StreamType streamType = StreamType.NONE;
+        if (streamTypeString.equals("S")) {
+            streamType = StreamType.STATIC;
+        } else if (streamTypeString.equals("D")) {
+            streamType = StreamType.DYNAMIC;
+        }
+        return streamType;
+    }
+
+    private String getLocalStreamPath(StreamType streamType, String streamUri) {
+        if (streamType == StreamType.DYNAMIC) {
+            return fileManager.concatFilePath(mediaBasePath, streamUri);
+        } else {
+            String localUri = fileManager.concatFilePath(fileManager.getParentPathFromUri(streamUri), fileManager.getFileNameFromUri(streamUri)); // test/stream1
+            localUri = fileManager.concatFilePath(localUri, fileManager.getFileNameWithExtensionFromUri(streamUri)); // test/stream1/stream1.mpd
+            return fileManager.concatFilePath(mediaBasePath, localUri); // /home/udash/udash/media/test/stream1/stream1.mpd
+        }
+    }
+
+    private String makeDashUnitId(String localStreamPath) {
+        return AppInstance.getInstance().getConfigManager().getHttpListenIp() + ":" + fileManager.getFilePathWithoutExtensionFromUri(localStreamPath);
+    }
+
+    private boolean startDownloadStream(StreamType streamType, String streamUri, String localStreamPath) {
+        String dashUnitId = makeDashUnitId(localStreamPath);
+        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashUnitId);
+        if (dashUnit != null) {
+            logger.debug("[MediaManager] DashUnit({}) is already exist. ({})", dashUnitId, dashUnit);
+            return false;
+        }
+        dashUnit = ServiceManager.getInstance().getDashServer().addDashUnit(
+                streamType, dashUnitId,
+                null, 0, false
+        );
+
+        if (dashUnit != null) {
+            String mpdPath = makeMpdPath(localStreamPath);
+            dashUnit.setInputFilePath(localStreamPath);
+            dashUnit.setOutputFilePath(mpdPath);
+
+            if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
+                startDashClient(mpdPath, streamUri, dashUnit);
+            }
+        }
+
+        return true;
+    }
+
+    private String makeMpdPath(String localStreamPath) {
+        if (localStreamPath.endsWith(StreamConfigManager.MP4_POSTFIX)) {
+            localStreamPath = localStreamPath.replace(StreamConfigManager.MP4_POSTFIX, StreamConfigManager.DASH_POSTFIX);
+        }
+        return localStreamPath;
+    }
+
+    private String makeHttpPath(String streamUri) {
+        String httpPath = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
+        return fileManager.concatFilePath(httpPath, streamUri);
+    }
+
+    private void startDashClient(String mpdPath, String streamUri, DashUnit dashUnit) {
+        String httpPath = makeHttpPath(streamUri);
+        DashClient dashClient = new DashClient(dashUnit.getId(),
+                ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
+                httpPath, fileManager.getParentPathFromUri(mpdPath)
+        );
+
+        // GET STATIC MEDIA SOURCE from remote dash server
+        if (dashClient.start()) {
+            dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
+            dashUnit.setDashClient(dashClient);
+        }
     }
 
     public void addMediaInfo(int index, StreamType streamType, String uri) {

@@ -40,14 +40,9 @@ public class DashMessageHandler implements HttpMessageHandler {
     ////////////////////////////////////////////////////////////////////////////////
     @Override
     public Object handle(HttpRequest request, HttpResponse response, String originUri, String uriFileName, ChannelHandlerContext ctx, DashUnit dashUnit) {
-        DashServer dashServer = ServiceManager.getInstance().getDashServer();
-        if (request == null || uriFileName == null || ctx == null) {
-            return null;
-        }
+        if (request == null || uriFileName == null || ctx == null) { return null; }
 
-        ///////////////////////////
         // CHECK URI
-        String result = null;
         String uri = request.getRequest().uri();
         if (!this.uri.equals(uri)) {
             logger.warn("[DashMessageHandler(uri={})] URI is not equal with handler's uri. (uri={})", this.uri, uri);
@@ -55,21 +50,31 @@ public class DashMessageHandler implements HttpMessageHandler {
         }
 
         String uriFileNameWithExtension = fileManager.getFileNameWithExtensionFromUri(uri);
-        if (uriFileNameWithExtension.contains(".") && uriFileNameWithExtension.endsWith(StreamConfigManager.MP4_POSTFIX)) {
-            File uriFile = new File(uri);
-            if (!uriFile.exists() || uriFile.isDirectory()) {
-                logger.warn("[DashMessageHandler(uri={})] Fail to find the mp4 file. (uri={})", this.uri, uri);
-                return null;
-            }
+        if (isUriWrong(uriFileNameWithExtension)) {
+            logger.warn("[DashMessageHandler(uri={})] Fail to find the mp4 file. (uri={})", this.uri, uri);
+            return null;
         }
-        ///////////////////////////
 
-        ///////////////////////////
+        // DASH PROCESSING
+        return dashProcessing(uriFileName, uriFileNameWithExtension);
+    }
+    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////
+    private boolean isUriWrong(String uriFileNameWithExtension) {
+        if (uriFileNameWithExtension.contains(".")
+                && uriFileNameWithExtension.endsWith(StreamConfigManager.MP4_POSTFIX)) {
+            File uriFile = new File(uri);
+            return !uriFile.exists() || uriFile.isDirectory();
+        }
+        return false;
+    }
+
+    private String dashProcessing(String uriFileName, String uriFileNameWithExtension) {
         // GENERATE MPD FROM MP4 BY GPAC
         String mp4Path; // Absolute path
         String mpdPath = null; // Absolute path
         try {
-            ///////////////////////////
             // GET COMMAND & RUN SCRIPT
             if (uriFileNameWithExtension.contains(".")) {
                 if (uri.endsWith(StreamConfigManager.MP4_POSTFIX)) {
@@ -83,117 +88,15 @@ public class DashMessageHandler implements HttpMessageHandler {
                     return null;
                 }
 
-                File mpdFile = new File(mpdPath);
-                if (!mpdFile.exists()) {
-                    ///////////////////////////
-                    FFmpegFrameRecorder audioFrameRecorder = null;
-                    FFmpegFrameRecorder videoFrameRecorder = null;
-                    try {
-                        ///////////////////////////
-                        FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);
-                        if (!configManager.isAudioOnly()) {
-                            fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
-                            fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
-                        }
-                        fFmpegFrameGrabber.start();
-                        ///////////////////////////
-
-                        /////////////////////////////////
-                        // [OUTPUT] FFmpegFrameRecorder
-                        if (configManager.isAudioOnly()) {
-                            audioFrameRecorder = new FFmpegFrameRecorder(
-                                    mpdPath,
-                                    AudioService.CHANNEL_NUM
-                            );
-                            StreamConfigManager.setRemoteStreamAudioOptions(audioFrameRecorder);
-                            StreamConfigManager.setDashOptions(audioFrameRecorder,
-                                    uriFileName,
-                                    configManager.getSegmentDuration(), 0
-                            );
-                            audioFrameRecorder.start();
-                        } else {
-                            videoFrameRecorder = new FFmpegFrameRecorder(
-                                    mpdPath,
-                                    StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
-                                    AudioService.CHANNEL_NUM
-                            );
-                            StreamConfigManager.setRemoteStreamVideoOptions(videoFrameRecorder);
-                            StreamConfigManager.setRemoteStreamAudioOptions(videoFrameRecorder);
-                            StreamConfigManager.setDashOptions(videoFrameRecorder,
-                                    uriFileName,
-                                    configManager.getSegmentDuration(), 0
-                            );
-                            videoFrameRecorder.start();
-                        }
-                        /////////////////////////////////
-
-                        /////////////////////////////////
-                        long startTime = 0;
-                        Frame capturedFrame;
-                        while (true) {
-                            //////////////////////////////////////
-                            if (configManager.isAudioOnly()) {
-                                capturedFrame = fFmpegFrameGrabber.grabSamples();
-                            } else {
-                                capturedFrame = fFmpegFrameGrabber.grab();
-                            }
-                            if(capturedFrame == null){ break; }
-                            //////////////////////////////////////
-
-                            //////////////////////////////////////
-                            if (configManager.isAudioOnly() && audioFrameRecorder != null) {
-                                // AUDIO DATA ONLY
-                                if (capturedFrame.samples != null && capturedFrame.samples.length > 0) {
-                                    audioFrameRecorder.record(capturedFrame);
-                                }
-                            } else if (videoFrameRecorder != null) {
-                                //////////////////////////////////////
-                                // Check for AV drift
-                                if (startTime == 0) { startTime = System.currentTimeMillis(); }
-                                long curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
-                                if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
-                                    videoFrameRecorder.setTimestamp(curTimeStamp);
-                                }
-
-                                videoFrameRecorder.record(capturedFrame);
-                                //////////////////////////////////////
-                            }
-                            /////////////////////////////////////
-                        }
-                        /////////////////////////////////
-                    } catch (Exception e) {
-                        // ignore
-                        logger.warn("DashMessageHandler.run.Exception", e);
-                    } finally {
-                        try {
-                            if (videoFrameRecorder != null) {
-                                videoFrameRecorder.stop();
-                                videoFrameRecorder.release();
-                            }
-
-                            if (audioFrameRecorder != null) {
-                                audioFrameRecorder.stop();
-                                audioFrameRecorder.release();
-                            }
-                        } catch (Exception e) {
-                            // ignore
-                        }
-                    }
-
-                    mpdFile = new File(mpdPath);
-                    if (!mpdFile.exists()) {
-                        logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
-                        return null;
-                    }
-                } /*else {
-                    logger.debug("[DashMessageHandler(uri={})] The mpd file is already exist. (mpdPath={})", this.uri, mpdPath);
-                }*/
+                if (!getMediaStream(mpdPath, mp4Path, uriFileName)) {
+                    return null;
+                }
             } else {
                 mpdPath = fileManager.concatFilePath(uri, uriFileName + StreamConfigManager.DASH_POSTFIX);
             }
 
-            ///////////////////////////
             // GET MPD
+            DashServer dashServer = ServiceManager.getInstance().getDashServer();
             if (!dashServer.getMpdManager().parseMpd(mpdPath, false)) {
                 logger.warn("[DashMessageHandler(uri={})] Fail to parse the mpd. (uri={}, mpdPath={})", this.uri, uri, mpdPath);
                 return null;
@@ -209,18 +112,113 @@ public class DashMessageHandler implements HttpMessageHandler {
                 }
             }
 
-            result = dashServer.getMpdManager().writeAsString();
-            ///////////////////////////
+            return dashServer.getMpdManager().writeAsString();
         } catch (Exception e) {
             logger.warn("DashMessageHandler(uri={}).handle.Exception (uri={}, mpdPath={})\n", this.uri, uri, mpdPath, e);
+            return null;
         }
-        ///////////////////////////
-
-        return result;
     }
-    ////////////////////////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////////////////////////
+    private boolean getMediaStream(String mpdPath, String mp4Path, String uriFileName) {
+        File mpdFile = new File(mpdPath);
+        if (!mpdFile.exists()) {
+            FFmpegFrameRecorder audioFrameRecorder = null;
+            FFmpegFrameRecorder videoFrameRecorder = null;
+            try {
+                FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);
+                if (!configManager.isAudioOnly()) {
+                    fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
+                    fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                }
+                fFmpegFrameGrabber.start();
+
+                // [OUTPUT] FFmpegFrameRecorder
+                if (configManager.isAudioOnly()) {
+                    audioFrameRecorder = new FFmpegFrameRecorder(
+                            mpdPath,
+                            AudioService.CHANNEL_NUM
+                    );
+                    StreamConfigManager.setRemoteStreamAudioOptions(audioFrameRecorder);
+                    StreamConfigManager.setDashOptions(audioFrameRecorder,
+                            uriFileName,
+                            configManager.getSegmentDuration(), 0
+                    );
+                    audioFrameRecorder.start();
+                } else {
+                    videoFrameRecorder = new FFmpegFrameRecorder(
+                            mpdPath,
+                            StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                            AudioService.CHANNEL_NUM
+                    );
+                    StreamConfigManager.setRemoteStreamVideoOptions(videoFrameRecorder);
+                    StreamConfigManager.setRemoteStreamAudioOptions(videoFrameRecorder);
+                    StreamConfigManager.setDashOptions(videoFrameRecorder,
+                            uriFileName,
+                            configManager.getSegmentDuration(), 0
+                    );
+                    videoFrameRecorder.start();
+                }
+
+                long startTime = 0;
+                Frame capturedFrame;
+                while (true) {
+                    if (configManager.isAudioOnly()) {
+                        capturedFrame = fFmpegFrameGrabber.grabSamples();
+                    } else {
+                        capturedFrame = fFmpegFrameGrabber.grab();
+                    }
+                    if (capturedFrame == null) {
+                        break;
+                    }
+
+                    if (configManager.isAudioOnly() && audioFrameRecorder != null) {
+                        // AUDIO DATA ONLY
+                        if (capturedFrame.samples != null && capturedFrame.samples.length > 0) {
+                            audioFrameRecorder.record(capturedFrame);
+                        }
+                    } else if (videoFrameRecorder != null) {
+                        // Check for AV drift
+                        if (startTime == 0) {
+                            startTime = System.currentTimeMillis();
+                        }
+                        long curTimeStamp = 1000 * (System.currentTimeMillis() - startTime);
+                        if (curTimeStamp > videoFrameRecorder.getTimestamp()) { // Lip-flap correction
+                            videoFrameRecorder.setTimestamp(curTimeStamp);
+                        }
+
+                        videoFrameRecorder.record(capturedFrame);
+                    }
+                }
+            } catch (Exception e) {
+                // ignore
+                logger.warn("[DashMessageHandler(uri={})] run.Exception", uri, e);
+                return false;
+            } finally {
+                try {
+                    if (videoFrameRecorder != null) {
+                        videoFrameRecorder.stop();
+                        videoFrameRecorder.release();
+                    }
+
+                    if (audioFrameRecorder != null) {
+                        audioFrameRecorder.stop();
+                        audioFrameRecorder.release();
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+
+            mpdFile = new File(mpdPath);
+            if (!mpdFile.exists()) {
+                logger.warn("[DashMessageHandler(uri={})] Fail to generate the mpd file. MPD file is not exists. (mpdPath={})", uri, mpdPath);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public String getUri() {
         return uri;
     }
