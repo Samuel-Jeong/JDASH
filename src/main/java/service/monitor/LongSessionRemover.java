@@ -67,7 +67,7 @@ public class LongSessionRemover extends Job {
 
             ///////////////////////////////////
             // 2) CHECK USELESS FILE
-            /*List<String> dynamicStreamKeys = dashServer.getDynamicStreamPathList();
+            List<String> dynamicStreamKeys = dashServer.getDynamicStreamPathList();
             File mediaBaseDir = new File(AppInstance.getInstance().getConfigManager().getMediaBasePath());
             if (mediaBaseDir.exists() && mediaBaseDir.isDirectory()) {
                 File[] mediaDirs = mediaBaseDir.listFiles();
@@ -81,7 +81,7 @@ public class LongSessionRemover extends Job {
                             limitTime
                     );
                 }
-            }*/
+            }
             ///////////////////////////////////
         } catch (Exception e) {
             logger.warn("({}) run.Exception", getName());
