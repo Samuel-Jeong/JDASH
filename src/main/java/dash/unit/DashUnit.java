@@ -74,10 +74,10 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public void runLiveStreaming(String uriFileName, String sourceUri, String mpdPath) {
+    public boolean runLiveStreaming(String uriFileName, String sourceUri, String mpdPath) {
         if (isLiveStreaming.get()) {
             logger.warn("[DashUnit(id={})] runLiveStreaming is already running...", id);
-            return;
+            return false;
         }
 
         try {
@@ -101,6 +101,7 @@ public class DashUnit {
                     logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
                 } else {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
+                    return false;
                 }
                 //////////////////////////////
             } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
@@ -112,7 +113,7 @@ public class DashUnit {
                 );
                 if (!dashClient.start()) {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Dash client streaming", id);
-                    return;
+                    return false;
                 }
                 dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
 
@@ -143,9 +144,11 @@ public class DashUnit {
             }
 
             isLiveStreaming.set(true);
+            return true;
             //////////////////////////////
         } catch (Exception e) {
             logger.debug("[DashUnit(id={})] runLiveStreaming.Exception", id, e);
+            return false;
         }
     }
 

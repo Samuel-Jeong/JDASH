@@ -46,10 +46,9 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        ///////////////////////////
         // GET URI
-        final FullHttpRequest request = (FullHttpRequest) o;
-        if (HttpHeaderUtil.is100ContinueExpected(request)) {
+        final FullHttpRequest httpRequest = (FullHttpRequest) o;
+        if (HttpHeaderUtil.is100ContinueExpected(httpRequest)) {
             dashServer.send100Continue(channelHandlerContext);
         }
 
@@ -59,7 +58,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
          * [vod/test.mp4]
          * [vod/test.mpd]
          */
-        String uri = request.uri();
+        String uri = httpRequest.uri();
         if (uri == null) {
             logger.warn("[DashHttpMessageFilter] URI is not defined.");
             return;
@@ -67,16 +66,14 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         uri = uri.trim();
         String originUri = uri;
         if (originUri.contains("bad-request")) { return; }
-        logger.trace("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, request);
-        ///////////////////////////
+        logger.trace("[DashHttpMessageFilter] [OriginUri={}] REQUEST: \n{}", originUri, httpRequest);
 
-        ///////////////////////////
         // GET DASH UNIT
         boolean isRegistered = false;
         DashUnit dashUnit = null;
-        String uriFileName = fileManager.getFileNameFromUri(uri); // [Seoul] or [Seoul_chunk_1_00001]
+        String uriFileName = fileManager.getFileNameFromUri(originUri); // [Seoul] or [Seoul_chunk_1_00001]
         if (uriFileName == null) {
-            logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", uri);
+            logger.warn("[DashHttpMessageFilter] URI is wrong. (uri={})", originUri);
             return;
         }
         logger.trace("[DashHttpMessageFilter] uriFileName: {}", uriFileName);
@@ -114,62 +111,74 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
         }
 
         if (dashUnit == null) {
-            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", uri);
+            logger.warn("[DashHttpMessageFilter] NOT FOUND URI (Dash unit is not registered. Must use dash client.) : {}", originUri);
             return;
         }
 
-        String uriFileNameWithExtension = fileManager.getFileNameWithExtensionFromUri(uri);
-        if (uriFileNameWithExtension != null && uriFileNameWithExtension.contains(".")) {
-            String parentPathOfUri = fileManager.getParentPathFromUri(uri); // aws/20210209
-            if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
-                parentPathOfUri = fileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
-                uri = fileManager.concatFilePath(parentPathOfUri, uriFileNameWithExtension); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
-            } else {
-                uri = fileManager.concatFilePath(uriFileName, uri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
-            }
-        }
+        String localUri = makeLocalUri(originUri, uriFileName);
+        httpRequest.setUri(localUri);
 
-        uri = fileManager.concatFilePath(basePath, uri); // [/Users/.../Seoul/Seoul.mp4] or [/Users/.../Seoul/Seoul_chunk_1_00001.m4s]
-        request.setUri(uri);
-        ///////////////////////////
-
-        ///////////////////////////
         // ROUTING IF NOT REGISTERED
-        HttpMessageRoute uriRoute = null;
+        HttpMessageRoute httpMessageRoute = null;
         if (!isRegistered) {
-            uriRoute = uriRouteTable.findUriRoute(request.method(), uri);
-            if (uriRoute == null) {
-                logger.warn("[DashHttpMessageFilter] NOT FOUND URI (from the route table) : {}", uri);
-                dashServer.writeNotFound(channelHandlerContext, request);
+            httpMessageRoute = uriRouteTable.findUriRoute(httpRequest.method(), localUri);
+            if (httpMessageRoute == null) {
+                logger.warn("[DashHttpMessageFilter] NOT FOUND URI (from the route table) : {}", localUri);
+                dashServer.writeNotFound(channelHandlerContext, httpRequest);
                 return;
             }
         }
-        ///////////////////////////
 
         try {
-            ///////////////////////////
-            // PROCESS URI
             if (!isRegistered) { // GET MPD URI 수신 시 (not segment uri)
-                final HttpRequest requestWrapper = new HttpRequest(request);
-                final Object obj = uriRoute.getHandler().handle(requestWrapper, null, originUri, uriFileName, channelHandlerContext, dashUnit);
-                String content = obj == null ? "" : obj.toString();
-
-                dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+                processMpdRequest(channelHandlerContext, httpRequest, dashUnit, httpMessageRoute, originUri, uriFileName);
             } else { // GET SEGMENT URI 수신 시 (not mpd uri)
-                byte[] segmentBytes = dashUnit.getSegmentByteData(uri);
-                if (segmentBytes != null) {
-                    logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", uri, segmentBytes.length);
-                    dashServer.writeResponse(channelHandlerContext, request, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
-                    //FileManager.deleteFile(uri);
-                } else {
-                    logger.warn("[DashHttpMessageFilter] The segment file is not exist. (uri={})", uri);
-                    dashServer.writeNotFound(channelHandlerContext, request);
-                }
+                processSegmentRequest(channelHandlerContext, httpRequest, dashUnit, localUri);
             }
-            ///////////////////////////
         } catch (final Exception e) {
             logger.warn("DashHttpMessageFilter.messageReceived.Exception", e);
-            dashServer.writeInternalServerError(channelHandlerContext, request);
+            dashServer.writeInternalServerError(channelHandlerContext, httpRequest);
+        }
+    }
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    private String makeLocalUri(String remoteUri, String uriFileName) {
+        String uriFileNameWithExtension = fileManager.getFileNameWithExtensionFromUri(remoteUri);
+        if (uriFileNameWithExtension != null && uriFileNameWithExtension.contains(".")) {
+            String parentPathOfUri = fileManager.getParentPathFromUri(remoteUri); // aws/20210209
+            if (parentPathOfUri != null && !parentPathOfUri.isEmpty()) {
+                parentPathOfUri = fileManager.concatFilePath(parentPathOfUri, uriFileName); // [aws/20210209/Seoul]
+                remoteUri = fileManager.concatFilePath(parentPathOfUri, uriFileNameWithExtension); // [aws/20210209/Seoul/Seoul.mp4] or [aws/20210209/Seoul/Seoul_chunk_1_00001.m4s]
+            } else {
+                remoteUri = fileManager.concatFilePath(uriFileName, remoteUri); // [Seoul/Seoul.mp4] or [Seoul/Seoul_chunk_1_00001.m4s]
+            }
+        }
+        return fileManager.concatFilePath(basePath, remoteUri); // [/Users/.../Seoul/Seoul.mp4] or [/Users/.../Seoul/Seoul_chunk_1_00001.m4s]
+    }
+
+    private void processMpdRequest(ChannelHandlerContext channelHandlerContext, FullHttpRequest httpRequest,
+                                   DashUnit dashUnit, HttpMessageRoute httpMessageRoute,
+                                   String originUri, String uriFileName) throws Exception {
+        final HttpRequest requestWrapper = new HttpRequest(httpRequest);
+        final Object obj = httpMessageRoute.getHandler().handle(
+                requestWrapper, null,
+                originUri, uriFileName,
+                channelHandlerContext, dashUnit
+        );
+        String content = obj == null ? "" : obj.toString();
+        dashServer.writeResponse(channelHandlerContext, httpRequest, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+    }
+
+    private void processSegmentRequest(ChannelHandlerContext channelHandlerContext, FullHttpRequest httpRequest,
+                                       DashUnit dashUnit, String localUri) {
+        byte[] segmentBytes = dashUnit.getSegmentByteData(localUri);
+        if (segmentBytes != null) {
+            logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", localUri, segmentBytes.length);
+            dashServer.writeResponse(channelHandlerContext, httpRequest, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
+        } else {
+            logger.warn("[DashHttpMessageFilter] The segment file is not exist. (uri={})", localUri);
+            dashServer.writeNotFound(channelHandlerContext, httpRequest);
         }
     }
     ////////////////////////////////////////////////////////////
@@ -187,4 +196,3 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     ////////////////////////////////////////////////////////////
 
 }
-

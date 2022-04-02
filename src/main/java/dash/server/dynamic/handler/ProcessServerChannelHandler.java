@@ -117,9 +117,14 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                     if (dashUnit != null) {
                         String networkPath = makeNetworkPath();
                         if (networkPath != null) {
-                            startStreaming(networkPath, streamUri, dashUnit);
-                            streamingStartResponse = makeResponseForStreamingStart(dashServer, ResponseType.SUCCESS, ResponseType.REASON_SUCCESS);
+                            if (startStreaming(networkPath, streamUri, dashUnit)) {
+                                streamingStartResponse = makeResponseForStreamingStart(dashServer, ResponseType.SUCCESS, ResponseType.REASON_SUCCESS);
+                            } else {
+                                dashServer.deleteDashUnit(dashUnitId);
+                                streamingStartResponse = makeResponseForStreamingStart(dashServer, ResponseType.FORBIDDEN, ResponseType.REASON_FAIL_TO_ACCESS);
+                            }
                         } else {
+                            dashServer.deleteDashUnit(dashUnitId);
                             streamingStartResponse = makeResponseForStreamingStart(dashServer, ResponseType.NOT_FOUND, ResponseType.REASON_NOT_FOUND);
                         }
                     } else {
@@ -250,7 +255,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
         return null;
     }
 
-    private void startStreaming(String networkPath, String streamUri, DashUnit dashUnit) {
+    private boolean startStreaming(String networkPath, String streamUri, DashUnit dashUnit) {
         String sourceUri = fileManager.concatFilePath(networkPath, streamUri);
         String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), streamUri);
         File mpdPathFile = new File(mpdPath);
@@ -264,10 +269,17 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
         mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
         dashUnit.setInputFilePath(sourceUri);
         dashUnit.setOutputFilePath(mpdPath);
-        dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath);
-        logger.debug("[ProcessServerChannelHandler] Streaming is running successfully. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
-                dashUnit.getId(), mpdPath, streamUri, sourceUri
-        );
+        if (dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath)) {
+            logger.debug("[ProcessServerChannelHandler] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+                    dashUnit.getId(), mpdPath, streamUri, sourceUri
+            );
+            return true;
+        } else {
+            logger.warn("[ProcessServerChannelHandler] Fail to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+                    dashUnit.getId(), mpdPath, streamUri, sourceUri
+            );
+            return false;
+        }
     }
 
 }
