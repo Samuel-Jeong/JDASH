@@ -83,6 +83,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
         if (httpObject instanceof HttpResponse) {
             HttpResponse httpResponse = (HttpResponse) httpObject;
 
+            dashClient.stopAudioTimeout();
             if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
                 // 재시도 로직
                 if (!retry()) {
@@ -93,8 +94,6 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                 }
                 return;
             } else {
-                dashClient.stopAudioTimeout();
-
                 if (dashClient.getAudioRetryCount() > 0) {
                     dashClient.setAudioRetryCount(0);
                     dashClient.setIsAudioRetrying(false);

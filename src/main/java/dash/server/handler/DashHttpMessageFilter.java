@@ -166,8 +166,13 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                 originUri, uriFileName,
                 channelHandlerContext, dashUnit
         );
-        String content = obj == null ? "" : obj.toString();
-        dashServer.writeResponse(channelHandlerContext, httpRequest, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+
+        if (obj == null) {
+            dashServer.writeNotFound(channelHandlerContext, httpRequest);
+        } else {
+            String content = obj.toString();
+            dashServer.writeResponse(channelHandlerContext, httpRequest, HttpResponseStatus.OK, HttpMessageManager.TYPE_DASH_XML, content);
+        }
     }
 
     private void processSegmentRequest(ChannelHandlerContext channelHandlerContext, FullHttpRequest httpRequest,

@@ -83,6 +83,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
         if (httpObject instanceof HttpResponse) {
             HttpResponse httpResponse = (HttpResponse) httpObject;
 
+            dashClient.stopVideoTimeout();
             if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
                 // 재시도 로직
                 if (!retry()) {
@@ -93,8 +94,6 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 }
                 return;
             } else {
-                dashClient.stopVideoTimeout();
-
                 if (dashClient.getVideoRetryCount() > 0) {
                     dashClient.setVideoRetryCount(0);
                     dashClient.setIsVideoRetrying(false);
