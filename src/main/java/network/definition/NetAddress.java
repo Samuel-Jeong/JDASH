@@ -1,5 +1,7 @@
 package network.definition;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import network.socket.SocketProtocol;
 
 import java.net.Inet4Address;
@@ -159,13 +161,8 @@ public class NetAddress {
 
     @Override
     public String toString() {
-        return "NetAddress{" +
-                "inet4Address=" + inet4Address.toString() +
-                ", inet6Address=" + inet6Address.toString() +
-                ", port=" + port +
-                ", isIpv4=" + isIpv4 +
-                ", socketProtocol=" + socketProtocol.name() +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

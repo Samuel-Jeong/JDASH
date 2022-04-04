@@ -10,7 +10,7 @@ public class GroupEndpointId {
     // VARIABLES
     private NetAddress groupAddress;
     private NetAddress sourceFilterAddress; // > null 이 아니면 SSM group
-    transient private UINT8_T ttl;
+    private UINT8_T ttl;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
