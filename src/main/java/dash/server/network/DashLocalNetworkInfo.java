@@ -1,4 +1,4 @@
-package dash.client.handler.base;
+package dash.server.network;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

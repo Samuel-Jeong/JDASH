@@ -2,8 +2,8 @@ package dash.client.handler;
 
 import config.ConfigManager;
 import dash.client.DashClient;
-import dash.client.handler.base.DashLocalAddressManager;
-import dash.client.handler.base.DashLocalNetworkInfo;
+import dash.server.network.DashLocalAddressManager;
+import dash.server.network.DashLocalNetworkInfo;
 import io.netty.handler.codec.http.*;
 import network.definition.DestinationRecord;
 import network.definition.NetAddress;

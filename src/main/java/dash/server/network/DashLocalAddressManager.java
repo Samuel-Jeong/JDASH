@@ -1,4 +1,4 @@
-package dash.client.handler.base;
+package dash.server.network;
 
 import config.ConfigManager;
 import dash.client.DashClient;
