@@ -90,7 +90,7 @@ public class ServiceManager {
             }
         }
 
-        if (configManager.isEnableAutoDeleteUselessSession() && configManager.isEnableAutoDeleteUselessDir()) {
+        if (configManager.isEnableAutoDeleteUselessSession() || configManager.isEnableAutoDeleteUselessDir()) {
             if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
                 // FOR REMOVING the old session & folder for this service
                 scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
