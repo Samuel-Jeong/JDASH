@@ -51,17 +51,21 @@ public class ScheduleManager {
             return null;
         }
 
+        ScheduleUnit scheduleUnit = scheduleUnitMap.get(key);
+        if (scheduleUnit != null) {
+            return scheduleUnit;
+        }
+
         try {
             scheduleUnitMapLock.lock();
 
-            scheduleUnitMap.putIfAbsent(key,
-                    new ScheduleUnit(
-                            key,
-                            poolSize,
-                            queueSize
-                    )
+            scheduleUnit = new ScheduleUnit(
+                    key,
+                    poolSize,
+                    queueSize
             );
-            return scheduleUnitMap.get(key);
+            scheduleUnitMap.put(key, scheduleUnit);
+            return scheduleUnit;
         } catch (Exception e) {
             logger.warn("Fail to add the schedule unit.", e);
             return null;
