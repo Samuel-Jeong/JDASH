@@ -46,7 +46,7 @@ public class DashUnit {
     public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
 
     transient private final ScheduleManager scheduleManager = new ScheduleManager();
-    transient private RemoteStreamService remoteCameraService = null;
+    transient private RemoteStreamService remoteStreamService = null;
 
     transient private DashClient dashClient = null;
     transient private OldFileController oldFileController = null;
@@ -83,11 +83,9 @@ public class DashUnit {
         }
 
         try {
-            //////////////////////////////
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-                //////////////////////////////
                 // REMOTE CAMERA SERVICE with RTMP
-                remoteCameraService = new RemoteStreamService(
+                remoteStreamService = new RemoteStreamService(
                         scheduleManager,
                         RemoteStreamService.class.getSimpleName() + "_" + id,
                         0, 10, TimeUnit.MILLISECONDS,
@@ -95,17 +93,21 @@ public class DashUnit {
                         id, configManager, uriFileName, sourceUri, mpdPath
                 );
 
-                if (remoteCameraService.init()) {
-                    scheduleManager.startJob(
+                if (remoteStreamService.init()) {
+                    if (scheduleManager.startJob(
                             REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
-                            remoteCameraService
-                    );
-                    logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
+                            remoteStreamService)) {
+                        logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
+                    } else {
+                        logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
+                        return false;
+                    }
                 } else {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
                     return false;
                 }
-                //////////////////////////////
+
+                isLiveStreaming.set(true);
             } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 dashClient = new DashClient(
                         id,
@@ -123,9 +125,17 @@ public class DashUnit {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Dash client streaming", id);
                     return false;
                 }
-                dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
 
-                //////////////////////////////
+                new Thread(() -> {
+                    TimeUnit timeUnit = TimeUnit.SECONDS;
+                    try {
+                        timeUnit.sleep((long) configManager.getTimeOffset());
+                        dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
+                    } catch (Exception e) {
+                        logger.warn("[DashUnit(id={})] [FAIL] (timeUnit.sleep) or (dashClient.sendHttpGetRequest)", id, e);
+                    }
+                }).start();
+
                 // OLD FILE CONTROLLER
                 String dashPath = mpdPath;
                 String dashPathExtension = FileUtils.getExtension(dashPath);
@@ -141,17 +151,21 @@ public class DashUnit {
                         1, 1, true,
                         id, dashPath
                 );
-                scheduleManager.startJob(
+                if (scheduleManager.startJob(
                         OLD_FILE_CONTROL_SCHEDULE_KEY,
-                        oldFileController
-                );
-                logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
-                //////////////////////////////
+                        oldFileController)) {
+                    logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
+                } else {
+                    logger.warn("[DashUnit(id={})] [-RUN FAIL] OldFileController", id);
+                }
 
                 logger.debug("[DashUnit(id={})] [+RUN] Dash client streaming", id);
+                isLiveStreaming.set(true);
+            } else {
+                logger.warn("[DashUnit(id={})] Unknown stream type is detected. Fail to stream the live streaming.", id);
+                return false;
             }
 
-            isLiveStreaming.set(true);
             return true;
             //////////////////////////////
         } catch (Exception e) {
@@ -173,10 +187,10 @@ public class DashUnit {
 
             //////////////////////////////
             // REMOTE CAMERA SERVICE with RTMP
-            if (remoteCameraService != null) {
-                scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteCameraService);
-                remoteCameraService.stop();
-                remoteCameraService = null;
+            if (remoteStreamService != null) {
+                scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteStreamService);
+                remoteStreamService.stop();
+                remoteStreamService = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] Rtmp client streaming", id);
             }
             // REMOTE CAMERA SERVICE with DASH

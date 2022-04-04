@@ -103,7 +103,12 @@ public class RemoteStreamService extends Job {
                             1, 1, true,
                             false, frameQueue, fFmpegFrameGrabber.getGamma()
                     );
-                    scheduleManager.startJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController);
+                    if (scheduleManager.startJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController)) {
+                        logger.debug("[RemoteStreamService({})] [+RUN] Success to start the remote camera.", dashUnitId);
+                    } else {
+                        logger.warn("[RemoteStreamService({})] [-RUN FAIL] Fail to start the remote camera.", dashUnitId);
+                        return false;
+                    }
                 }
             }
             /////////////////////////////////

@@ -69,14 +69,18 @@ public class ServiceManager {
 
         if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, threadPoolSize, threadPoolSize * 2)) {
             // FOR CHECKING the availability of this program
-            scheduleManager.startJob(MAIN_SCHEDULE_JOB,
+            if (scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     new HaHandler(
                             scheduleManager,
                             HaHandler.class.getSimpleName(),
                             0, DELAY, TimeUnit.MILLISECONDS,
                             5, 0, true
-                    )
-            );
+                    ))) {
+                logger.debug("[ServiceManager] [+RUN] HA Handler");
+            } else {
+                logger.warn("[ServiceManager] [-RUN FAIL] HA Handler");
+                return false;
+            }
 
             // FOR CHECKING [~/media_info/~]
             FileKeeper fileKeeper = new FileKeeper(
@@ -86,28 +90,50 @@ public class ServiceManager {
                     10, 0, true
             );
             if (fileKeeper.init()) {
-                scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper);
+                if (scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper)) {
+                    logger.debug("[ServiceManager] [+RUN] File Keeper");
+                } else {
+                    logger.warn("[ServiceManager] [-RUN FAIL] File Keeper");
+                    scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+                    return false;
+                }
+            } else {
+                logger.warn("[ServiceManager] [-RUN FAIL] File Keeper");
+                scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+                return false;
             }
         }
 
         if (configManager.isEnableAutoDeleteUselessSession() || configManager.isEnableAutoDeleteUselessDir()) {
             if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
                 // FOR REMOVING the old session & folder for this service
-                scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
+                if (scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
                         new LongSessionRemover(
                                 scheduleManager,
                                 LongSessionRemover.class.getSimpleName(),
                                 0, DELAY, TimeUnit.MILLISECONDS,
                                 3, 0, true
-                        )
-                );
+                        ))) {
+                    logger.debug("[ServiceManager] [+RUN] Long session remover");
+                } else {
+                    logger.warn("[ServiceManager] [-RUN FAIL] Long session remover");
+                    scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+                    return false;
+                }
             }
         }
         ////////////////////////////////////////
 
         ////////////////////////////////////////
         // INITIATE DASH MANAGER
-        if (!dashServer.start()) { return false; }
+        if (dashServer.start()) {
+            logger.debug("[ServiceManager] [+RUN] Dash server");
+        } else {
+            logger.warn("[ServiceManager] [-RUN FAIL] Dash server");
+            scheduleManager.stopAll(MAIN_SCHEDULE_JOB);
+            scheduleManager.stopAll(LONG_SESSION_REMOVE_SCHEDULE_JOB);
+            return false;
+        }
         ////////////////////////////////////////
 
         logger.debug("| All services are opened.");

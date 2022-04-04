@@ -112,7 +112,12 @@ public class LocalStreamService extends Job {
                             1, 0, true,
                             true, frameQueue, openCVFrameGrabber.getGamma()
                     );
-                    scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController);
+                    if (scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController)) {
+                        logger.debug("[LocalStreamService] [+RUN] Success to start the local camera.");
+                    } else {
+                        logger.warn("[LocalStreamService] [-RUN FAIL] Fail to start the local camera.");
+                        System.exit(1);
+                    }
                 }
             }
             /////////////////////////////////
@@ -233,7 +238,7 @@ public class LocalStreamService extends Job {
                     }
                 }
             } else {
-                audioService.startSampling(fFmpegFrameRecorder);
+                if (!audioService.startSampling(fFmpegFrameRecorder)) { return; }
 
                 if (openCVFrameGrabber != null) {
                     Frame capturedFrame;

@@ -184,8 +184,12 @@ public class DashServer {
                         0, 0, TimeUnit.MILLISECONDS,
                         1, 1, false
                 );
-                result = localStreamService.start();
-                baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService);
+
+                if (localStreamService.start()) {
+                    result = baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService);
+                } else {
+                    result = false;
+                }
             }
         }
 

@@ -87,10 +87,10 @@ public class AudioService {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public void startSampling(FFmpegFrameRecorder fFmpegFrameRecorder) {
+    public boolean startSampling(FFmpegFrameRecorder fFmpegFrameRecorder) {
         if (fFmpegFrameRecorder == null) {
-            logger.warn("[AudioService] Recorder is not defined. Fail to start sampling");
-            return;
+            logger.warn("[AudioService] Fail to start sampling. Recorder is not defined.");
+            return false;
         }
 
         if (scheduleManager != null) {
@@ -101,8 +101,18 @@ public class AudioService {
                     1, 1, true,
                     fFmpegFrameRecorder
             );
-            scheduleManager.startJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler);
+            if (scheduleManager.startJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler)) {
+                logger.debug("[AudioService] [+RUN] Success to start audio sampling.");
+            } else {
+                logger.warn("[AudioService] [-RUN FAIL] Fail to start audio sampling.");
+                return false;
+            }
+        } else {
+            logger.warn("[AudioService] [-RUN FAIL] Fail to start audio sampling. ScheduleManager is not defined yet.");
+            return false;
         }
+
+        return true;
     }
     ///////////////////////////////////////////////////////////////////////////
 
