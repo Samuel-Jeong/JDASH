@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DynamicMediaManager {
@@ -28,7 +29,7 @@ public class DynamicMediaManager {
     private final NetAddress localListenAddress;
     private GroupSocket localGroupSocket = null;
     private final NetAddress targetAddress;
-    private final int sessionId = new Random().nextInt();
+    private final String sessionId = UUID.randomUUID().toString();
 
     private DashUnit targetDashUnit = null;
 
@@ -84,7 +85,7 @@ public class DynamicMediaManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public int getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

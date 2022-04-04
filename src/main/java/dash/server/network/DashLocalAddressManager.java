@@ -79,7 +79,6 @@ public class DashLocalAddressManager {
             }
         }
 
-        // 1) ADDRESS
         // MPD
         for (int i = 0; i < dashLocalMpdNetworkInfos.length; i++) {
             NetAddress localMpdListenAddress = new NetAddress(
@@ -121,7 +120,6 @@ public class DashLocalAddressManager {
             logger.debug("[DashLocalAddressManager] Success to register the local audio network info. ([{}]:{})", i, dashLocalAudioNetworkInfos[i]);
         }
 
-
         // VIDEO
         if (!configManager.isAudioOnly()) {
             for (int i = 0; i < dashLocalAudioNetworkInfos.length; i++) {
@@ -145,7 +143,6 @@ public class DashLocalAddressManager {
                 dashLocalVideoNetworkInfos[i] = new DashLocalNetworkInfo(localVideoListenAddress, localVideoGroupSocket);
                 logger.debug("[DashLocalAddressManager] Success to register the local video network info. ([{}]:{})", i, dashLocalVideoNetworkInfos[i]);
             }
-
         }
 
         return true;
@@ -219,7 +216,7 @@ public class DashLocalAddressManager {
         }
     }
 
-    public int addTargetToMpdSocket(DashClient dashClient, NetAddress targetAddress, long sessionId) {
+    public int addTargetToMpdSocket(DashClient dashClient, NetAddress targetAddress, String sessionId) {
         int mpdNetworkInfoIndex = dashLocalMpdNetworkInfoIndex.get();
         DashLocalNetworkInfo dashLocalMpdNetworkInfo = dashLocalMpdNetworkInfos[mpdNetworkInfoIndex];
         if (dashLocalMpdNetworkInfo == null) {
@@ -251,19 +248,28 @@ public class DashLocalAddressManager {
         return mpdNetworkInfoIndex;
     }
 
-    public boolean deleteTargetFromMpdSocket (int index, long sessionId) {
-        if (!checkMpdNetworkInfoIndex(index)) { return false; }
+    public boolean deleteTargetFromMpdSocket (int index, String sessionId) {
+        if (!checkMpdNetworkInfoIndex(index)) {
+            logger.warn("[DashLocalAddressManager] Mpd socket index is wrong. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         DashLocalNetworkInfo dashLocalMpdNetworkInfo = dashLocalMpdNetworkInfos[index];
-        if (dashLocalMpdNetworkInfo == null) { return false; }
+        if (dashLocalMpdNetworkInfo == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local mpd network info. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         GroupSocket localMpdGroupSocket = dashLocalMpdNetworkInfo.getLocalGroupSocket();
-        if (localMpdGroupSocket == null) { return false; }
+        if (localMpdGroupSocket == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local mpd group socket. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         return localMpdGroupSocket.removeDestination(sessionId);
     }
 
-    public int addTargetToAudioSocket(DashClient dashClient, NetAddress targetAddress, long sessionId) {
+    public int addTargetToAudioSocket(DashClient dashClient, NetAddress targetAddress, String sessionId) {
         int audioNetworkInfoIndex = dashLocalAudioNetworkInfoIndex.get();
         DashLocalNetworkInfo dashLocalAudioNetworkInfo = dashLocalAudioNetworkInfos[audioNetworkInfoIndex];
         if (dashLocalAudioNetworkInfo == null) {
@@ -295,19 +301,28 @@ public class DashLocalAddressManager {
         return audioNetworkInfoIndex;
     }
 
-    public boolean deleteTargetFromAudioSocket (int index, long sessionId) {
-        if (!checkAudioNetworkInfoIndex(index)) { return false; }
+    public boolean deleteTargetFromAudioSocket (int index, String sessionId) {
+        if (!checkAudioNetworkInfoIndex(index)) {
+            logger.warn("[DashLocalAddressManager] Audio socket index is wrong. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         DashLocalNetworkInfo dashLocalAudioNetworkInfo = dashLocalAudioNetworkInfos[index];
-        if (dashLocalAudioNetworkInfo == null) { return false; }
+        if (dashLocalAudioNetworkInfo == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local audio network info. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         GroupSocket localAudioGroupSocket = dashLocalAudioNetworkInfo.getLocalGroupSocket();
-        if (localAudioGroupSocket == null) { return false; }
+        if (localAudioGroupSocket == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local audio group socket. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         return localAudioGroupSocket.removeDestination(sessionId);
     }
 
-    public int addTargetToVideoSocket(DashClient dashClient, NetAddress targetAddress, long sessionId) {
+    public int addTargetToVideoSocket(DashClient dashClient, NetAddress targetAddress, String sessionId) {
         int videoNetworkInfoIndex = dashLocalVideoNetworkInfoIndex.get();
         DashLocalNetworkInfo dashLocalVideoNetworkInfo = dashLocalVideoNetworkInfos[videoNetworkInfoIndex];
         if (dashLocalVideoNetworkInfo == null) {
@@ -339,14 +354,23 @@ public class DashLocalAddressManager {
         return videoNetworkInfoIndex;
     }
 
-    public boolean deleteTargetFromVideoSocket (int index, long sessionId) {
-        if (!checkVideoNetworkInfoIndex(index)) { return false; }
+    public boolean deleteTargetFromVideoSocket (int index, String sessionId) {
+        if (!checkVideoNetworkInfoIndex(index)) {
+            logger.warn("[DashLocalAddressManager] Video socket index is wrong. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         DashLocalNetworkInfo dashLocalVideoNetworkInfo = dashLocalVideoNetworkInfos[index];
-        if (dashLocalVideoNetworkInfo == null) { return false; }
+        if (dashLocalVideoNetworkInfo == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local video network info. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         GroupSocket localVideoGroupSocket = dashLocalVideoNetworkInfo.getLocalGroupSocket();
-        if (localVideoGroupSocket == null) { return false; }
+        if (localVideoGroupSocket == null) {
+            logger.warn("[DashLocalAddressManager] Fail to find the local video group socket. (index={}, sessionId={})", index, sessionId);
+            return false;
+        }
 
         return localVideoGroupSocket.removeDestination(sessionId);
     }

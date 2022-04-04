@@ -15,6 +15,7 @@ import service.AppInstance;
 import service.ServiceManager;
 
 import java.net.URI;
+import java.util.UUID;
 
 public class DashHttpMessageSender {
 
@@ -24,7 +25,7 @@ public class DashHttpMessageSender {
     public static final String HTTP_PREFIX = "http";
 
     private final String dashUnitId;
-    private final long socketSessionId;
+    private final String socketSessionId;
     private String host = null;
 
     private int localMpdNetworkInfoIndex = -1;
@@ -38,7 +39,7 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
     public DashHttpMessageSender(String dashUnitId) {
         this.dashUnitId = dashUnitId;
-        this.socketSessionId = dashUnitId.hashCode();
+        this.socketSessionId = UUID.randomUUID().toString();
         this.configManager = AppInstance.getInstance().getConfigManager();
         this.dashLocalAddressManager = ServiceManager.getInstance().getDashServer().getDashLocalAddressManager();
     }
@@ -126,7 +127,7 @@ public class DashHttpMessageSender {
     public void sendMessage(GroupSocket groupSocket, HttpRequest httpRequest) {
         if (groupSocket == null) { return; }
 
-        DestinationRecord destinationRecord = groupSocket.getDestination(dashUnitId.hashCode());
+        DestinationRecord destinationRecord = groupSocket.getDestination(socketSessionId);
         if (destinationRecord == null) { return; }
 
         NettyChannel nettyChannel = destinationRecord.getNettyChannel();

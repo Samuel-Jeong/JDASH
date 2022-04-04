@@ -30,7 +30,7 @@ public class NettyTcpClientChannel extends NettyChannel {
 
     ////////////////////////////////////////////////////////////
     // CONSTRUCTOR
-    public NettyTcpClientChannel(BaseEnvironment baseEnvironment, long sessionId, int threadCount, int recvBufSize, ChannelInitializer<NioSocketChannel> childHandler) {
+    public NettyTcpClientChannel(BaseEnvironment baseEnvironment, String sessionId, int threadCount, int recvBufSize, ChannelInitializer<NioSocketChannel> childHandler) {
         super(baseEnvironment, sessionId, threadCount, 0, recvBufSize);
 
         eventLoopGroup = new NioEventLoopGroup(threadCount);

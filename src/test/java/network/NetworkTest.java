@@ -83,7 +83,7 @@ public class NetworkTest {
         //
 
         // Destination 추가
-        Assert.assertTrue(groupSocket1.addDestination(netAddress2, null, 1234, clientChannelInitializer));
+        Assert.assertTrue(groupSocket1.addDestination(netAddress2, null, "1234", clientChannelInitializer));
         baseEnvironment.printMsg("GROUP-SOCKET1: {%s}", groupSocket1.toString());
         baseEnvironment.printMsg("GROUP-SOCKET2: {%s}", groupSocket2.toString());
         //

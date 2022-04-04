@@ -29,7 +29,7 @@ public class NettyUdpChannel extends NettyChannel {
 
     ////////////////////////////////////////////////////////////
     // CONSTRUCTOR
-    public NettyUdpChannel(BaseEnvironment baseEnvironment, long sessionId, int threadCount, int sendBufSize, int recvBufSize, ChannelInitializer<NioDatagramChannel> channelHandler) {
+    public NettyUdpChannel(BaseEnvironment baseEnvironment, String sessionId, int threadCount, int sendBufSize, int recvBufSize, ChannelInitializer<NioDatagramChannel> channelHandler) {
         super(baseEnvironment, sessionId, threadCount, sendBufSize, recvBufSize);
 
         nioEventLoopGroup = new NioEventLoopGroup(threadCount);

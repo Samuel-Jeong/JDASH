@@ -22,20 +22,22 @@ public class Socket {
     // VARIABLES
     transient private final BaseEnvironment baseEnvironment;
     private final NetAddress netAddress;
+    private final String sessionId;
     transient private final NettyChannel nettyChannel;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     // CONSTRUCTOR
-    public Socket(BaseEnvironment baseEnvironment, NetInterface netInterface, NetAddress netAddress, ChannelInitializer<?> channelHandler) {
+    public Socket(BaseEnvironment baseEnvironment, NetInterface netInterface, String sessionId, NetAddress netAddress, ChannelInitializer<?> channelHandler) {
         this.baseEnvironment = baseEnvironment;
         this.netAddress = netAddress;
+        this.sessionId = sessionId;
 
         if (netAddress.getSocketProtocol().equals(SocketProtocol.TCP)) {
             if (netInterface.isListenOnly()) {
                 nettyChannel = new NettyTcpServerChannel(
                         baseEnvironment,
-                        0,
+                        sessionId,
                         netInterface.getThreadCount(),
                         netInterface.getRecvBufSize(),
                         (ChannelInitializer<SocketChannel>) channelHandler
@@ -43,7 +45,7 @@ public class Socket {
             } else {
                 nettyChannel = new NettyTcpClientChannel(
                         baseEnvironment,
-                        0,
+                        sessionId,
                         netInterface.getThreadCount(),
                         netInterface.getRecvBufSize(),
                         (ChannelInitializer<NioSocketChannel>) channelHandler
@@ -52,7 +54,7 @@ public class Socket {
         } else {
             nettyChannel = new NettyUdpChannel(
                     baseEnvironment,
-                    0,
+                    sessionId,
                     netInterface.getThreadCount(),
                     netInterface.getSendBufSize(),
                     netInterface.getRecvBufSize(),
@@ -96,6 +98,10 @@ public class Socket {
 
     public NetAddress getNetAddress() {
         return netAddress;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 
     public void reset() {

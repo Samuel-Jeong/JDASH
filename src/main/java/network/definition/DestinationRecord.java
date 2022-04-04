@@ -6,14 +6,14 @@ public class DestinationRecord {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    private final long sessionId;
+    private final String sessionId;
     private final GroupEndpointId groupEndpointId;
     private final NettyChannel nettyChannel;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     // CONSTRUCTOR
-    public DestinationRecord(long sessionId, GroupEndpointId groupEndpointId, NettyChannel nettyChannel) {
+    public DestinationRecord(String sessionId, GroupEndpointId groupEndpointId, NettyChannel nettyChannel) {
         this.sessionId = sessionId;
         this.groupEndpointId = groupEndpointId;
         this.nettyChannel = nettyChannel;
@@ -22,7 +22,7 @@ public class DestinationRecord {
 
     ////////////////////////////////////////////////////////////
     // FUNCTIONS
-    public long getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

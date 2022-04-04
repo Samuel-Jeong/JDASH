@@ -10,7 +10,7 @@ public class NettyChannel {
     ////////////////////////////////////////////////////////////
     // VARIABLES
     transient private final BaseEnvironment baseEnvironment;
-    private final long sessionId;
+    private final String sessionId;
     private final int threadCount;
 
     private final int sendBufSize;
@@ -24,7 +24,7 @@ public class NettyChannel {
 
     ////////////////////////////////////////////////////////////
     // CONSTRUCTOR
-    public NettyChannel(BaseEnvironment baseEnvironment, long sessionId, int threadCount, int sendBufSize, int recvBufSize) {
+    public NettyChannel(BaseEnvironment baseEnvironment, String sessionId, int threadCount, int sendBufSize, int recvBufSize) {
         this.baseEnvironment = baseEnvironment;
         this.sessionId = sessionId;
         this.threadCount = threadCount;
@@ -44,7 +44,7 @@ public class NettyChannel {
         return baseEnvironment;
     }
 
-    public long getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 
