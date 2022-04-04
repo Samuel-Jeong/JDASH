@@ -47,7 +47,7 @@ public class DashHttpMessageSender {
     ////////////////////////////////////////////////////////////
     public boolean start(DashClient dashClient, NetAddress targetAddress) {
         localMpdNetworkInfoIndex = dashLocalAddressManager.addTargetToMpdSocket(dashClient, targetAddress, socketSessionId);
-        if (localAudioNetworkInfoIndex < 0) { return false; }
+        if (localMpdNetworkInfoIndex < 0) { return false; }
 
         localAudioNetworkInfoIndex = dashLocalAddressManager.addTargetToAudioSocket(dashClient, targetAddress, socketSessionId);
         if (localAudioNetworkInfoIndex < 0) { return false; }

@@ -247,6 +247,7 @@ public class DashLocalAddressManager {
             dashLocalMpdNetworkInfoIndex.set(0);
         }
 
+        logger.debug("[DashLocalAddressManager] Success to open the mpd connect channel. (localNetworkInfo={}, target={})", dashLocalMpdNetworkInfo, targetAddress);
         return mpdNetworkInfoIndex;
     }
 
@@ -290,6 +291,7 @@ public class DashLocalAddressManager {
             dashLocalAudioNetworkInfoIndex.set(0);
         }
 
+        logger.debug("[DashLocalAddressManager] Success to open the audio connect channel. (localNetworkInfo={}, target={})", dashLocalAudioNetworkInfo, targetAddress);
         return audioNetworkInfoIndex;
     }
 
@@ -333,6 +335,7 @@ public class DashLocalAddressManager {
             dashLocalVideoNetworkInfoIndex.set(0);
         }
 
+        logger.debug("[DashLocalAddressManager] Success to open the video connect channel. (localNetworkInfo={}, target={})", dashLocalVideoNetworkInfo, targetAddress);
         return videoNetworkInfoIndex;
     }
 
