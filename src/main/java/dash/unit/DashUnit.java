@@ -7,6 +7,8 @@ import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
 import dash.mpd.parser.mpd.MPD;
 import dash.unit.tool.OldFileController;
+import network.definition.NetAddress;
+import network.socket.SocketProtocol;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +113,13 @@ public class DashUnit {
                         sourceUri,
                         fileManager.getParentPathFromUri(mpdPath)
                 );
-                if (!dashClient.start()) {
+
+                NetAddress targetAddress = new NetAddress(
+                        configManager.getHttpTargetIp(),
+                        configManager.getHttpTargetPort(),
+                        true, SocketProtocol.TCP
+                );
+                if (!dashClient.start(targetAddress)) {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] Dash client streaming", id);
                     return false;
                 }

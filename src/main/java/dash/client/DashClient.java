@@ -14,6 +14,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
+import network.definition.NetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -82,7 +83,7 @@ public class DashClient {
         this.targetBasePath = targetBasePath;
         this.targetMpdPath = fileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
 
-        this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId, baseEnvironment, false); // SSL 아직 미지원
+        this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId);
         this.mpdManager = new MpdManager(dashUnitId, targetMpdPath);
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
@@ -98,10 +99,10 @@ public class DashClient {
         );
     }
 
-    public boolean start() {
+    public boolean start(NetAddress targetAddress) {
         //////////////////////////////
         // SETTING : HTTP
-        if (!this.dashHttpMessageSender.start(this)) {
+        if (!this.dashHttpMessageSender.start(this, targetAddress)) {
             return false;
         }
         //////////////////////////////

@@ -160,8 +160,8 @@ public class NetAddress {
     @Override
     public String toString() {
         return "NetAddress{" +
-                "inet4Address=" + inet4Address +
-                ", inet6Address=" + inet6Address +
+                "inet4Address=" + inet4Address.toString() +
+                ", inet6Address=" + inet6Address.toString() +
                 ", port=" + port +
                 ", isIpv4=" + isIpv4 +
                 ", socketProtocol=" + socketProtocol.name() +

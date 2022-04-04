@@ -61,6 +61,9 @@ public class ConfigManager {
     public static final String FIELD_AUTO_DELETE_SESSION_LIMIT_TIME = "AUTO_DELETE_SESSION_LIMIT_TIME";
     public static final String FIELD_ENABLE_AUTO_DELETE_USELESS_DIR = "ENABLE_AUTO_DELETE_USELESS_DIR";
     public static final String FIELD_AUTO_DELETE_DIR_LIMIT_TIME = "AUTO_DELETE_DIR_LIMIT_TIME";
+    public static final String FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE = "LOCAL_MPD_LISTEN_SOCKET_SIZE";
+    public static final String FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE= "LOCAL_AUDIO_LISTEN_SOCKET_SIZE";
+    public static final String FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE= "LOCAL_VIDEO_LISTEN_SOCKET_SIZE";
 
     // CLIENT
     public static final String FIELD_ENABLE_GUI = "ENABLE_GUI";
@@ -127,6 +130,9 @@ public class ConfigManager {
     private long autoDeleteSessionLimitTime = 0; // ms
     private boolean enableAutoDeleteUselessDir = false;
     private long autoDeleteDirLimitTime = 0; // ms
+    private int localMpdListenSocketSize = 0; // 1 ~ 10000
+    private int localAudioListenSocketSize = 0; // 1 ~ 10000
+    private int localVideoListenSocketSize = 0; // 1 ~ 10000
 
     // CLIENT
     private boolean enableGui = false;
@@ -392,6 +398,42 @@ public class ConfigManager {
             this.autoDeleteDirLimitTime = Long.parseLong(autoDeleteDirLimitTimeString);
             if (this.autoDeleteDirLimitTime < 0) {
                 logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+                System.exit(1);
+            }
+        }
+
+        String localMpdListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
+        if (localMpdListenSocketSizeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
+            System.exit(1);
+        } else {
+            this.localMpdListenSocketSize = Integer.parseInt(localMpdListenSocketSizeString);
+            if (this.localMpdListenSocketSize <= 0 || this.localMpdListenSocketSize > 10000) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
+                System.exit(1);
+            }
+        }
+
+        String localAudioListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
+        if (localAudioListenSocketSizeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
+            System.exit(1);
+        } else {
+            this.localAudioListenSocketSize = Integer.parseInt(localAudioListenSocketSizeString);
+            if (this.localAudioListenSocketSize <= 0 || this.localAudioListenSocketSize > 10000) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
+                System.exit(1);
+            }
+        }
+
+        String localVideoListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
+        if (localVideoListenSocketSizeString == null) {
+            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
+            System.exit(1);
+        } else {
+            this.localVideoListenSocketSize = Integer.parseInt(localVideoListenSocketSizeString);
+            if (this.localVideoListenSocketSize <= 0 || this.localVideoListenSocketSize > 10000) {
+                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
                 System.exit(1);
             }
         }
@@ -967,4 +1009,15 @@ public class ConfigManager {
         return autoDeleteDirLimitTime;
     }
 
+    public int getLocalMpdListenSocketSize() {
+        return localMpdListenSocketSize;
+    }
+
+    public int getLocalAudioListenSocketSize() {
+        return localAudioListenSocketSize;
+    }
+
+    public int getLocalVideoListenSocketSize() {
+        return localVideoListenSocketSize;
+    }
 }

@@ -64,7 +64,7 @@ public class DynamicMediaManager {
 
         // ADD TARGET CHANNEL
         localGroupSocket.addDestination(targetAddress, null, sessionId, new PreProcessClientChannelHandlerInitializer());
-        logger.debug("[DynamicMediaManager] ADD DESTINATION [{}]", targetAddress);
+        logger.debug("[DynamicMediaManager] ADD DESTINATION [{}]", targetAddress.toString());
     }
 
     public void stop() {

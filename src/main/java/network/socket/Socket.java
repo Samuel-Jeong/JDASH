@@ -1,5 +1,7 @@
 package network.socket;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.netty.channel.Channel;
@@ -18,10 +20,9 @@ public class Socket {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    private final BaseEnvironment baseEnvironment;
+    transient private final BaseEnvironment baseEnvironment;
     private final NetAddress netAddress;
-    private final SocketProtocol socketProtocol;
-    private final NettyChannel nettyChannel;
+    transient private final NettyChannel nettyChannel;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -29,9 +30,8 @@ public class Socket {
     public Socket(BaseEnvironment baseEnvironment, NetInterface netInterface, NetAddress netAddress, ChannelInitializer<?> channelHandler) {
         this.baseEnvironment = baseEnvironment;
         this.netAddress = netAddress;
-        this.socketProtocol = netAddress.getSocketProtocol();
 
-        if (socketProtocol.equals(SocketProtocol.TCP)) {
+        if (netAddress.getSocketProtocol().equals(SocketProtocol.TCP)) {
             if (netInterface.isListenOnly()) {
                 nettyChannel = new NettyTcpServerChannel(
                         baseEnvironment,
@@ -98,10 +98,6 @@ public class Socket {
         return netAddress;
     }
 
-    public SocketProtocol getSocketProtocol() {
-        return socketProtocol;
-    }
-
     public void reset() {
         if (netAddress == null) { return; }
         netAddress.clear();
@@ -109,12 +105,8 @@ public class Socket {
 
     @Override
     public String toString() {
-        return "Socket{" +
-                "baseEnvironment=" + baseEnvironment +
-                ", netAddress=" + netAddress +
-                ", socketProtocol=" + socketProtocol.name() +
-                ", nettyChannel=" + nettyChannel +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

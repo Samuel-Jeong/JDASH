@@ -2,22 +2,17 @@ package dash.client.handler;
 
 import config.ConfigManager;
 import dash.client.DashClient;
-import instance.BaseEnvironment;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.SocketChannel;
+import dash.client.handler.base.DashLocalAddressManager;
+import dash.client.handler.base.DashLocalNetworkInfo;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.SslContext;
 import network.definition.DestinationRecord;
 import network.definition.NetAddress;
 import network.socket.GroupSocket;
-import network.socket.SocketManager;
-import network.socket.SocketProtocol;
 import network.socket.netty.NettyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.system.ResourceManager;
+import service.ServiceManager;
 
 import java.net.URI;
 
@@ -28,200 +23,57 @@ public class DashHttpMessageSender {
 
     public static final String HTTP_PREFIX = "http";
 
-    private final BaseEnvironment baseEnvironment;
-    private final ConfigManager configManager;
-
     private final String dashUnitId;
+    private final long socketSessionId;
     private String host = null;
 
-    private final boolean isSsl;
-    private SslContext sslContext = null;
+    private int localMpdNetworkInfoIndex = -1;
+    private int localAudioNetworkInfoIndex = -1;
+    private int localVideoNetworkInfoIndex = -1;
 
-    private SocketManager socketManager = null;
-    private NetAddress localAudioListenAddress = null;
-    private NetAddress localVideoListenAddress = null;
-    private NetAddress localMpdListenAddress = null;
+    private final ConfigManager configManager;
+    private final DashLocalAddressManager dashLocalAddressManager;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashHttpMessageSender(String dashUnitId, BaseEnvironment baseEnvironment, boolean isSsl) {
+    public DashHttpMessageSender(String dashUnitId) {
         this.dashUnitId = dashUnitId;
-        this.baseEnvironment = baseEnvironment;
-        this.isSsl = isSsl;
+        this.socketSessionId = dashUnitId.hashCode();
         this.configManager = AppInstance.getInstance().getConfigManager();
+        this.dashLocalAddressManager = ServiceManager.getInstance().getDashServer().getDashLocalAddressManager();
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public boolean start(DashClient dashClient) {
-        ResourceManager resourceManager = baseEnvironment.getPortResourceManager();
+    public boolean start(DashClient dashClient, NetAddress targetAddress) {
+        localMpdNetworkInfoIndex = dashLocalAddressManager.addTargetToMpdSocket(dashClient, targetAddress, socketSessionId);
+        if (localAudioNetworkInfoIndex < 0) { return false; }
 
-        socketManager = new SocketManager(
-                baseEnvironment,
-                false, false,
-                configManager.getThreadCount(),
-                configManager.getSendBufSize(),
-                configManager.getRecvBufSize()
-        );
+        localAudioNetworkInfoIndex = dashLocalAddressManager.addTargetToAudioSocket(dashClient, targetAddress, socketSessionId);
+        if (localAudioNetworkInfoIndex < 0) { return false; }
 
-        // AUDIO
-        localAudioListenAddress = new NetAddress(
-                configManager.getHttpListenIp(),
-                resourceManager.takePort(),
-                true, SocketProtocol.TCP
-        );
-
-        // VIDEO
         if (!configManager.isAudioOnly()) {
-            localVideoListenAddress = new NetAddress(
-                    configManager.getHttpListenIp(),
-                    resourceManager.takePort(),
-                    true, SocketProtocol.TCP
-            );
-        }
-
-        // MPD
-        localMpdListenAddress = new NetAddress(
-                configManager.getHttpListenIp(),
-                resourceManager.takePort(),
-                true, SocketProtocol.TCP
-        );
-
-        NetAddress targetAddress = new NetAddress(
-                configManager.getHttpTargetIp(),
-                configManager.getHttpTargetPort(),
-                true, SocketProtocol.TCP
-        );
-
-        if (isSsl) {
-            try {
-                sslContext = SslContext.newClientContext();
-            } catch (Exception e) {
-                logger.warn("[DashHttpMessageSender({})] Fail to set the ssl context.", dashUnitId, e);
-            }
-        }
-
-        socketManager.addSocket(localAudioListenAddress, new HttpMessageServerInitializer());
-        if (localVideoListenAddress != null) { socketManager.addSocket(localVideoListenAddress, new HttpMessageServerInitializer()); }
-        socketManager.addSocket(localMpdListenAddress, new HttpMessageServerInitializer());
-
-        // AUDIO
-        GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
-        if (!localAudioGroupSocket.getListenSocket().openListenChannel()) {
-            resourceManager.restorePort(localAudioListenAddress.getPort());
-            logger.warn("[DashHttpMessageSender({})] Fail to open the local audio listen channel.", dashUnitId);
-            return false;
-        }
-
-        if (!localAudioGroupSocket.addDestination(
-                targetAddress,
-                null,
-                dashUnitId.hashCode(),
-                new HttpAudioMessageClientInitializer(sslContext, dashClient))) {
-            localAudioGroupSocket.removeAllDestinations();
-            localAudioGroupSocket.getListenSocket().stop();
-            resourceManager.restorePort(localAudioListenAddress.getPort());
-            logger.warn("[DashHttpMessageSender({})] Fail to open the local audio connect channel.", dashUnitId);
-            return false;
-        }
-
-        // VIDEO
-        if (!configManager.isAudioOnly() && localVideoListenAddress != null) {
-            GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-            if (!localVideoGroupSocket.getListenSocket().openListenChannel()) {
-                localAudioGroupSocket.removeAllDestinations();
-                localAudioGroupSocket.getListenSocket().stop();
-                resourceManager.restorePort(localAudioListenAddress.getPort());
-
-                resourceManager.restorePort(localVideoListenAddress.getPort());
-                return false;
-            }
-
-            if (!localVideoGroupSocket.addDestination(
-                    targetAddress,
-                    null,
-                    dashUnitId.hashCode(),
-                    new HttpVideoMessageClientInitializer(sslContext, dashClient))) {
-                localAudioGroupSocket.removeAllDestinations();
-                localAudioGroupSocket.getListenSocket().stop();
-                resourceManager.restorePort(localAudioListenAddress.getPort());
-
-                localVideoGroupSocket.removeAllDestinations();
-                localVideoGroupSocket.getListenSocket().stop();
-                resourceManager.restorePort(localVideoListenAddress.getPort());
-                return false;
-            }
-        }
-
-        // MPD
-        GroupSocket localMpdGroupSocket = socketManager.getSocket(localMpdListenAddress);
-        if (!localMpdGroupSocket.getListenSocket().openListenChannel()) {
-            localAudioGroupSocket.removeAllDestinations();
-            localAudioGroupSocket.getListenSocket().stop();
-            resourceManager.restorePort(localAudioListenAddress.getPort());
-
-            if (localVideoListenAddress != null) {
-                GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-                localVideoGroupSocket.removeAllDestinations();
-                localVideoGroupSocket.getListenSocket().stop();
-                resourceManager.restorePort(localVideoListenAddress.getPort());
-            }
-
-            resourceManager.restorePort(localMpdListenAddress.getPort());
-            return false;
-        }
-
-        if (!localMpdGroupSocket.addDestination(
-                targetAddress,
-                null,
-                dashUnitId.hashCode(),
-                new HttpMpdMessageClientInitializer(sslContext, dashClient))) {
-            localAudioGroupSocket.removeAllDestinations();
-            localAudioGroupSocket.getListenSocket().stop();
-            resourceManager.restorePort(localAudioListenAddress.getPort());
-
-            if (localVideoListenAddress != null) {
-                GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-                localVideoGroupSocket.removeAllDestinations();
-                localVideoGroupSocket.getListenSocket().stop();
-                resourceManager.restorePort(localVideoListenAddress.getPort());
-            }
-
-            localMpdGroupSocket.removeAllDestinations();
-            localMpdGroupSocket.getListenSocket().stop();
-            resourceManager.restorePort(localMpdListenAddress.getPort());
-            return false;
+            localVideoNetworkInfoIndex = dashLocalAddressManager.addTargetToVideoSocket(dashClient, targetAddress, socketSessionId);
+            return localVideoNetworkInfoIndex >= 0;
         }
 
         return true;
     }
 
     public void stop() {
-        if (socketManager == null || localAudioListenAddress == null || localMpdListenAddress == null) {
-            return;
+        if (!dashLocalAddressManager.deleteTargetFromMpdSocket(localMpdNetworkInfoIndex, socketSessionId)) {
+            logger.warn("[DashHttpMessageSender({})] Fail to delete the target from mpd socket.", dashUnitId);
         }
 
-        ResourceManager resourceManager = baseEnvironment.getPortResourceManager();
-
-        // AUDIO
-        GroupSocket localAudioGroupSocket = socketManager.getSocket(localAudioListenAddress);
-        localAudioGroupSocket.removeAllDestinations();
-        localAudioGroupSocket.getListenSocket().closeListenChannel();
-        resourceManager.restorePort(localAudioListenAddress.getPort());
-
-        // VIDEO
-        if (!configManager.isAudioOnly() && localVideoListenAddress != null) {
-            GroupSocket localVideoGroupSocket = socketManager.getSocket(localVideoListenAddress);
-            localVideoGroupSocket.removeAllDestinations();
-            localVideoGroupSocket.getListenSocket().closeListenChannel();
-            resourceManager.restorePort(localVideoListenAddress.getPort());
+        if (!dashLocalAddressManager.deleteTargetFromAudioSocket(localAudioNetworkInfoIndex, socketSessionId)) {
+            logger.warn("[DashHttpMessageSender({})] Fail to delete the target from audio socket.", dashUnitId);
         }
 
-        // MPD
-        GroupSocket localMpdGroupSocket = socketManager.getSocket(localMpdListenAddress);
-        localMpdGroupSocket.removeAllDestinations();
-        localMpdGroupSocket.getListenSocket().closeListenChannel();
-        resourceManager.restorePort(localMpdListenAddress.getPort());
+        if (!configManager.isAudioOnly()) {
+            if (!dashLocalAddressManager.deleteTargetFromVideoSocket(localVideoNetworkInfoIndex, socketSessionId)) {
+                logger.warn("[DashHttpMessageSender({})] Fail to delete the target from video socket.", dashUnitId);
+            }
+        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -245,21 +97,30 @@ public class DashHttpMessageSender {
     }
 
     public void sendMessageForMpd(HttpRequest httpRequest) {
-        if (httpRequest == null || socketManager == null || localMpdListenAddress == null) { return; }
+        if (httpRequest == null) { return; }
 
-        sendMessage(socketManager.getSocket(localMpdListenAddress), httpRequest);
-    }
+        DashLocalNetworkInfo mpdNetworkInfo = dashLocalAddressManager.getMpdNetworkInfo(localMpdNetworkInfoIndex);
+        if (mpdNetworkInfo == null) { return; }
 
-    public void sendMessageForVideo(HttpRequest httpRequest) {
-        if (httpRequest == null || socketManager == null || localVideoListenAddress == null) { return; }
-
-        sendMessage(socketManager.getSocket(localVideoListenAddress), httpRequest);
+        sendMessage(mpdNetworkInfo.getLocalGroupSocket(), httpRequest);
     }
 
     public void sendMessageForAudio(HttpRequest httpRequest) {
-        if (httpRequest == null || socketManager == null || localAudioListenAddress == null) { return; }
+        if (httpRequest == null) { return; }
 
-        sendMessage(socketManager.getSocket(localAudioListenAddress), httpRequest);
+        DashLocalNetworkInfo audioNetworkInfo = dashLocalAddressManager.getAudioNetworkInfo(localAudioNetworkInfoIndex);
+        if (audioNetworkInfo == null) { return; }
+
+        sendMessage(audioNetworkInfo.getLocalGroupSocket(), httpRequest);
+    }
+
+    public void sendMessageForVideo(HttpRequest httpRequest) {
+        if (httpRequest == null) { return; }
+
+        DashLocalNetworkInfo videoNetworkInfo = dashLocalAddressManager.getVideoNetworkInfo(localVideoNetworkInfoIndex);
+        if (videoNetworkInfo == null) { return; }
+
+        sendMessage(videoNetworkInfo.getLocalGroupSocket(), httpRequest);
     }
 
     public void sendMessage(GroupSocket groupSocket, HttpRequest httpRequest) {
@@ -302,94 +163,6 @@ public class DashHttpMessageSender {
 
     public void setHost(String host) {
         this.host = host;
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    private static class HttpMessageServerInitializer extends ChannelInitializer<SocketChannel> {
-
-        @Override
-        public void initChannel(SocketChannel ch) {
-            final ChannelPipeline p = ch.pipeline();
-            p.addLast("decoder", new HttpRequestDecoder(4096, 8192, 8192, false));
-            p.addLast("aggregator", new HttpObjectAggregator(100 * 1024 * 1024));
-            p.addLast("encoder", new HttpResponseEncoder());
-        }
-    }
-
-    private static class HttpAudioMessageClientInitializer extends ChannelInitializer<SocketChannel> {
-
-        private final SslContext sslContext;
-        private final DashClient dashClient;
-
-        public HttpAudioMessageClientInitializer(SslContext sslContext, DashClient dashClient) {
-            this.sslContext = sslContext;
-            this.dashClient = dashClient;
-        }
-
-        @Override
-        public void initChannel(SocketChannel ch) {
-            final ChannelPipeline p = ch.pipeline();
-
-            // Enable HTTPS if necessary.
-            if (sslContext != null) {
-                p.addLast(sslContext.newHandler(ch.alloc()));
-            }
-
-            p.addLast("encoder", new HttpClientCodec());
-            p.addLast(new HttpContentDecompressor());
-            p.addLast(new DashAudioHttpClientHandler(dashClient));
-        }
-    }
-
-    private static class HttpVideoMessageClientInitializer extends ChannelInitializer<SocketChannel> {
-
-        private final SslContext sslContext;
-        private final DashClient dashClient;
-
-        public HttpVideoMessageClientInitializer(SslContext sslContext, DashClient dashClient) {
-            this.sslContext = sslContext;
-            this.dashClient = dashClient;
-        }
-
-        @Override
-        public void initChannel(SocketChannel ch) {
-            final ChannelPipeline p = ch.pipeline();
-
-            // Enable HTTPS if necessary.
-            if (sslContext != null) {
-                p.addLast(sslContext.newHandler(ch.alloc()));
-            }
-
-            p.addLast("encoder", new HttpClientCodec());
-            p.addLast(new HttpContentDecompressor());
-            p.addLast(new DashVideoHttpClientHandler(dashClient));
-        }
-    }
-
-    private static class HttpMpdMessageClientInitializer extends ChannelInitializer<SocketChannel> {
-
-        private final SslContext sslContext;
-        private final DashClient dashClient;
-
-        public HttpMpdMessageClientInitializer(SslContext sslContext, DashClient dashClient) {
-            this.sslContext = sslContext;
-            this.dashClient = dashClient;
-        }
-
-        @Override
-        public void initChannel(SocketChannel ch) {
-            final ChannelPipeline p = ch.pipeline();
-
-            // Enable HTTPS if necessary.
-            if (sslContext != null) {
-                p.addLast(sslContext.newHandler(ch.alloc()));
-            }
-
-            p.addLast("encoder", new HttpClientCodec());
-            p.addLast(new HttpContentDecompressor());
-            p.addLast(new DashMpdHttpClientHandler(dashClient));
-        }
     }
     ////////////////////////////////////////////////////////////
 

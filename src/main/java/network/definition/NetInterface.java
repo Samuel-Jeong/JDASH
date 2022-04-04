@@ -1,5 +1,7 @@
 package network.definition;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import instance.BaseEnvironment;
 import network.stats.NetInterfaceTrafficStats;
 
@@ -7,7 +9,7 @@ public class NetInterface {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    private final BaseEnvironment baseEnvironment;
+    transient private final BaseEnvironment baseEnvironment;
     private final boolean isStream; // tcp or udp
     private final boolean listenOnly; // tcp 일 때만 적용됨
     private final int threadCount;
@@ -79,14 +81,8 @@ public class NetInterface {
 
     @Override
     public String toString() {
-        return "NetInterface{" +
-                "baseEnvironment=" + baseEnvironment +
-                ", isStream=" + isStream +
-                ", threadCount=" + threadCount +
-                ", sendBufSize=" + sendBufSize +
-                ", recvBufSize=" + recvBufSize +
-                ", netInterfaceTrafficStats=" + netInterfaceTrafficStats +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

@@ -1,5 +1,7 @@
 package network.socket;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.netty.channel.Channel;
@@ -26,13 +28,13 @@ public class GroupSocket { // SEND-ONLY
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    private final BaseEnvironment baseEnvironment;
+    transient private final BaseEnvironment baseEnvironment;
     private final NetInterface netInterface;
     private final GroupEndpointId incomingGroupEndpointId;
 
     private final Socket listenSocket;
-    private final HashMap<Long, DestinationRecord> destinationMap = new HashMap<>();
-    private final ReentrantLock destinationMapLock = new ReentrantLock();
+    transient private final HashMap<Long, DestinationRecord> destinationMap = new HashMap<>();
+    transient private final ReentrantLock destinationMapLock = new ReentrantLock();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -170,8 +172,12 @@ public class GroupSocket { // SEND-ONLY
         return true;
     }
 
-    public void removeDestination(long sessionId) {
+    public boolean removeDestination(long sessionId) {
+        if (sessionId < 0) { return false; }
+
         DestinationRecord destinationRecord = getDestination(sessionId);
+        if (destinationRecord == null) { return false; }
+
         destinationRecord.getNettyChannel().closeConnectChannel();
         destinationRecord.getNettyChannel().stop();
 
@@ -184,9 +190,12 @@ public class GroupSocket { // SEND-ONLY
                     listenSocket.getNetAddress().getPort(),
                     sessionId, e.toString()
             );
+            return false;
         } finally {
             destinationMapLock.unlock();
         }
+
+        return true;
     }
 
     public void removeAllDestinations() {
@@ -271,14 +280,8 @@ public class GroupSocket { // SEND-ONLY
 
     @Override
     public String toString() {
-        return "GroupSocket{" +
-                "baseEnvironment=" + baseEnvironment +
-                ", netInterface=" + netInterface +
-                ", incomingGroupEndpointId=" + incomingGroupEndpointId +
-                ", listenSocket=" + listenSocket +
-                ", destinationMap=" + destinationMap +
-                ", destinationMapLock=" + destinationMapLock +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

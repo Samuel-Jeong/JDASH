@@ -162,7 +162,12 @@ public class MediaManager {
         );
 
         // GET STATIC MEDIA SOURCE from remote dash server
-        if (dashClient.start()) {
+        NetAddress targetAddress = new NetAddress(
+                configManager.getHttpTargetIp(),
+                configManager.getHttpTargetPort(),
+                true, SocketProtocol.TCP
+        );
+        if (dashClient.start(targetAddress)) {
             dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
             dashUnit.setDashClient(dashClient);
         }

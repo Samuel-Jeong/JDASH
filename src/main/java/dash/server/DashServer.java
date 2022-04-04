@@ -3,6 +3,7 @@ package dash.server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import config.ConfigManager;
+import dash.client.handler.base.DashLocalAddressManager;
 import dash.mpd.MpdManager;
 import dash.mpd.parser.mpd.MPD;
 import dash.server.dynamic.DynamicMediaManager;
@@ -52,7 +53,8 @@ public class DashServer {
     public static final String DASH_SCHEDULE_JOB = "DASH_SCHEDULE_JOB";
 
     private final BaseEnvironment baseEnvironment;
-    private final SocketManager socketManager;
+    private final SocketManager httpSocketManager;
+    private final SocketManager udpSocketManager;
     private final HttpMessageManager httpMessageManager;
     private final MediaManager mediaManager;
     private final DynamicMediaManager dynamicMediaManager;
@@ -60,6 +62,7 @@ public class DashServer {
     private LocalStreamService localStreamService = null;
 
     private final MpdManager mpdManager;
+    private final DashLocalAddressManager dashLocalAddressManager;
 
     private final HashMap<String, DashUnit> dashUnitMap = new HashMap<>();
     private final ReentrantLock dashUnitMapLock = new ReentrantLock();
@@ -87,13 +90,22 @@ public class DashServer {
         );
 
         baseEnvironment = baseEnvObjectSupplier.get(); // lazy initialization
+        dashLocalAddressManager = new DashLocalAddressManager(baseEnvironment, false); // ssl 아직 미지원
         ///////////////////////////
 
         ///////////////////////////
-        // SocketManager 생성
-        socketManager = new SocketManager(
+        // HTTP 용 SocketManager 생성
+        httpSocketManager = new SocketManager(
                 baseEnvironment,
-                false, true,
+                true, true,
+                configManager.getThreadCount(),
+                configManager.getSendBufSize(),
+                configManager.getRecvBufSize()
+        ); // eager initialization
+        // UDP 용 SocketManager 생성
+        udpSocketManager = new SocketManager(
+                baseEnvironment,
+                false, false,
                 configManager.getThreadCount(),
                 configManager.getSendBufSize(),
                 configManager.getRecvBufSize()
@@ -104,7 +116,7 @@ public class DashServer {
         // HttpMessageManager 생성
         httpMessageManager = new HttpMessageManager(
                 baseEnvironment.getScheduleManager(),
-                socketManager
+                httpSocketManager
         );
         ///////////////////////////
 
@@ -142,7 +154,7 @@ public class DashServer {
 
         ///////////////////////////
         // DynamicMediaManager 생성
-        dynamicMediaManager = new DynamicMediaManager(socketManager);
+        dynamicMediaManager = new DynamicMediaManager(udpSocketManager);
         ///////////////////////////
     }
     ////////////////////////////////////////////////////////////
@@ -153,6 +165,8 @@ public class DashServer {
 
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         baseEnvironment.start();
+
+        dashLocalAddressManager.start();
 
         ///////////////////////////
         // LOAD MEDIA URI
@@ -214,6 +228,7 @@ public class DashServer {
         }
         //////////////////////////////////////
 
+        dashLocalAddressManager.stop();
         dynamicMediaManager.stop();
         httpMessageManager.stop();
         baseEnvironment.stop();
@@ -245,8 +260,12 @@ public class DashServer {
         return baseEnvironment;
     }
 
-    public SocketManager getSocketManager() {
-        return socketManager;
+    public SocketManager getHttpSocketManager() {
+        return httpSocketManager;
+    }
+
+    public SocketManager getUdpSocketManager() {
+        return udpSocketManager;
     }
 
     public HttpMessageManager getHttpMessageManager() {
@@ -271,6 +290,10 @@ public class DashServer {
 
     public String getServiceName() {
         return httpMessageManager.getServiceName();
+    }
+
+    public DashLocalAddressManager getDashLocalAddressManager() {
+        return dashLocalAddressManager;
     }
     ////////////////////////////////////////////////////////////
 

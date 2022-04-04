@@ -1,5 +1,7 @@
 package network.stats;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import util.type.UINT32_T;
 
 public class NetInterfaceTrafficStats {
@@ -37,6 +39,12 @@ public class NetInterfaceTrafficStats {
     public void clear() {
         totalNumPackets = 0;
         totalNumBytes = 0;
+    }
+
+    @Override
+    public String toString() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
     ////////////////////////////////////////////////////////////
 

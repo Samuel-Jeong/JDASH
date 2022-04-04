@@ -5,6 +5,8 @@ import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
+import network.definition.NetAddress;
+import network.socket.SocketProtocol;
 import org.junit.Test;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
@@ -42,7 +44,12 @@ public class DashClientTest {
                         //"/test/outdoor_market_ambiance_Dolby/outdoor_market_ambiance_Dolby.mpd",
                 targetBasePath
         );
-        dashClient.start();
+        NetAddress targetAddress = new NetAddress(
+                configManager.getHttpTargetIp(),
+                configManager.getHttpTargetPort(),
+                true, SocketProtocol.TCP
+        );
+        dashClient.start(targetAddress);
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////
