@@ -158,6 +158,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                     );
                     dashClient.getMpdManager().makeMediaSegment(fileManager, targetVideoMediaSegPath, data);
                     break;
+                default:
+                    break;
             }
 
             logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
@@ -197,6 +199,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                                 ),
                                 MessageType.VIDEO
                         );
+                        break;
+                    default:
                         break;
                 }
 

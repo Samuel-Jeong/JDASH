@@ -9,7 +9,6 @@ import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
-import instance.BaseEnvironment;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -33,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DashClient {
 
     ////////////////////////////////////////////////////////////
-    transient private static final Logger logger = LoggerFactory.getLogger(DashClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashClient.class);
 
     private boolean isStopped = false;
 
@@ -48,12 +47,12 @@ public class DashClient {
     private String targetVideoInitSegPath;
 
     private static final long TIMEOUT = 10000; // ms
-    transient private final Timer mpdTimer = new HashedWheelTimer();
-    transient private Timeout mpdTimeout = null;
-    transient private final Timer audioTimer = new HashedWheelTimer();
-    transient private Timeout audioTimeout = null;
-    transient private final Timer videoTimer = new HashedWheelTimer();
-    transient private Timeout videoTimeout = null;
+    private final transient Timer mpdTimer = new HashedWheelTimer();
+    private transient Timeout mpdTimeout = null;
+    private final transient Timer audioTimer = new HashedWheelTimer();
+    private transient Timeout audioTimeout = null;
+    private final transient Timer videoTimer = new HashedWheelTimer();
+    private transient Timeout videoTimeout = null;
 
     private final AtomicInteger mpdRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isMpdRetrying = new AtomicBoolean(false);
@@ -62,18 +61,18 @@ public class DashClient {
     private final AtomicInteger videoRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isVideoRetrying = new AtomicBoolean(false);
 
-    transient private final DashClientFsmManager dashClientAudioFsmManager = new DashClientFsmManager();
-    transient private final DashClientFsmManager dashClientVideoFsmManager;
+    private final transient DashClientFsmManager dashClientAudioFsmManager = new DashClientFsmManager();
+    private final transient DashClientFsmManager dashClientVideoFsmManager;
     private final String dashClientStateUnitId;
 
-    transient private final DashHttpMessageSender dashHttpMessageSender;
+    private final transient DashHttpMessageSender dashHttpMessageSender;
 
-    transient private final MpdManager mpdManager;
-    transient private final FileManager fileManager = new FileManager();
+    private final transient MpdManager mpdManager;
+    private final transient FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashClient(String dashUnitId, BaseEnvironment baseEnvironment, String srcPath, String targetBasePath) {
+    public DashClient(String dashUnitId, String srcPath, String targetBasePath) {
         this.dashUnitId = dashUnitId;
         this.dashClientStateUnitId = "DASH_CLIENT_STATE:" + dashUnitId;
 

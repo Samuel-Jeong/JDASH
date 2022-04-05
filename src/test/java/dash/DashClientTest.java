@@ -16,10 +16,9 @@ import java.util.concurrent.TimeUnit;
 
 public class DashClientTest {
 
-    @Test
     public void test() {
         ////////////////////////////////////////////////////////////
-        String configPath = "/Users/jamesj/GIT_PROJECTS/udash/src/main/resources/config/user_conf.ini";
+        String configPath = System.getProperty("user.dir") + "/src/main/resources/config/user_conf.ini";
         ConfigManager configManager = new ConfigManager(configPath);
         AppInstance appInstance = AppInstance.getInstance();
         appInstance.setConfigManager(configManager);
@@ -35,9 +34,9 @@ public class DashClientTest {
 
         ////////////////////////////////////////////////////////////
         //String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/outdoor_market_ambiance_Dolby";
-        String targetBasePath = "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/client_test_resources/jamesj";
+        String targetBasePath = System.getProperty("user.dir") + "/src/test/resources/client_test_resources/jamesj";
         DashClient dashClient = new DashClient(
-                "TEST_1", baseEnvironment,
+                "TEST_1",
                 "http://" + configManager.getHttpTargetIp() +
                         ":" + configManager.getHttpTargetPort() +
                         "/live/jamesj/jamesj.mpd",

@@ -29,14 +29,14 @@ public class GroupSocket { // SEND-ONLY
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    transient private final BaseEnvironment baseEnvironment;
+    private final transient BaseEnvironment baseEnvironment;
     private final NetInterface netInterface;
 
-    transient private final String listenSocketSessionId;
+    private final transient String listenSocketSessionId;
     private final Socket listenSocket;
 
-    transient private final HashMap<String, DestinationRecord> destinationMap = new HashMap<>();
-    transient private final ReentrantLock destinationMapLock = new ReentrantLock();
+    private final transient HashMap<String, DestinationRecord> destinationMap = new HashMap<>();
+    private final transient ReentrantLock destinationMapLock = new ReentrantLock();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

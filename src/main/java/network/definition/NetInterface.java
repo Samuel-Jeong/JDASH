@@ -9,7 +9,7 @@ public class NetInterface {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    transient private final BaseEnvironment baseEnvironment;
+    private final transient BaseEnvironment baseEnvironment;
     private final boolean isStream; // tcp or udp
     private final boolean listenOnly; // tcp 일 때만 적용됨
     private final int threadCount;

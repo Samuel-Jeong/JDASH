@@ -124,8 +124,7 @@ public class DashMessageHandler implements HttpMessageHandler {
         if (!mpdFile.exists()) {
             FFmpegFrameRecorder audioFrameRecorder = null;
             FFmpegFrameRecorder videoFrameRecorder = null;
-            try {
-                FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);
+            try (FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);) {
                 if (!configManager.isAudioOnly()) {
                     fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
                     fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);

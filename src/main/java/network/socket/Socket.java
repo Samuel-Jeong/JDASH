@@ -20,10 +20,10 @@ public class Socket {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    transient private final BaseEnvironment baseEnvironment;
+    private final transient BaseEnvironment baseEnvironment;
     private final NetAddress netAddress;
     private final String sessionId;
-    transient private final NettyChannel nettyChannel;
+    private final transient NettyChannel nettyChannel;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

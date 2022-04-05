@@ -9,14 +9,14 @@ public class NettyChannel {
 
     ////////////////////////////////////////////////////////////
     // VARIABLES
-    transient private final BaseEnvironment baseEnvironment;
+    private final transient BaseEnvironment baseEnvironment;
     private final String sessionId;
     private final int threadCount;
 
     private final int sendBufSize;
     private final int recvBufSize;
-    transient private final ConcurrentCyclicFIFO<byte[]> sendBuf;
-    transient private final ConcurrentCyclicFIFO<byte[]> recvBuf;
+    private final transient ConcurrentCyclicFIFO<byte[]> sendBuf;
+    private final transient ConcurrentCyclicFIFO<byte[]> recvBuf;
 
     private String listenIp = null;
     private int listenPort = 0;

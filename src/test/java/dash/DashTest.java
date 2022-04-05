@@ -17,7 +17,7 @@ public class DashTest {
     @Test
     public void test() {
         ////////////////////////////////////////////////////////////
-        String configPath = "/Users/jamesj/GIT_PROJECTS/udash/src/main/resources/config/user_conf.ini";
+        String configPath = System.getProperty("user.dir") + "/src/main/resources/config/user_conf.ini";
         ConfigManager configManager = new ConfigManager(configPath);
         AppInstance appInstance = AppInstance.getInstance();
         appInstance.setConfigManager(configManager);
@@ -31,7 +31,7 @@ public class DashTest {
         DashServer dashServer = new DashServer();
         MpdManager mpdManager = dashServer.getMpdManager();
         mpdManager.parseMpd(
-                "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/test/jamesj2.mpd",
+                System.getProperty("user.dir") + "/src/test/resources/Seoul/Seoul.mpd",
                 false
         );
 
@@ -79,7 +79,7 @@ public class DashTest {
         return dashServer
                 .getMpdManager()
                 .parseMpd(
-                        "/Users/jamesj/GIT_PROJECTS/udash/src/test/resources/mpd_examples/mpd_example4.xml",
+                        System.getProperty("user.dir") + "/src/test/resources/mpd_examples/mpd_example4.xml",
                         false
                 );
     }

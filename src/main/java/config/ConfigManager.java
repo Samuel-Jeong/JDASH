@@ -22,6 +22,9 @@ public class ConfigManager {
 
     ////////////////////////////////////////////////////////////
     // CONSTANT
+    private static final String CONSTANT_PRINT_SUCCESS_LOG_FORMAT = "Load [{}] config...(OK)";
+    private static final String CONSTANT_PRINT_FAIL_LOG_FORMAT_1 = "Fail to load [{}-{}].";
+    private static final String CONSTANT_PRINT_FAIL_LOG_FORMAT_2 = "Fail to load [{}-{}]. ({})";
     public static final String CONSTANT_SERVICE_DASH = "UDASH"; // UDASH Service 이름
     public static final String CONSTANT_SERVICE_CDN = "UCDN"; // UCDN Service 이름
     ////////////////////////////////////////////////////////////
@@ -213,22 +216,22 @@ public class ConfigManager {
     private void loadCommonConfig() {
         this.id = getIniValue(SECTION_COMMON, FIELD_ID);
         if (id == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ID);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_COMMON, FIELD_ID);
             System.exit(1);
         }
 
         this.remoteId = getIniValue(SECTION_COMMON, FIELD_REMOTE_ID);
         if (remoteId == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_REMOTE_ID);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_COMMON, FIELD_REMOTE_ID);
             System.exit(1);
         }
 
         this.serviceName = getIniValue(SECTION_COMMON, FIELD_SERVICE_NAME);
         if (serviceName == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_SERVICE_NAME);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_COMMON, FIELD_SERVICE_NAME);
             System.exit(1);
         } else if (!serviceName.equals(CONSTANT_SERVICE_DASH) && !serviceName.equals(CONSTANT_SERVICE_CDN)) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_SERVICE_NAME);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_COMMON, FIELD_SERVICE_NAME);
             logger.error("MUST CHECK SERVICE NAME (given: {}, expected: {} or {})",
                     serviceName, CONSTANT_SERVICE_DASH, CONSTANT_SERVICE_CDN
             );
@@ -237,7 +240,7 @@ public class ConfigManager {
 
         String enableClientString = getIniValue(SECTION_COMMON, FIELD_ENABLE_CLIENT);
         if (enableClientString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_COMMON, FIELD_ENABLE_CLIENT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_COMMON, FIELD_ENABLE_CLIENT);
             System.exit(1);
         } else {
             this.enableClient = Boolean.parseBoolean(enableClientString);
@@ -245,23 +248,23 @@ public class ConfigManager {
 
         this.threadCount = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_THREAD_COUNT));
         if (this.threadCount <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_THREAD_COUNT, threadCount);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_2, SECTION_COMMON, FIELD_THREAD_COUNT, threadCount);
             System.exit(1);
         }
 
         this.sendBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_SEND_BUF_SIZE));
         if (this.sendBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_SEND_BUF_SIZE, sendBufSize);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_2, SECTION_COMMON, FIELD_SEND_BUF_SIZE, sendBufSize);
             System.exit(1);
         }
 
         this.recvBufSize = Integer.parseInt(getIniValue(SECTION_COMMON, FIELD_RECV_BUF_SIZE));
         if (this.recvBufSize <= 0) {
-            logger.error("Fail to load [{}-{}]. ({})", SECTION_COMMON, FIELD_RECV_BUF_SIZE, recvBufSize);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_2, SECTION_COMMON, FIELD_RECV_BUF_SIZE, recvBufSize);
             System.exit(1);
         }
 
-        logger.debug("Load [{}] config...(OK)", SECTION_COMMON);
+        logger.debug(CONSTANT_PRINT_SUCCESS_LOG_FORMAT, SECTION_COMMON);
     }
 
     /**
@@ -271,19 +274,19 @@ public class ConfigManager {
     private void loadServerConfig() {
         this.streaming = getIniValue(SECTION_SERVER, FIELD_STREAMING);
         if (streaming == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_STREAMING);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_STREAMING);
             System.exit(1);
         } else {
             if (!streaming.equals(StreamConfigManager.STREAMING_WITH_DASH)
                     && !streaming.equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_STREAMING);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_STREAMING);
                 System.exit(1);
             }
         }
 
         String enablePreloadWithDashString = getIniValue(SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
         if (enablePreloadWithDashString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_ENABLE_PRELOAD_WITH_DASH);
             System.exit(1);
         } else {
             this.enablePreloadWithDash = Boolean.parseBoolean(enablePreloadWithDashString);
@@ -291,80 +294,80 @@ public class ConfigManager {
 
         this.httpListenIp = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_IP);
         if (this.httpListenIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_IP);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_IP);
             System.exit(1);
         }
 
         String httpListenPortString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
         if (httpListenPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
             System.exit(1);
         } else {
             this.httpListenPort = Integer.parseInt(httpListenPortString);
             if (this.httpListenPort <= 0 || this.httpListenPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT);
                 System.exit(1);
             }
         }
 
         String httpListenPortBeginOffsetString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
         if (httpListenPortBeginOffsetString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
             System.exit(1);
         } else {
             this.httpListenPortBeginOffset = Integer.parseInt(httpListenPortBeginOffsetString);
             if (this.httpListenPortBeginOffset <= 0 || this.httpListenPort + this.httpListenPortBeginOffset > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_BEGIN_OFFSET);
                 System.exit(1);
             }
         }
 
         String httpListenPortEndOffsetString = getIniValue(SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
         if (httpListenPortEndOffsetString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
             System.exit(1);
         } else {
             this.httpListenPortEndOffset = Integer.parseInt(httpListenPortEndOffsetString);
             if (this.httpListenPortEndOffset <= 0 || this.httpListenPort + this.httpListenPortEndOffset > 65535
                     || this.httpListenPortBeginOffset >= this.httpListenPortEndOffset) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_HTTP_LISTEN_PORT_END_OFFSET);
                 System.exit(1);
             }
         }
 
         this.preprocessListenIp = getIniValue(SECTION_SERVER, FIELD_PREPROCESS_LISTEN_IP);
         if (this.preprocessListenIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_LISTEN_IP);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_PREPROCESS_LISTEN_IP);
             System.exit(1);
         }
 
         String preprocessListenPortString = getIniValue(SECTION_SERVER, FIELD_PREPROCESS_LISTEN_PORT);
         if (preprocessListenPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_LISTEN_PORT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_PREPROCESS_LISTEN_PORT);
             System.exit(1);
         } else {
             this.preprocessListenPort = Integer.parseInt(preprocessListenPortString);
             if (this.preprocessListenPort <= 0 || this.preprocessListenPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_PREPROCESS_TARGET_PORT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_PREPROCESS_TARGET_PORT);
                 System.exit(1);
             }
         }
 
         String maxDashUnitLimitString = getIniValue(SECTION_SERVER, FIELD_MAX_DASH_UNIT_LIMIT);
         if (maxDashUnitLimitString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_MAX_DASH_UNIT_LIMIT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_MAX_DASH_UNIT_LIMIT);
             System.exit(1);
         } else {
             this.maxDashUnitLimit = Integer.parseInt(maxDashUnitLimitString);
             if (this.maxDashUnitLimit <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_MAX_DASH_UNIT_LIMIT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_MAX_DASH_UNIT_LIMIT);
                 System.exit(1);
             }
         }
 
         String enableAutoDeleteUselessSessionString = getIniValue(SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION);
         if (enableAutoDeleteUselessSessionString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_SESSION);
             System.exit(1);
         } else {
             this.enableAutoDeleteUselessSession = Boolean.parseBoolean(enableAutoDeleteUselessSessionString);
@@ -372,19 +375,19 @@ public class ConfigManager {
 
         String autoDeleteSessionLimitTimeString = getIniValue(SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
         if (autoDeleteSessionLimitTimeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
             System.exit(1);
         } else {
             this.autoDeleteSessionLimitTime = Long.parseLong(autoDeleteSessionLimitTimeString);
             if (this.autoDeleteSessionLimitTime < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_AUTO_DELETE_SESSION_LIMIT_TIME);
                 System.exit(1);
             }
         }
 
         String enableAutoDeleteUselessDirString = getIniValue(SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_DIR);
         if (enableAutoDeleteUselessDirString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_DIR);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_ENABLE_AUTO_DELETE_USELESS_DIR);
             System.exit(1);
         } else {
             this.enableAutoDeleteUselessDir = Boolean.parseBoolean(enableAutoDeleteUselessDirString);
@@ -392,48 +395,48 @@ public class ConfigManager {
 
         String autoDeleteDirLimitTimeString = getIniValue(SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
         if (autoDeleteDirLimitTimeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
             System.exit(1);
         } else {
             this.autoDeleteDirLimitTime = Long.parseLong(autoDeleteDirLimitTimeString);
             if (this.autoDeleteDirLimitTime < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_AUTO_DELETE_DIR_LIMIT_TIME);
                 System.exit(1);
             }
         }
 
         String localMpdListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
         if (localMpdListenSocketSizeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
             System.exit(1);
         } else {
             this.localMpdListenSocketSize = Integer.parseInt(localMpdListenSocketSizeString);
             if (this.localMpdListenSocketSize <= 0 || this.localMpdListenSocketSize > 10000) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_MPD_LISTEN_SOCKET_SIZE);
                 System.exit(1);
             }
         }
 
         String localAudioListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
         if (localAudioListenSocketSizeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
             System.exit(1);
         } else {
             this.localAudioListenSocketSize = Integer.parseInt(localAudioListenSocketSizeString);
             if (this.localAudioListenSocketSize <= 0 || this.localAudioListenSocketSize > 10000) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_AUDIO_LISTEN_SOCKET_SIZE);
                 System.exit(1);
             }
         }
 
         String localVideoListenSocketSizeString = getIniValue(SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
         if (localVideoListenSocketSizeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
             System.exit(1);
         } else {
             this.localVideoListenSocketSize = Integer.parseInt(localVideoListenSocketSizeString);
             if (this.localVideoListenSocketSize <= 0 || this.localVideoListenSocketSize > 10000) {
-                logger.error("Fail to load [{}-{}].", SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_SERVER, FIELD_LOCAL_VIDEO_LISTEN_SOCKET_SIZE);
                 System.exit(1);
             }
         }
@@ -446,13 +449,13 @@ public class ConfigManager {
     private void loadClientConfig() {
         this.cameraPath = getIniValue(SECTION_CLIENT, FIELD_CAMERA_PATH);
         if (cameraPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_CAMERA_PATH);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_CAMERA_PATH);
             System.exit(1);
         }
 
         String enableGuiString = getIniValue(SECTION_CLIENT, FIELD_ENABLE_GUI);
         if (enableGuiString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_ENABLE_GUI);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_ENABLE_GUI);
             System.exit(1);
         } else {
             this.enableGui = Boolean.parseBoolean(enableGuiString);
@@ -460,60 +463,60 @@ public class ConfigManager {
 
         this.httpTargetIp = getIniValue(SECTION_CLIENT, FIELD_HTTP_TARGET_IP);
         if (this.httpTargetIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_IP);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_HTTP_TARGET_IP);
             System.exit(1);
         }
 
         String httpTargetPortString = getIniValue(SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
         if (httpTargetPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
             System.exit(1);
         } else {
             this.httpTargetPort = Integer.parseInt(httpTargetPortString);
             if (this.httpTargetPort <= 0 || this.httpTargetPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
                 System.exit(1);
             }
         }
 
         String preprocessInitIdleTimeSring = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
         if (preprocessInitIdleTimeSring == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
             System.exit(1);
         } else {
             this.preprocessInitIdleTime = Long.parseLong(preprocessInitIdleTimeSring);
             if (this.preprocessInitIdleTime < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_PREPROCESS_INIT_IDLE_TIME);
                 System.exit(1);
             }
         }
 
         this.preprocessTargetIp = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
         if (this.preprocessTargetIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_PREPROCESS_TARGET_IP);
             System.exit(1);
         }
 
-        String preprocessTargetPort = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
-        if (preprocessTargetPort == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+        String preprocessTargetPortString = getIniValue(SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+        if (preprocessTargetPortString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
             System.exit(1);
         } else {
-            this.preprocessTargetPort = Integer.parseInt(preprocessTargetPort);
+            this.preprocessTargetPort = Integer.parseInt(preprocessTargetPortString);
             if (this.preprocessTargetPort <= 0 || this.preprocessTargetPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_PREPROCESS_TARGET_PORT);
                 System.exit(1);
             }
         }
 
         String downloadChunkRetryCountString = getIniValue(SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
         if (downloadChunkRetryCountString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
             System.exit(1);
         } else {
             this.downloadChunkRetryCount = Integer.parseInt(downloadChunkRetryCountString);
             if (this.downloadChunkRetryCount < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_DOWNLOAD_CHUNK_RETRY_COUNT);
                 System.exit(1);
             }
         }
@@ -526,19 +529,19 @@ public class ConfigManager {
     private void loadMediaConfig() {
         this.mediaBasePath = getIniValue(SECTION_MEDIA, FIELD_MEDIA_BASE_PATH);
         if (mediaBasePath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_MEDIA_BASE_PATH);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_BASE_PATH);
             System.exit(1);
         }
 
         this.mediaListPath = getIniValue(SECTION_MEDIA, FIELD_MEDIA_LIST_PATH);
         if (mediaListPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_MEDIA_LIST_PATH);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_LIST_PATH);
             System.exit(1);
         }
 
         String clearDashDataIfSessionClosedString = getIniValue(SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
         if (clearDashDataIfSessionClosedString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED);
             System.exit(1);
         } else {
             this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
@@ -546,19 +549,19 @@ public class ConfigManager {
 
         String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
         if (chunkFileDeletionIntervalSecondsString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
             System.exit(1);
         } else {
             this.chunkFileDeletionIntervalSeconds = Integer.parseInt(chunkFileDeletionIntervalSecondsString);
             if (this.chunkFileDeletionIntervalSeconds <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
                 System.exit(1);
             }
         }
 
         String audioOnlyString = getIniValue(SECTION_MEDIA, FIELD_AUDIO_ONLY);
         if (audioOnlyString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_AUDIO_ONLY);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_AUDIO_ONLY);
             System.exit(1);
         } else {
             this.audioOnly = Boolean.parseBoolean(audioOnlyString);
@@ -566,101 +569,101 @@ public class ConfigManager {
 
         String localAudioCodecString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
         if (localAudioCodecString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
             System.exit(1);
         } else {
             this.localAudioCodec = Integer.parseInt(localAudioCodecString);
             if (this.localAudioCodec <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_AUDIO_CODEC);
                 System.exit(1);
             }
         }
 
         String localAudioSampleRateString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
         if (localAudioSampleRateString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
             System.exit(1);
         } else {
             this.localAudioSampleRate = Integer.parseInt(localAudioSampleRateString);
             if (this.localAudioSampleRate <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_AUDIO_SAMPLERATE);
                 System.exit(1);
             }
         }
 
         String localVideoCodecString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
         if (localVideoCodecString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
             System.exit(1);
         } else {
             this.localVideoCodec = Integer.parseInt(localVideoCodecString);
             if (this.localVideoCodec <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_VIDEO_CODEC);
                 System.exit(1);
             }
         }
 
         String localVideoPixelFormatString = getIniValue(SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
         if (localVideoPixelFormatString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
             System.exit(1);
         } else {
             this.localVideoPixelFormat = Integer.parseInt(localVideoPixelFormatString);
             if (this.localVideoPixelFormat < 0) { // 0 : YUV420P
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_LOCAL_VIDEO_PIXEL_FORMAT);
                 System.exit(1);
             }
         }
 
         String remoteAudioCodecString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
         if (remoteAudioCodecString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
             System.exit(1);
         } else {
             this.remoteAudioCodec = Integer.parseInt(remoteAudioCodecString);
             if (this.remoteAudioCodec <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
                 System.exit(1);
             }
         }
 
         String remoteAudioSampleRateString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
         if (remoteAudioSampleRateString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
             System.exit(1);
         } else {
             this.remoteAudioSampleRate = Integer.parseInt(remoteAudioSampleRateString);
             if (this.remoteAudioSampleRate <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_AUDIO_SAMPLERATE);
                 System.exit(1);
             }
         }
 
         String remoteVideoCodecString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
         if (remoteVideoCodecString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
             System.exit(1);
         } else {
             this.remoteVideoCodec = Integer.parseInt(remoteVideoCodecString);
             if (this.remoteVideoCodec <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_VIDEO_CODEC);
                 System.exit(1);
             }
         }
 
         String remoteVideoPixelFormatString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
         if (remoteVideoPixelFormatString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
             System.exit(1);
         } else {
             this.remoteVideoPixelFormat = Integer.parseInt(remoteVideoPixelFormatString);
             if (this.remoteVideoPixelFormat < 0) { // 0 : YUV420P
-                logger.error("Fail to load [{}-{}].", SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
                 System.exit(1);
             }
         }
 
-        logger.debug("Load [{}] config...(OK)", SECTION_MEDIA);
+        logger.debug(CONSTANT_PRINT_SUCCESS_LOG_FORMAT, SECTION_MEDIA);
     }
 
     /**
@@ -670,7 +673,7 @@ public class ConfigManager {
     private void loadMpdConfig() {
         String enableValidationString = getIniValue(SECTION_MPD, FIELD_ENABLE_VALIDATION);
         if (enableValidationString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_ENABLE_VALIDATION);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_ENABLE_VALIDATION);
             System.exit(1);
         } else {
             this.enableValidation = Boolean.parseBoolean(enableValidationString);
@@ -678,60 +681,60 @@ public class ConfigManager {
 
         this.representationIdFormat = getIniValue(SECTION_MPD, FIELD_REPRESENTATION_ID_FORMAT);
         if (representationIdFormat == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_REPRESENTATION_ID_FORMAT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_REPRESENTATION_ID_FORMAT);
             System.exit(1);
         }
 
         this.chunkNumberFormat = getIniValue(SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
         if (chunkNumberFormat == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_CHUNK_NUMBER_FORMAT);
             System.exit(1);
         }
-        
+
         this.segmentNumberFormat = getIniValue(SECTION_MPD, FIELD_SEGMENT_NUMBER_FORMAT);
         if (segmentNumberFormat == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_NUMBER_FORMAT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_SEGMENT_NUMBER_FORMAT);
             System.exit(1);
         }
 
         this.validationXsdPath = getIniValue(SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
         if (validationXsdPath == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_VALIDATION_XSD_PATH);
             System.exit(1);
         }
 
         String segmentDurationString = getIniValue(SECTION_MPD, FIELD_SEGMENT_DURATION);
         if (segmentDurationString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_SEGMENT_DURATION);
             System.exit(1);
         } else {
             this.segmentDuration = Double.parseDouble(segmentDurationString);
             if (this.segmentDuration <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_SEGMENT_DURATION);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_SEGMENT_DURATION);
                 System.exit(1);
             }
         }
 
         String segmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_TIME_OFFSET);
         if (segmentDurationOffsetString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_TIME_OFFSET);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_TIME_OFFSET);
             System.exit(1);
         } else {
             this.timeOffset = Double.parseDouble(segmentDurationOffsetString);
             if (this.timeOffset < 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_TIME_OFFSET);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_TIME_OFFSET);
                 System.exit(1);
             }
         }
 
         String windowSizeString = getIniValue(SECTION_MPD, FIELD_WINDOW_SIZE);
         if (windowSizeString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_WINDOW_SIZE);
             System.exit(1);
         } else {
             this.windowSize = Integer.parseInt(windowSizeString);
             if (this.windowSize <= 0) {
-                logger.error("Fail to load [{}-{}].", SECTION_MPD, FIELD_WINDOW_SIZE);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_WINDOW_SIZE);
                 System.exit(1);
             }
         }
@@ -744,23 +747,23 @@ public class ConfigManager {
     private void loadRtmpConfig() {
         this.rtmpPublishIp = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
         if (this.rtmpPublishIp == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
             System.exit(1);
         }
 
         String rtmpPublishPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
         if (rtmpPublishPortString == null) {
-            logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
             System.exit(1);
         } else {
             this.rtmpPublishPort = Integer.parseInt(rtmpPublishPortString);
             if (this.rtmpPublishPort <= 0 || this.rtmpPublishPort > 65535) {
-                logger.error("Fail to load [{}-{}].", SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
                 System.exit(1);
             }
         }
 
-        logger.debug("Load [{}] config...(OK)", SECTION_RTMP);
+        logger.debug(CONSTANT_PRINT_SUCCESS_LOG_FORMAT, SECTION_RTMP);
     }
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -12,7 +12,6 @@ public class RemoteCameraTest {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteCameraTest.class);
 
-    @Test
     public void test() {
         ScheduleManager scheduleManager = new ScheduleManager();
         RemoteStreamService remoteCameraService = new RemoteStreamService(

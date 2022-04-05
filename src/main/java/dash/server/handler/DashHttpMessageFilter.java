@@ -178,7 +178,7 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
     private void processSegmentRequest(ChannelHandlerContext channelHandlerContext, FullHttpRequest httpRequest,
                                        DashUnit dashUnit, String localUri) {
         byte[] segmentBytes = dashUnit.getSegmentByteData(localUri);
-        if (segmentBytes != null) {
+        if (segmentBytes != null && segmentBytes.length > 0) {
             logger.debug("[DashHttpMessageFilter] SEGMENT [{}] [len={}]", localUri, segmentBytes.length);
             dashServer.writeResponse(channelHandlerContext, httpRequest, HttpResponseStatus.OK, HttpMessageManager.TYPE_PLAIN, segmentBytes);
         } else {

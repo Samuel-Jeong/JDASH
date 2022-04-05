@@ -158,6 +158,8 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                     );
                     dashClient.getMpdManager().makeMediaSegment(fileManager, targetAudioMediaSegPath, data);
                     break;
+                default:
+                    break;
             }
 
             logger.trace("[DashAudioHttpClientHandler({})] [AUDIO] {}", dashClient.getDashUnitId(), data);
@@ -197,6 +199,8 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                                 ),
                                 MessageType.AUDIO
                         );
+                        break;
+                    default:
                         break;
                 }
 

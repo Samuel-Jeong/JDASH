@@ -13,7 +13,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
-import service.ServiceManager;
 import service.scheduler.schedule.ScheduleManager;
 import stream.RemoteStreamService;
 import stream.StreamConfigManager;
@@ -27,14 +26,14 @@ public class DashUnit {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashUnit.class);
 
-    transient private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    private final transient ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
     private final StreamType type;
     private final long initiationTime;
     private final String id;
     private final long expires;
 
-    transient private MPD mpd;
+    private transient MPD mpd;
 
     private String inputFilePath = null;
     private String outputFilePath = null;
@@ -45,12 +44,12 @@ public class DashUnit {
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
     public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
 
-    transient private final ScheduleManager scheduleManager = new ScheduleManager();
-    transient private RemoteStreamService remoteStreamService = null;
+    private final transient ScheduleManager scheduleManager = new ScheduleManager();
+    private transient RemoteStreamService remoteStreamService = null;
 
-    transient private DashClient dashClient = null;
-    transient private OldFileController oldFileController = null;
-    transient private final FileManager fileManager = new FileManager();
+    private transient DashClient dashClient = null;
+    private transient OldFileController oldFileController = null;
+    private final transient FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -111,7 +110,6 @@ public class DashUnit {
             } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 dashClient = new DashClient(
                         id,
-                        ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
                         sourceUri,
                         fileManager.getParentPathFromUri(mpdPath)
                 );
@@ -220,7 +218,6 @@ public class DashUnit {
     public void clearMpdPath() {
         if (outputFilePath != null) { // Delete MPD path
             String mpdParentPath = fileManager.getParentPathFromUri(outputFilePath);
-            //logger.debug("[DashUnit(id={})] outputFilePath: {}, mpdParentPath: {}", id, outputFilePath, mpdParentPath);
             if (mpdParentPath != null) {
                 fileManager.deleteFile(mpdParentPath);
                 logger.debug("[DashUnit(id={})] DELETE ALL MPD Files. (path={})", id, mpdParentPath);

@@ -15,7 +15,6 @@ import util.module.FileManager;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,8 +72,8 @@ public class MpdManager {
     private int curAudioRepresentationCount = 0;
     private int curVideoRepresentationCount = 0;
 
-    transient private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
-    transient private final FileManager fileManager = new FileManager();
+    private final transient ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+    private final transient FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////

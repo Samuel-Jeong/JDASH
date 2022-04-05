@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -33,97 +34,55 @@ public class FileManager {
     public boolean writeBytes(File file, byte[] data, boolean isAppend) {
         if (file == null || data == null || data.length == 0) { return false; }
 
-        BufferedOutputStream bufferedOutputStream = null;
-        try {
-            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, isAppend));
+        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, isAppend))) {
             bufferedOutputStream.write(data);
             return true;
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to write the file. (fileName={})", file.getAbsolutePath(), e);
             return false;
-        } finally {
-            try {
-                if (bufferedOutputStream != null) {
-                    bufferedOutputStream.close();
-                }
-            } catch (Exception e) {
-                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", file.getAbsolutePath());
-            }
         }
     }
 
     public boolean writeBytes(String fileName, byte[] data, boolean isAppend) {
         if (fileName == null) { return false; }
 
-        BufferedOutputStream bufferedOutputStream = null;
-        try {
-            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName, isAppend));
+        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName, isAppend))) {
             bufferedOutputStream.write(data);
             return true;
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to write the file. (fileName={})", fileName, e);
             return false;
-        } finally {
-            try {
-                if (bufferedOutputStream != null) {
-                    bufferedOutputStream.close();
-                }
-            } catch (Exception e) {
-                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName, e);
-            }
         }
     }
 
     public boolean writeString(String fileName, String data, boolean isAppend) {
         if (fileName == null) { return false; }
 
-        BufferedWriter bufferedWriter = null;
-        try {
-            bufferedWriter = new BufferedWriter(new FileWriter(fileName, isAppend));
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileName, isAppend))) {
             bufferedWriter.write(data);
             return true;
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to write the file. (fileName={})", fileName, e);
             return false;
-        } finally {
-            try {
-                if (bufferedWriter != null) {
-                    bufferedWriter.close();
-                }
-            } catch (Exception e) {
-                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName, e);
-            }
         }
     }
 
     public byte[] readAllBytes(String fileName) {
-        if (fileName == null) { return null; }
+        if (fileName == null) { return new byte[0]; }
 
-        BufferedInputStream bufferedInputStream = null;
-        try {
-            bufferedInputStream = new BufferedInputStream(new FileInputStream(fileName));
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileName))) {
             return bufferedInputStream.readAllBytes();
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
-            return null;
-        } finally {
-            try {
-                if (bufferedInputStream != null) {
-                    bufferedInputStream.close();
-                }
-            } catch (IOException e) {
-                logger.warn("[FileManager] Fail to close the buffer stream. (fileName={})", fileName);
-            }
+            return new byte[0];
         }
     }
 
     public List<String> readAllLines(String fileName) {
-        if (fileName == null) { return null; }
+        if (fileName == null) { return Collections.emptyList(); }
 
-        BufferedReader bufferedReader = null;
         List<String> lines = new ArrayList<>();
-        try {
-            bufferedReader = new BufferedReader(new FileReader(fileName));
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName))) {
             String line;
             while( (line = bufferedReader.readLine()) != null ) {
                 lines.add(line);
@@ -132,14 +91,6 @@ public class FileManager {
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
             return lines;
-        } finally {
-            try {
-                if (bufferedReader != null) {
-                    bufferedReader.close();
-                }
-            } catch (IOException e) {
-                logger.warn("[FileManager] Fail to close the buffer reader. (fileName={})", fileName, e);
-            }
         }
     }
 
@@ -270,12 +221,11 @@ public class FileManager {
             // 3) 파일 마지막 수정 시간 확인
             long lastModifiedTime = getLastModificationSecondTime(curFile);
             if (lastModifiedTime >= limitTime) { // 제한 시간 [이상] 경과
-                if (curFile.delete()) {
-                    logger.trace("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
-                            curFile.getAbsolutePath(),
-                            lastModifiedTime, limitTime
-                    );
-                }
+                Files.delete(curFile.toPath());
+                logger.trace("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
+                        curFile.getAbsolutePath(),
+                        lastModifiedTime, limitTime
+                );
             }
             ///////////////////////////////
         }

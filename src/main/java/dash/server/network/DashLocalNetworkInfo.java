@@ -8,7 +8,7 @@ import network.socket.GroupSocket;
 public class DashLocalNetworkInfo {
 
     // ADDRESS : SOCKET = 1 : 1
-    transient private NetAddress localListenAddress;
+    private transient NetAddress localListenAddress;
     private GroupSocket localGroupSocket;
 
     public DashLocalNetworkInfo(NetAddress localListenAddress, GroupSocket localGroupSocket) {

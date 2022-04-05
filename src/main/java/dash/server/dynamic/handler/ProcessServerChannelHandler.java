@@ -40,17 +40,14 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
     ////////////////////////////////////////////////////////////////////////////////
     public ProcessServerChannelHandler() {
         List<String> mediaListFileLines = fileManager.readAllLines(AppInstance.getInstance().getConfigManager().getMediaListPath());
-        for (String mediaListFileLine : mediaListFileLines) {
-            if (mediaListFileLine == null || mediaListFileLine.isEmpty()) { continue; }
-
-            mediaListFileLine = mediaListFileLine.trim();
-            if (mediaListFileLine.startsWith("#")) { continue; }
-
-            String[] elements = mediaListFileLine.split(",");
-            if (elements.length != 2) { continue; }
-
-            validatedStreamNames.add(elements[1].trim());
-        }
+        mediaListFileLines.stream()
+                .filter(mediaListFileLine -> mediaListFileLine != null && !mediaListFileLine.isEmpty())
+                .map(String::trim)
+                .filter(mediaListFileLine -> !mediaListFileLine.startsWith("#"))
+                .map(mediaListFileLine -> mediaListFileLine.split(","))
+                .filter(elements -> elements.length == 2)
+                .map(elements -> elements[1].trim())
+                .forEach(validatedStreamNames::add);
 
         configManager = AppInstance.getInstance().getConfigManager();
     }

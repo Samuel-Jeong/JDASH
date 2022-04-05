@@ -44,13 +44,15 @@ public class MediaManager {
         List<String> fileLines = fileManager.readAllLines(mediaListFilePath);
 
         // 2) APPLY BASE PATH IN FRONT OF THE RAW FILE PATH
-        if (fileLines != null) {
+        if (fileLines != null && !fileLines.isEmpty()) {
             mediaInfoList.clear();
 
             int mediaInfoListIndex = 0;
             for (String rawUri : fileLines) {
                 String[] elements = parseRawUri(rawUri);
-                if (elements == null) { continue; }
+                if (elements.length == 0) {
+                    continue;
+                }
 
                 // GET StreamType
                 StreamType streamType = getStreamTypeFromString(elements[0]);
@@ -62,9 +64,15 @@ public class MediaManager {
                 // ADD Static DashUnit only
                 String dashPathExtension = FileUtils.getExtension(streamUri);
                 if (dashPathExtension.length() != 0) {
-                    if (!streamType.equals(StreamType.STATIC)) { continue; }
-                    if (!streamUri.endsWith(StreamConfigManager.MP4_POSTFIX) && !streamUri.endsWith(StreamConfigManager.DASH_POSTFIX)) { continue; }
-                    if (!startDownloadStream(streamType, streamUri, localStreamPath)) { continue; }
+                    if (!streamType.equals(StreamType.STATIC)) {
+                        continue;
+                    }
+                    if (!streamUri.endsWith(StreamConfigManager.MP4_POSTFIX) && !streamUri.endsWith(StreamConfigManager.DASH_POSTFIX)) {
+                        continue;
+                    }
+                    if (!startDownloadStream(streamType, streamUri, localStreamPath)) {
+                        continue;
+                    }
                 }
 
                 // ADD MediaInfo
@@ -76,15 +84,15 @@ public class MediaManager {
     }
 
     private String[] parseRawUri(String rawUri) {
-        if (rawUri == null || rawUri.isEmpty()) { return null; }
+        if (rawUri == null || rawUri.isEmpty()) { return new String[0]; }
 
         rawUri = rawUri.trim();
         // 앞에 '#' 이 있으면 주석으로 처리
-        if (rawUri.startsWith("#")) { return null; }
+        if (rawUri.startsWith("#")) { return new String[0]; }
 
         // ex) D,live/jamesj
         String[] elements = rawUri.split(",");
-        if (elements.length != 2) { return null; }
+        if (elements.length != 2) { return new String[0]; }
         return elements;
     }
 
@@ -156,8 +164,8 @@ public class MediaManager {
 
     private void startDashClient(String mpdPath, String streamUri, DashUnit dashUnit) {
         String httpPath = makeHttpPath(streamUri);
-        DashClient dashClient = new DashClient(dashUnit.getId(),
-                ServiceManager.getInstance().getDashServer().getBaseEnvironment(),
+        DashClient dashClient = new DashClient(
+                dashUnit.getId(),
                 httpPath, fileManager.getParentPathFromUri(mpdPath)
         );
 

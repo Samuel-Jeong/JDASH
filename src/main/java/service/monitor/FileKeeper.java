@@ -19,7 +19,7 @@ public class FileKeeper extends Job {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(FileKeeper.class);
 
-    transient private WatchService watchService = null; // 파일 변경 감지 모니터 서비스 > 특정 경로 전체 감지 > 특정 파일은 안됨
+    private transient WatchService watchService = null; // 파일 변경 감지 모니터 서비스 > 특정 경로 전체 감지 > 특정 파일은 안됨
     private Path mediaListPath = null;
     ////////////////////////////////////////////////////////////
 
