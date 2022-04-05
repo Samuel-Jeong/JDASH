@@ -46,7 +46,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
     ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        //cause.printStackTrace();
         ctx.close();
     }
 
