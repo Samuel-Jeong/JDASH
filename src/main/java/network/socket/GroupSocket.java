@@ -31,9 +31,8 @@ public class GroupSocket { // SEND-ONLY
     // VARIABLES
     transient private final BaseEnvironment baseEnvironment;
     private final NetInterface netInterface;
-    private final GroupEndpointId incomingGroupEndpointId;
 
-    private final String listenSocketSessionId;
+    transient private final String listenSocketSessionId;
     private final Socket listenSocket;
 
     transient private final HashMap<String, DestinationRecord> destinationMap = new HashMap<>();
@@ -45,7 +44,6 @@ public class GroupSocket { // SEND-ONLY
     public GroupSocket(BaseEnvironment baseEnvironment, NetInterface netInterface, NetAddress listenAddress, ChannelInitializer<?> channelHandler) {
         this.baseEnvironment = baseEnvironment;
         this.netInterface = netInterface;
-        this.incomingGroupEndpointId = new GroupEndpointId(listenAddress);
         this.listenSocketSessionId = UUID.randomUUID().toString();
         this.listenSocket = new Socket(baseEnvironment, netInterface, listenSocketSessionId, listenAddress, channelHandler);
     }
@@ -53,7 +51,6 @@ public class GroupSocket { // SEND-ONLY
     public GroupSocket(BaseEnvironment baseEnvironment, NetInterface netInterface, NetAddress listenAddress, NetAddress sourceFilterAddress, ChannelInitializer<?> channelHandler) {
         this.baseEnvironment = baseEnvironment;
         this.netInterface = netInterface;
-        this.incomingGroupEndpointId = new GroupEndpointId(listenAddress, sourceFilterAddress);
         this.listenSocketSessionId = UUID.randomUUID().toString();
         this.listenSocket = new Socket(baseEnvironment, netInterface, listenSocketSessionId, listenAddress, channelHandler);
     }
@@ -63,7 +60,7 @@ public class GroupSocket { // SEND-ONLY
     // FUNCTIONS
     public boolean addDestination(NetAddress targetAddress, NetAddress sourceFilterAddress, String sessionId, ChannelInitializer<?> channelHandler) {
         if (targetAddress == null) { return false; }
-        if (targetAddress.isIpv4() != incomingGroupEndpointId.isIpv4()) { return false; }
+        if (targetAddress.isIpv4() != listenSocket.getNetAddress().isIpv4()) { return false; }
 
         destinationMapLock.lock();
         try {
@@ -223,10 +220,6 @@ public class GroupSocket { // SEND-ONLY
 
     public Socket getListenSocket() {
         return listenSocket;
-    }
-
-    public GroupEndpointId getIncomingGroupEndpointId() {
-        return incomingGroupEndpointId;
     }
 
     private boolean isSameDestination(NetAddress netAddress, String sessionId) {
