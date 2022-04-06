@@ -7,6 +7,7 @@ import service.scheduler.schedule.unit.ScheduleUnit;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ScheduleManager {
@@ -79,7 +80,7 @@ public class ScheduleManager {
 
         try {
             scheduleUnitMapLock.lock();
-
+            Optional.ofNullable(scheduleUnitMap.get(key)).ifPresent(ScheduleUnit::stopAll);
             scheduleUnitMap.remove(key);
         } catch (Exception e) {
             logger.warn("Fail to delete the schedule unit map.", e);
@@ -97,7 +98,7 @@ public class ScheduleManager {
     public void clearScheduleUnitMap() {
         try {
             scheduleUnitMapLock.lock();
-
+            scheduleUnitMap.values().forEach(ScheduleUnit::stopAll);
             scheduleUnitMap.clear();
             logger.debug("Success to clear the schedule unit map.");
         } catch (Exception e) {
@@ -135,29 +136,10 @@ public class ScheduleManager {
     }
 
     public void stopAll(String scheduleUnitKey) {
-        ScheduleUnit scheduleUnit = getScheduleUnit(scheduleUnitKey);
-        if (scheduleUnit == null) {
-            return;
-        }
-
-        scheduleUnit.stopAll();
         removeScheduleUnit(scheduleUnitKey);
     }
 
     public void finish() {
-        for (Map.Entry<String, ScheduleUnit> entry : getCloneCallMap().entrySet()) {
-            if (entry == null) {
-                continue;
-            }
-
-            ScheduleUnit scheduleUnit = entry.getValue();
-            if (scheduleUnit == null) {
-                continue;
-            }
-
-            scheduleUnit.stopAll();
-        }
-
         clearScheduleUnitMap();
     }
 
