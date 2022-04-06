@@ -112,6 +112,7 @@ public class MpdManager {
             mpd = mpdParser.parse(inputStream);
             if (mpd == null) {
                 logger.warn("[MpdManager({})] Fail to parse the mpd. (path={})", dashUnitId, targetMpdPath);
+                return false;
             } else {
                 logger.trace("[MpdManager({})] Success to parse the mpd. (path={}, mpd=\n{})", dashUnitId, targetMpdPath, mpd);
             }
