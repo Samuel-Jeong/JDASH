@@ -7,6 +7,7 @@ import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.schedule.ScheduleManager;
 import util.module.ConcurrentCyclicFIFO;
@@ -189,7 +190,12 @@ public class RemoteStreamService extends Job {
                 } else {
                     capturedFrame = fFmpegFrameGrabber.grab();
                 }
-                if(capturedFrame == null){ continue; }
+                if(capturedFrame == null) {
+                    // 세션 삭제
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashUnitId);
+                    logger.debug("[RemoteStreamService({})] Remote stream is disconnected.", dashUnitId);
+                    break;
+                }
                 //////////////////////////////////////
 
                 //////////////////////////////////////
