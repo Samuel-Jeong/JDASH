@@ -16,7 +16,7 @@ public class DashClientGetAudioInitSegCallBack extends CallBack {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashClientGetAudioInitSegCallBack.class);
 
-    private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
+    private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ public class DashClientGetAudioInitSegCallBack extends CallBack {
         if (audioSegmentDuration > 0) {
             try {
                 timeUnit.sleep(audioSegmentDuration);
-                logger.trace("[DashClientGetInitSegCallBack({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), audioSegmentDuration);
+                logger.trace("[DashClientGetAudioInitSegCallBack({})] [AUDIO] Waiting... ({})", dashClient.getDashUnitId(), audioSegmentDuration);
             } catch (Exception e) {
                 //logger.warn("");
             }

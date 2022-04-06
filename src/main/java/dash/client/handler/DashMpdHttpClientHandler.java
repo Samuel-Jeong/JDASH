@@ -29,8 +29,7 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashMpdHttpClientHandler.class);
 
-    private final TimeUnit timeUnitSec = TimeUnit.SECONDS;
-    private final TimeUnit timeUnitMilliSec = TimeUnit.MILLISECONDS;
+    private static final TimeUnit timeUnitSec = TimeUnit.SECONDS;
 
     private final int retryCount;
 

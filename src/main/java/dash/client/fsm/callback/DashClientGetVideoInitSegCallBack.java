@@ -17,7 +17,7 @@ public class DashClientGetVideoInitSegCallBack extends CallBack {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashClientGetVideoInitSegCallBack.class);
 
-    private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
+    private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ public class DashClientGetVideoInitSegCallBack extends CallBack {
             if (videoSegmentDuration > 0) {
                 try {
                     timeUnit.sleep(videoSegmentDuration);
-                    logger.trace("[DashClientGetInitSegCallBack({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), videoSegmentDuration);
+                    logger.trace("[DashClientGetVideoInitSegCallBack({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), videoSegmentDuration);
                 } catch (Exception e) {
                     //logger.warn("");
                 }

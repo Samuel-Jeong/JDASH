@@ -28,7 +28,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashVideoHttpClientHandler.class);
 
-    private final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
+    private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
     private final int retryCount;
 
