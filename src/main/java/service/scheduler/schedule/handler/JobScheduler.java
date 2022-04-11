@@ -84,12 +84,16 @@ public class JobScheduler {
 
         scheduleLock.lock();
         try {
-            JobAdder jobAdder = scheduleMap.get(scheduleUnitKey + ":" + job.getName());
+            String jobKey = scheduleUnitKey + ":" + job.getName();
+            JobAdder jobAdder = scheduleMap.get(jobKey);
             if (jobAdder != null) {
                 jobAdder.stop();
+                job.setIsFinished(true);
+                scheduleMap.remove(jobKey);
+                logger.debug("[JobScheduler({})] [{}] is canceled.", scheduleUnitKey, job.getName());
+            } else {
+                logger.warn("[JobScheduler({})] [{}] is not canceled. Not found the job.", scheduleUnitKey, job.getName());
             }
-            job.setIsFinished(true);
-            logger.debug("[JobScheduler({})] [{}] is finished.", scheduleUnitKey, job.getName());
         } catch (Exception e) {
             logger.warn("[JobScheduler({})] Fail to cancel the job. ({})", scheduleUnitKey, job.getName(), e);
         } finally {
@@ -100,19 +104,9 @@ public class JobScheduler {
     public void stop() {
         scheduleLock.lock();
         try {
-            for (Map.Entry<String, JobAdder> entry : scheduleMap.entrySet()) {
-                if (entry == null) {
-                    continue;
-                }
-
-                String jobKey = entry.getKey();
-                JobAdder jobAdder = entry.getValue();
-                if (jobAdder == null) {
-                    continue;
-                }
-                jobAdder.stop();
-                logger.debug("[JobScheduler({})] [{}] is finished.", scheduleUnitKey, jobKey);
-            }
+            scheduleMap.values().forEach(JobAdder::stop);
+            scheduleMap.clear();
+            logger.debug("[JobScheduler({})] Success to stop all the jobs.", scheduleUnitKey);
         } catch (Exception e) {
             logger.warn("[JobScheduler({})] Fail to stop the jobs.", scheduleUnitKey, e);
         } finally {

@@ -127,7 +127,7 @@ public class DashUnit {
                 new Thread(() -> {
                     TimeUnit timeUnit = TimeUnit.SECONDS;
                     try {
-                        timeUnit.sleep((long) configManager.getTimeOffset());
+                        timeUnit.sleep((long) configManager.getRemoteTimeOffset());
                         dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
                     } catch (Exception e) {
                         logger.warn("[DashUnit(id={})] [FAIL] (timeUnit.sleep) or (dashClient.sendHttpGetRequest)", id, e);

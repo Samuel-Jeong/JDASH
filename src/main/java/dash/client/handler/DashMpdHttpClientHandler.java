@@ -166,19 +166,17 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
             dashClient.setIsMpdRetrying(false);
             return false;
         }
-
         dashClient.setIsMpdRetrying(true);
+
         try {
-            timeUnitSec.sleep((long) AppInstance.getInstance().getConfigManager().getTimeOffset());
             //logger.trace("[DashAudioHttpClientHandler({})] [MPD] Waiting... ({}sec)", dashClient.getDashUnitId(), 1);
+            timeUnitSec.sleep((long) AppInstance.getInstance().getConfigManager().getRemoteTimeOffset());
         } catch (Exception e) {
             //logger.warn("");
         }
 
         dashClient.sendHttpGetRequest(dashClient.getSrcPath(), MessageType.MPD);
-        logger.warn("[DashMpdHttpClientHandler({})] [MPD] [count={}] Retrying... ({})",
-                dashClient.getDashUnitId(), curMpdRetryCount, dashClient.getSrcPath()
-        );
+        //logger.warn("[DashMpdHttpClientHandler({})] [MPD] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curMpdRetryCount, dashClient.getSrcPath());
         return true;
     }
 

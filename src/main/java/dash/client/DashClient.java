@@ -25,6 +25,7 @@ import util.module.FileManager;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * [DASH Client] : [Remote Dash Unit] = 1 : 1
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DashClient {
 
     ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashClient.class);
+    private transient static final Logger logger = LoggerFactory.getLogger(DashClient.class);
 
     private boolean isStopped = false;
 
@@ -56,10 +57,14 @@ public class DashClient {
 
     private final AtomicInteger mpdRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isMpdRetrying = new AtomicBoolean(false);
+
     private final AtomicInteger audioRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isAudioRetrying = new AtomicBoolean(false);
+    private final AtomicLong audioCompensationTime = new AtomicLong(0);
+
     private final AtomicInteger videoRetryCount = new AtomicInteger(0);
     private final AtomicBoolean isVideoRetrying = new AtomicBoolean(false);
+    private final AtomicLong videoCompensationTime = new AtomicLong(0);
 
     private final transient DashClientFsmManager dashClientAudioFsmManager = new DashClientFsmManager();
     private final transient DashClientFsmManager dashClientVideoFsmManager;
@@ -143,15 +148,6 @@ public class DashClient {
     }
 
     public void stop() {
-        stopMpdTimeout();
-        mpdTimer.stop();
-
-        stopAudioTimeout();
-        audioTimer.stop();
-
-        stopVideoTimeout();
-        videoTimer.stop();
-
         this.dashClientAudioFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
         if (this.dashClientVideoFsmManager != null) {
             dashClientVideoFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
@@ -283,13 +279,51 @@ public class DashClient {
     }
 
     public void setMpdRetryCount(int retryCount) {
-        int curRetryCount = mpdRetryCount.get();
         mpdRetryCount.set(retryCount);
-        logger.debug("[DashClient({})] SET mpdRetryCount: {} > {}", dashUnitId, curRetryCount, mpdRetryCount.get());
     }
 
     public int incAndGetMpdRetryCount() {
         return mpdRetryCount.incrementAndGet();
+    }
+
+    public int getAudioRetryCount() {
+        return audioRetryCount.get();
+    }
+
+    public void setAudioRetryCount(int retryCount) {
+        audioRetryCount.set(retryCount);
+    }
+
+    public int incAndGetAudioRetryCount() {
+        return audioRetryCount.incrementAndGet();
+    }
+
+    public long getAudioCompensationTime() {
+        return audioCompensationTime.get();
+    }
+
+    public void setAudioCompensationTime(long audioCompensationTime) {
+        this.audioCompensationTime.set(audioCompensationTime);
+    }
+
+    public int getVideoRetryCount() {
+        return videoRetryCount.get();
+    }
+
+    public void setVideoRetryCount(int retryCount) {
+        videoRetryCount.set(retryCount);
+    }
+
+    public int incAndGetVideoRetryCount() {
+        return videoRetryCount.incrementAndGet();
+    }
+
+    public long getVideoCompensationTime() {
+        return videoCompensationTime.get();
+    }
+
+    public void setVideoCompensationTime(long videoCompensationTime) {
+        this.videoCompensationTime.set(videoCompensationTime);
     }
 
     public boolean isMpdRetrying() {
@@ -298,34 +332,6 @@ public class DashClient {
 
     public void setIsMpdRetrying(boolean isRetrying) {
         isMpdRetrying.set(isRetrying);
-    }
-
-    public int getAudioRetryCount() {
-        return audioRetryCount.get();
-    }
-
-    public void setAudioRetryCount(int retryCount) {
-        int curRetryCount = audioRetryCount.get();
-        audioRetryCount.set(retryCount);
-        logger.debug("[DashClient({})] SET audioRetryCount: {} > {}", dashUnitId, curRetryCount, audioRetryCount.get());
-    }
-
-    public int incAndGetAudioRetryCount() {
-        return audioRetryCount.incrementAndGet();
-    }
-
-    public int getVideoRetryCount() {
-        return videoRetryCount.get();
-    }
-
-    public void setVideoRetryCount(int retryCount) {
-        int curRetryCount = videoRetryCount.get();
-        videoRetryCount.set(retryCount);
-        logger.debug("[DashClient({})] SET videoRetryCount: {} > {}", dashUnitId, curRetryCount, videoRetryCount.get());
-    }
-
-    public int incAndGetVideoRetryCount() {
-        return videoRetryCount.incrementAndGet();
     }
 
     public boolean isAudioRetrying() {

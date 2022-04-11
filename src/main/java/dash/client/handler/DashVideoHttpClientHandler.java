@@ -94,8 +94,10 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 }
                 return;
             } else {
-                if (dashClient.getVideoRetryCount() > 0) {
+                int videoRetryCount = dashClient.getVideoRetryCount();
+                if (videoRetryCount > 0) {
                     dashClient.setVideoRetryCount(0);
+                    dashClient.setVideoCompensationTime(0);
                     dashClient.setIsVideoRetrying(false);
                 }
             }
@@ -169,36 +171,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         videoStateHandler.fire(DashClientEvent.GET_VIDEO_INIT_SEG, videoStateUnit);
                         break;
                     case DashClientState.VIDEO_INIT_SEG_DONE:
-                        long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
-                        String newVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
-                        if (newVideoSegmentName == null) {
-                            logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
-                                    dashClient.getDashUnitId(), curSeqNum
-                            );
-                            finish(channelHandlerContext);
-                            return;
-                        }
-                        //logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), curSeqNum, curVideoSegmentName, newVideoSegmentName);
-
-                        // SegmentDuration 만큼(micro-sec) sleep
-                        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
-                        if (segmentDuration > 0) {
-                            try {
-                                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE);
-                                //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
-                                timeUnit.sleep(segmentDuration);
-                            } catch (Exception e) {
-                                //logger.warn("");
-                            }
-                        }
-
-                        dashClient.sendHttpGetRequest(
-                                fileManager.concatFilePath(
-                                        dashClient.getSrcBasePath(),
-                                        newVideoSegmentName
-                                ),
-                                MessageType.VIDEO
-                        );
+                        sendReqForVideoSegment(channelHandlerContext, true);
                         break;
                     default:
                         break;
@@ -215,17 +188,22 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
             dashClient.setIsVideoRetrying(false);
             return false;
         }
-
         dashClient.setIsVideoRetrying(true);
 
-        // SegmentDuration 의 절반 만큼(micro-sec) sleep
         long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
         if (segmentDuration > 0) {
             try {
                 segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
-                segmentDuration /= 2; // 400000
+
+                int retryIntervalFactor = retryCount - (curVideoRetryCount - 1);
+                if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
+                segmentDuration /= retryIntervalFactor;
+
+                long curVideoCompensationFactor = dashClient.getVideoCompensationTime();
+                dashClient.setVideoCompensationTime(curVideoCompensationFactor + segmentDuration);
+
+                //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
                 timeUnit.sleep(segmentDuration);
-                logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
             } catch (Exception e) {
                 //logger.warn("");
             }
@@ -240,9 +218,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 MessageType.VIDEO
         );
 
-        logger.warn("[DashVideoHttpClientHandler({})] [VIDEO] [count={}] Retrying... ({})",
-                dashClient.getDashUnitId(), curVideoRetryCount, curVideoSegmentName
-        );
+        //logger.warn("[DashVideoHttpClientHandler({})] [VIDEO] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curVideoRetryCount, curVideoSegmentName);
         return true;
     }
 
@@ -277,6 +253,51 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 logger.trace("[DashVideoHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
             }
         }
+    }
+
+    private void sendReqForVideoSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
+        long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
+        String newVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+        if (newVideoSegmentName == null) {
+            logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
+                    dashClient.getDashUnitId(), curSeqNum
+            );
+            finish(channelHandlerContext);
+            return;
+        }
+        //logger.debug("[DashVideoHttpClientHandler({})] [+] [VIDEO] [seq={}] MediaSegment is changed. ([{}] > [{}])", dashClient.getDashUnitId(), curSeqNum, curVideoSegmentName, newVideoSegmentName);
+
+        if (isTrySleep) {
+            // SegmentDuration 만큼(micro-sec) sleep
+            long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+            if (segmentDuration > 0) {
+                try {
+                    segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE);
+
+                    long videoCompensationTime = dashClient.getVideoCompensationTime();
+                    if (videoCompensationTime > 0) {
+                        //logger.debug("videoCompensationTime: {}", videoCompensationTime);
+                        long newSegmentDuration = segmentDuration - videoCompensationTime;
+                        if (newSegmentDuration >= 0) {
+                            segmentDuration = newSegmentDuration;
+                        }
+                    }
+
+                    //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                    timeUnit.sleep(segmentDuration);
+                } catch (Exception e) {
+                    //logger.warn("");
+                }
+            }
+        }
+
+        dashClient.sendHttpGetRequest(
+                fileManager.concatFilePath(
+                        dashClient.getSrcBasePath(),
+                        newVideoSegmentName
+                ),
+                MessageType.VIDEO
+        );
     }
 
 }

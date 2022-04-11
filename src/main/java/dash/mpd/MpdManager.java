@@ -389,9 +389,9 @@ public class MpdManager {
                     writeMpd();
                     ///////////////////////////////////
                 }
-            } /*else {
+            } else {
                 setCustomLocalMpdOptions();
-            }*/
+            }
             /////////////////////////////////////////
 
             setLastMpdParsedTime(OffsetDateTime.now().toInstant().toEpochMilli());
@@ -442,9 +442,9 @@ public class MpdManager {
         long currentTime = getLastMpdParsedTime(); // milli-sec
         long elapsedTime = (currentTime - mediaStartTime) / 1000; // sec
         if (elapsedTime <= 0) { elapsedTime = 1; }
-        elapsedTime += (long) configManager.getTimeOffset();
+        elapsedTime += (long) configManager.getRemoteTimeOffset();
         logger.debug("[MpdManager({})] mediaStartTime: [{}]ms, currentTime: [{}]ms, elapsedTime: [{}]s, timeOffset=[{}]",
-                dashUnitId, mediaStartTime, currentTime, elapsedTime, configManager.getTimeOffset()
+                dashUnitId, mediaStartTime, currentTime, elapsedTime, configManager.getRemoteTimeOffset()
         );
 
         int segmentNumber = (int) (elapsedTime / segmentTime);
@@ -959,7 +959,7 @@ public class MpdManager {
 
     private void setCustomRemoteMpdOptions() {
         //Duration curMpdMaxSegmentDuration = getMaxSegmentDuration();
-        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getTimeOffset(); // seconds
+        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getRemoteTimeOffset(); // seconds
         //curMpdMaxSegmentDuration = curMpdMaxSegmentDuration.plusSeconds(segmentDurationOffsetSec);
 
         OffsetDateTime curAst = mpd.getAvailabilityStartTime();
@@ -980,14 +980,19 @@ public class MpdManager {
     }
 
     private void setCustomLocalMpdOptions() {
-        //long curEpochTime = Instant.now().toEpochMilli(); // milli-sec
-        OffsetDateTime curAst = OffsetDateTime.now();
-        logger.debug("[MpdManager({})] [LOCAL] AvailabilityStartTime has set. ({})",
-                dashUnitId, curAst
+        long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getLocalTimeOffset(); // seconds
+
+        OffsetDateTime curAst = mpd.getAvailabilityStartTime();
+        remoteMpdAvailabilityStartTime = curAst;
+        OffsetDateTime newAst = curAst.plusSeconds(segmentDurationOffsetSec);
+        logger.debug("[MpdManager({})] [LOCAL] AvailabilityStartTime has changed. ({} > {}, offset={})",
+                dashUnitId,
+                curAst, newAst,
+                segmentDurationOffsetSec
         );
 
         mpd = mpd.buildUpon()
-                .withAvailabilityStartTime(curAst)
+                .withAvailabilityStartTime(newAst)
                 .build();
     }
     ////////////////////////////////////////////////////////////

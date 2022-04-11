@@ -1,5 +1,6 @@
 package config;
 
+import lombok.Data;
 import org.ini4j.Ini;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.io.IOException;
  * @class public class UserConfig
  * @brief UserConfig Class
  */
+@Data
 public class ConfigManager {
 
     ////////////////////////////////////////////////////////////
@@ -101,7 +103,8 @@ public class ConfigManager {
     public static final String FIELD_VALIDATION_XSD_PATH = "VALIDATION_XSD_PATH";
     public static final String FIELD_SEGMENT_DURATION = "SEGMENT_DURATION";
     public static final String FIELD_WINDOW_SIZE = "WINDOW_SIZE";
-    public static final String FIELD_TIME_OFFSET = "TIME_OFFSET";
+    public static final String FIELD_LOCAL_TIME_OFFSET = "LOCAL_TIME_OFFSET";
+    public static final String FIELD_REMOTE_TIME_OFFSET = "REMOTE_TIME_OFFSET";
 
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
@@ -169,7 +172,8 @@ public class ConfigManager {
     private String segmentNumberFormat = null;
     private String validationXsdPath = null;
     private double segmentDuration = 0.0d;
-    private double timeOffset = 0.0d;
+    private double localTimeOffset = 0.0d;
+    private double remoteTimeOffset = 0.0d;
     private int windowSize = 0;
 
     // RTMP
@@ -715,17 +719,30 @@ public class ConfigManager {
             }
         }
 
-        String segmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_TIME_OFFSET);
-        if (segmentDurationOffsetString == null) {
-            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_TIME_OFFSET);
+        String localSegmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_LOCAL_TIME_OFFSET);
+        if (localSegmentDurationOffsetString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_LOCAL_TIME_OFFSET);
             System.exit(1);
         } else {
-            this.timeOffset = Double.parseDouble(segmentDurationOffsetString);
-            if (this.timeOffset < 0) {
-                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_TIME_OFFSET);
+            this.localTimeOffset = Double.parseDouble(localSegmentDurationOffsetString);
+            if (this.localTimeOffset < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_LOCAL_TIME_OFFSET);
                 System.exit(1);
             }
         }
+
+        String remoteSegmentDurationOffsetString = getIniValue(SECTION_MPD, FIELD_REMOTE_TIME_OFFSET);
+        if (remoteSegmentDurationOffsetString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_REMOTE_TIME_OFFSET);
+            System.exit(1);
+        } else {
+            this.remoteTimeOffset = Double.parseDouble(remoteSegmentDurationOffsetString);
+            if (this.remoteTimeOffset < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MPD, FIELD_REMOTE_TIME_OFFSET);
+                System.exit(1);
+            }
+        }
+
 
         String windowSizeString = getIniValue(SECTION_MPD, FIELD_WINDOW_SIZE);
         if (windowSizeString == null) {
@@ -808,219 +825,4 @@ public class ConfigManager {
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    public String getId() {
-        return id;
-    }
-
-    public String getRemoteId() {
-        return remoteId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public boolean isEnableClient() {
-        return enableClient;
-    }
-
-    public int getThreadCount() {
-        return threadCount;
-    }
-
-    public int getSendBufSize() {
-        return sendBufSize;
-    }
-
-    public int getRecvBufSize() {
-        return recvBufSize;
-    }
-
-    public String getStreaming() {
-        return streaming;
-    }
-
-    public boolean isEnablePreloadWithDash() {
-        return enablePreloadWithDash;
-    }
-
-    public String getHttpListenIp() {
-        return httpListenIp;
-    }
-
-    public int getHttpListenPort() {
-        return httpListenPort;
-    }
-
-    public int getHttpListenPortBeginOffset() {
-        return httpListenPortBeginOffset;
-    }
-
-    public int getHttpListenPortEndOffset() {
-        return httpListenPortEndOffset;
-    }
-
-    public String getPreprocessListenIp() {
-        return preprocessListenIp;
-    }
-
-    public int getPreprocessListenPort() {
-        return preprocessListenPort;
-    }
-
-    public int getMaxDashUnitLimit() {
-        return maxDashUnitLimit;
-    }
-
-    public boolean isEnableGui() {
-        return enableGui;
-    }
-
-    public String getCameraPath() {
-        return cameraPath;
-    }
-
-    public String getHttpTargetIp() {
-        return httpTargetIp;
-    }
-
-    public int getHttpTargetPort() {
-        return httpTargetPort;
-    }
-
-    public long getPreprocessInitIdleTime() {
-        return preprocessInitIdleTime;
-    }
-
-    public String getPreprocessTargetIp() {
-        return preprocessTargetIp;
-    }
-
-    public int getPreprocessTargetPort() {
-        return preprocessTargetPort;
-    }
-
-    public int getDownloadChunkRetryCount() {
-        return downloadChunkRetryCount;
-    }
-
-    public String getMediaBasePath() {
-        return mediaBasePath;
-    }
-
-    public String getMediaListPath() {
-        return mediaListPath;
-    }
-
-    public boolean isClearDashDataIfSessionClosed() {
-        return clearDashDataIfSessionClosed;
-    }
-
-    public int getChunkFileDeletionIntervalSeconds() {
-        return chunkFileDeletionIntervalSeconds;
-    }
-
-    public boolean isAudioOnly() {
-        return audioOnly;
-    }
-
-    public int getLocalAudioCodec() {
-        return localAudioCodec;
-    }
-
-    public int getLocalAudioSampleRate() {
-        return localAudioSampleRate;
-    }
-
-    public int getLocalVideoCodec() {
-        return localVideoCodec;
-    }
-
-    public int getLocalVideoPixelFormat() {
-        return localVideoPixelFormat;
-    }
-
-    public int getRemoteAudioCodec() {
-        return remoteAudioCodec;
-    }
-
-    public int getRemoteAudioSampleRate() {
-        return remoteAudioSampleRate;
-    }
-
-    public int getRemoteVideoCodec() {
-        return remoteVideoCodec;
-    }
-
-    public int getRemoteVideoPixelFormat() {
-        return remoteVideoPixelFormat;
-    }
-
-    public boolean isEnableValidation() {
-        return enableValidation;
-    }
-
-    public String getRepresentationIdFormat() {
-        return representationIdFormat;
-    }
-
-    public String getChunkNumberFormat() {
-        return chunkNumberFormat;
-    }
-
-    public String getSegmentNumberFormat() {
-        return segmentNumberFormat;
-    }
-    
-    public String getValidationXsdPath() {
-        return validationXsdPath;
-    }
-
-    public double getSegmentDuration() {
-        return segmentDuration;
-    }
-
-    public double getTimeOffset() {
-        return timeOffset;
-    }
-
-    public int getWindowSize() {
-        return windowSize;
-    }
-
-    public String getRtmpPublishIp() {
-        return rtmpPublishIp;
-    }
-
-    public int getRtmpPublishPort() {
-        return rtmpPublishPort;
-    }
-
-    public boolean isEnableAutoDeleteUselessSession() {
-        return enableAutoDeleteUselessSession;
-    }
-
-    public long getAutoDeleteSessionLimitTime() {
-        return autoDeleteSessionLimitTime;
-    }
-
-    public boolean isEnableAutoDeleteUselessDir() {
-        return enableAutoDeleteUselessDir;
-    }
-
-    public long getAutoDeleteDirLimitTime() {
-        return autoDeleteDirLimitTime;
-    }
-
-    public int getLocalMpdListenSocketSize() {
-        return localMpdListenSocketSize;
-    }
-
-    public int getLocalAudioListenSocketSize() {
-        return localAudioListenSocketSize;
-    }
-
-    public int getLocalVideoListenSocketSize() {
-        return localVideoListenSocketSize;
-    }
 }
