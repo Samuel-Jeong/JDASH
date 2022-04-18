@@ -2,9 +2,9 @@ package dash.server.network;
 
 import config.ConfigManager;
 import dash.client.DashClient;
-import dash.client.handler.DashAudioHttpClientHandler;
-import dash.client.handler.DashMpdHttpClientHandler;
-import dash.client.handler.DashVideoHttpClientHandler;
+import dash.client.handler.audio.DashAudioHttpClientHandler;
+import dash.client.handler.mpd.DashMpdHttpClientHandler;
+import dash.client.handler.video.DashVideoHttpClientHandler;
 import instance.BaseEnvironment;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;

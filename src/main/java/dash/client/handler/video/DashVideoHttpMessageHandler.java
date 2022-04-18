@@ -1,16 +1,16 @@
-package dash.client.handler;
+package dash.client.handler.video;
 
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
 import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
+import dash.client.handler.base.DashHttpMessageHandler;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +23,9 @@ import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
 
-    ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashVideoHttpClientHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashVideoHttpMessageHandler.class);
 
     private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 
@@ -34,52 +33,14 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
 
     private final DashClient dashClient;
     private final FileManager fileManager = new FileManager();
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    public DashVideoHttpClientHandler(DashClient dashClient) {
+    public DashVideoHttpMessageHandler(DashClient dashClient) {
         this.dashClient = dashClient;
         this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
     }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        //cause.printStackTrace();
-        ctx.close();
-    }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
-        if (dashClient != null) {
-            logger.warn("DashVideoHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
-        }
-        ctx.close();
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
-        if (dashClient == null) {
-            logger.warn("[DashVideoHttpClientHandler] DashClient is null. Fail to recv the message.");
-            channelHandlerContext.close();
-            return;
-        } else if (dashClient.isStopped()) {
-            //logger.warn("[DashVideoHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
-            return;
-        }
-
-        // RESPONSE
-        processResponse(httpObject, channelHandlerContext);
-
-        // CONTENT
-        processContent(httpObject, channelHandlerContext);
-    }
-    ////////////////////////////////////////////////////////////
-
-    private void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+    public void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
         if (httpObject instanceof HttpResponse) {
             HttpResponse httpResponse = (HttpResponse) httpObject;
 
@@ -106,7 +67,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
         }
     }
 
-    private void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+    @Override
+    public void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
         if (httpObject instanceof HttpContent) {
             if (dashClient.isVideoRetrying()) { return; }
 
@@ -171,7 +133,7 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                         videoStateHandler.fire(DashClientEvent.GET_VIDEO_INIT_SEG, videoStateUnit);
                         break;
                     case DashClientState.VIDEO_INIT_SEG_DONE:
-                        sendReqForVideoSegment(channelHandlerContext, true);
+                        sendReqForSegment(channelHandlerContext, true);
                         break;
                     default:
                         break;
@@ -182,59 +144,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
         }
     }
 
-    private boolean retry() {
-        int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
-        if (curVideoRetryCount > retryCount) {
-            dashClient.setIsVideoRetrying(false);
-            return false;
-        }
-        dashClient.setIsVideoRetrying(true);
-
-        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
-        if (segmentDuration > 0) {
-            try {
-                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
-
-                int retryIntervalFactor = retryCount - (curVideoRetryCount - 1);
-                if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
-                segmentDuration /= retryIntervalFactor;
-
-                long curVideoCompensationFactor = dashClient.getVideoCompensationTime();
-                dashClient.setVideoCompensationTime(curVideoCompensationFactor + segmentDuration);
-
-                //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
-                timeUnit.sleep(segmentDuration);
-            } catch (Exception e) {
-                //logger.warn("");
-            }
-        }
-
-        String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
-        dashClient.sendHttpGetRequest(
-                fileManager.concatFilePath(
-                        dashClient.getSrcBasePath(),
-                        curVideoSegmentName
-                ),
-                MessageType.VIDEO
-        );
-
-        //logger.warn("[DashVideoHttpClientHandler({})] [VIDEO] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curVideoRetryCount, curVideoSegmentName);
-        return true;
-    }
-
-    private void finish(ChannelHandlerContext channelHandlerContext) {
-        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
-        if (dashUnit != null) {
-            if (dashUnit.getType().equals(StreamType.STATIC)) {
-                dashClient.stop();
-            } else {
-                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
-            }
-        }
-        channelHandlerContext.close();
-    }
-
-    private void printHeader(HttpResponse httpResponse) {
+    @Override
+    protected void printHeader(HttpResponse httpResponse) {
         if (logger.isTraceEnabled()) {
             logger.trace("[DashVideoHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), httpResponse.status());
             logger.trace("> VERSION: {}", httpResponse.protocolVersion());
@@ -255,7 +166,8 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
         }
     }
 
-    private void sendReqForVideoSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
+    @Override
+    protected void sendReqForSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
         long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
         String newVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
         if (newVideoSegmentName == null) {
@@ -298,6 +210,60 @@ public class DashVideoHttpClientHandler extends SimpleChannelInboundHandler<Http
                 ),
                 MessageType.VIDEO
         );
+    }
+
+    @Override
+    protected boolean retry() {
+        int curVideoRetryCount = dashClient.incAndGetVideoRetryCount();
+        if (curVideoRetryCount > retryCount) {
+            dashClient.setIsVideoRetrying(false);
+            return false;
+        }
+        dashClient.setIsVideoRetrying(true);
+
+        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+        if (segmentDuration > 0) {
+            try {
+                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
+
+                int retryIntervalFactor = retryCount - (curVideoRetryCount - 1);
+                if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
+                segmentDuration /= retryIntervalFactor;
+
+                long curVideoCompensationFactor = dashClient.getVideoCompensationTime();
+                dashClient.setVideoCompensationTime(curVideoCompensationFactor + segmentDuration);
+
+                //logger.debug("[DashVideoHttpClientHandler({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), segmentDuration);
+                timeUnit.sleep(segmentDuration);
+            } catch (Exception e) {
+                //logger.warn("");
+            }
+        }
+
+        String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+        dashClient.sendHttpGetRequest(
+                fileManager.concatFilePath(
+                        dashClient.getSrcBasePath(),
+                        curVideoSegmentName
+                ),
+                MessageType.VIDEO
+        );
+
+        //logger.warn("[DashVideoHttpClientHandler({})] [VIDEO] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curVideoRetryCount, curVideoSegmentName);
+        return true;
+    }
+
+    @Override
+    protected void finish(ChannelHandlerContext channelHandlerContext) {
+        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
+        if (dashUnit != null) {
+            if (dashUnit.getType().equals(StreamType.STATIC)) {
+                dashClient.stop();
+            } else {
+                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+            }
+        }
+        channelHandlerContext.close();
     }
 
 }

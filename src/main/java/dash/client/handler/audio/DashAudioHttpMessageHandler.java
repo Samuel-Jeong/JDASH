@@ -1,16 +1,16 @@
-package dash.client.handler;
+package dash.client.handler.audio;
 
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
 import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
+import dash.client.handler.base.DashHttpMessageHandler;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,90 +23,23 @@ import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class DashAudioHttpMessageHandler extends DashHttpMessageHandler {
 
-    ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashAudioHttpClientHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashAudioHttpMessageHandler.class);
 
     private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
-
     private final int retryCount;
 
     private final DashClient dashClient;
     private final FileManager fileManager = new FileManager();
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    public DashAudioHttpClientHandler(DashClient dashClient) {
+    public DashAudioHttpMessageHandler(DashClient dashClient) {
         this.dashClient = dashClient;
         this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
     }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        //cause.printStackTrace();
-        ctx.close();
-    }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
-        if (dashClient != null) {
-            logger.warn("DashAudioHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
-        }
-        ctx.close();
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
-        if (dashClient == null) {
-            logger.warn("[DashAudioHttpClientHandler] DashClient is null. Fail to recv the message.");
-            channelHandlerContext.close();
-            return;
-        } else if (dashClient.isStopped()) {
-            //logger.warn("[DashAudioHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
-            return;
-        }
-
-        // RESPONSE
-        processResponse(httpObject, channelHandlerContext);
-
-        // CONTENT
-        processContent(httpObject, channelHandlerContext);
-    }
-    ////////////////////////////////////////////////////////////
-
-    private void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
-        if (httpObject instanceof HttpResponse) {
-            HttpResponse httpResponse = (HttpResponse) httpObject;
-
-            dashClient.stopAudioTimeout();
-            if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
-                // 재시도 로직
-                if (!retry()) {
-                    logger.warn("[DashAudioHttpClientHandler({})] [-] [AUDIO] !!! RECV NOT OK. DashClient will be stopped. (status={}, retryCount={})",
-                            dashClient.getDashUnitId(), httpResponse.status(), retryCount
-                    );
-                    finish(channelHandlerContext);
-                }
-                return;
-            } else {
-                int audioRetryCount = dashClient.getAudioRetryCount();
-                if (audioRetryCount > 0) {
-                    dashClient.setAudioRetryCount(0);
-                    dashClient.setAudioCompensationTime(0);
-                    dashClient.setIsAudioRetrying(false);
-                }
-            }
-
-            printHeader(httpResponse);
-        }
-    }
-
-    private void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+    public void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
         if (httpObject instanceof HttpContent) {
             if (dashClient.isAudioRetrying()) { return; }
 
@@ -171,7 +104,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
                         audioStateHandler.fire(DashClientEvent.GET_AUDIO_INIT_SEG, audioStateUnit);
                         break;
                     case DashClientState.AUDIO_INIT_SEG_DONE:
-                        sendReqForAudioSegment(channelHandlerContext, true);
+                        sendReqForSegment(channelHandlerContext, true);
                         break;
                     default:
                         break;
@@ -182,59 +115,36 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
         }
     }
 
-    private boolean retry() {
-        int curAudioRetryCount = dashClient.incAndGetAudioRetryCount();
-        if (curAudioRetryCount > retryCount) {
-            dashClient.setIsAudioRetrying(false);
-            return false;
-        }
-        dashClient.setIsAudioRetrying(true);
+    @Override
+    public void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+        if (httpObject instanceof HttpResponse) {
+            HttpResponse httpResponse = (HttpResponse) httpObject;
 
-        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
-        if (segmentDuration > 0) {
-            try {
-                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_AUDIO_TYPE); // 800000
-
-                int retryIntervalFactor = retryCount - (curAudioRetryCount - 1);
-                if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
-                segmentDuration /= retryIntervalFactor;
-
-                long curAudioCompensationFactor = dashClient.getAudioCompensationTime();
-                dashClient.setAudioCompensationTime(curAudioCompensationFactor + segmentDuration);
-
-                //logger.debug("[DashAudioHttpClientHandler({})] [AUDIO] Waiting... (interval={}, retryIntervalFactor={})", dashClient.getDashUnitId(), segmentDuration, retryIntervalFactor);
-                timeUnit.sleep(segmentDuration);
-            } catch (Exception e) {
-                //logger.warn("");
-            }
-        }
-
-        String curAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
-        dashClient.sendHttpGetRequest(
-                fileManager.concatFilePath(
-                        dashClient.getSrcBasePath(),
-                        curAudioSegmentName
-                ),
-                MessageType.AUDIO
-        );
-
-        //logger.warn("[DashAudioHttpClientHandler({})] [AUDIO] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curAudioRetryCount, curAudioSegmentName);
-        return true;
-    }
-
-    private void finish(ChannelHandlerContext channelHandlerContext) {
-        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
-        if (dashUnit != null) {
-            if (dashUnit.getType().equals(StreamType.STATIC)) {
-                dashClient.stop();
+            dashClient.stopAudioTimeout();
+            if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
+                // 재시도 로직
+                if (!retry()) {
+                    logger.warn("[DashAudioHttpClientHandler({})] [-] [AUDIO] !!! RECV NOT OK. DashClient will be stopped. (status={}, retryCount={})",
+                            dashClient.getDashUnitId(), httpResponse.status(), retryCount
+                    );
+                    finish(channelHandlerContext);
+                }
+                return;
             } else {
-                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                int audioRetryCount = dashClient.getAudioRetryCount();
+                if (audioRetryCount > 0) {
+                    dashClient.setAudioRetryCount(0);
+                    dashClient.setAudioCompensationTime(0);
+                    dashClient.setIsAudioRetrying(false);
+                }
             }
+
+            printHeader(httpResponse);
         }
-        channelHandlerContext.close();
     }
 
-    private void printHeader(HttpResponse httpResponse) {
+    @Override
+    protected void printHeader(HttpResponse httpResponse) {
         if (logger.isTraceEnabled()) {
             logger.trace("[DashAudioHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), httpResponse.status());
             logger.trace("> VERSION: {}", httpResponse.protocolVersion());
@@ -255,7 +165,8 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
         }
     }
 
-    private void sendReqForAudioSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
+    @Override
+    protected void sendReqForSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
         long curSeqNum = dashClient.getMpdManager().incAndGetAudioSegmentSeqNum();
         String newAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
         if (newAudioSegmentName == null) {
@@ -300,4 +211,57 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
         );
     }
 
+    @Override
+    protected boolean retry() {
+        int curAudioRetryCount = dashClient.incAndGetAudioRetryCount();
+        if (curAudioRetryCount > retryCount) {
+            dashClient.setIsAudioRetrying(false);
+            return false;
+        }
+        dashClient.setIsAudioRetrying(true);
+
+        long segmentDuration = dashClient.getMpdManager().getAudioSegmentDuration(); // 1000000
+        if (segmentDuration > 0) {
+            try {
+                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_AUDIO_TYPE); // 800000
+
+                int retryIntervalFactor = retryCount - (curAudioRetryCount - 1);
+                if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
+                segmentDuration /= retryIntervalFactor;
+
+                long curAudioCompensationFactor = dashClient.getAudioCompensationTime();
+                dashClient.setAudioCompensationTime(curAudioCompensationFactor + segmentDuration);
+
+                //logger.debug("[DashAudioHttpClientHandler({})] [AUDIO] Waiting... (interval={}, retryIntervalFactor={})", dashClient.getDashUnitId(), segmentDuration, retryIntervalFactor);
+                timeUnit.sleep(segmentDuration);
+            } catch (Exception e) {
+                //logger.warn("");
+            }
+        }
+
+        String curAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
+        dashClient.sendHttpGetRequest(
+                fileManager.concatFilePath(
+                        dashClient.getSrcBasePath(),
+                        curAudioSegmentName
+                ),
+                MessageType.AUDIO
+        );
+
+        //logger.warn("[DashAudioHttpClientHandler({})] [AUDIO] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curAudioRetryCount, curAudioSegmentName);
+        return true;
+    }
+
+    @Override
+    protected void finish(ChannelHandlerContext channelHandlerContext) {
+        DashUnit dashUnit = ServiceManager.getInstance().getDashServer().getDashUnitById(dashClient.getDashUnitId());
+        if (dashUnit != null) {
+            if (dashUnit.getType().equals(StreamType.STATIC)) {
+                dashClient.stop();
+            } else {
+                ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+            }
+        }
+        channelHandlerContext.close();
+    }
 }

@@ -1,16 +1,16 @@
-package dash.client.handler;
+package dash.client.handler.mpd;
 
 import dash.client.DashClient;
 import dash.client.fsm.DashClientEvent;
 import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
+import dash.client.handler.base.DashHttpMessageHandler;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +24,9 @@ import util.module.FileManager;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
 
-    ////////////////////////////////////////////////////////////
-    private static final Logger logger = LoggerFactory.getLogger(DashMpdHttpClientHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DashMpdHttpMessageHandler.class);
 
     private static final TimeUnit timeUnitSec = TimeUnit.SECONDS;
 
@@ -37,77 +36,15 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
     private final FileManager fileManager = new FileManager();
 
     private final long defaultMediaPresentationDuration;
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    public DashMpdHttpClientHandler(DashClient dashClient) {
+    public DashMpdHttpMessageHandler(DashClient dashClient) {
         this.dashClient = dashClient;
         this.defaultMediaPresentationDuration = AppInstance.getInstance().getConfigManager().getChunkFileDeletionIntervalSeconds();
         this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
     }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        //cause.printStackTrace();
-        ctx.close();
-    }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
-        if (dashClient != null) {
-            logger.warn("DashMpdHttpClientHandler is inactive. (dashUnitId={})", dashClient.getDashUnitId());
-        }
-        ctx.close();
-    }
-    ////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////
-    @Override
-    protected void messageReceived(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) {
-        if (dashClient == null) {
-            logger.warn("[DashMpdHttpClientHandler] DashClient is null. Fail to recv the message.");
-            channelHandlerContext.close();
-            return;
-        } else if (dashClient.isStopped()) {
-            //logger.warn("[DashMpdHttpClientHandler] DashClient({}) is already stopped. Fail to recv the message.", dashClient.getDashUnitId());
-            return;
-        }
-
-        // RESPONSE
-        processResponse(httpObject, channelHandlerContext);
-
-        // CONTENT
-        processContent(httpObject, channelHandlerContext);
-    }
-    ////////////////////////////////////////////////////////////
-
-    private void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
-        if (httpObject instanceof HttpResponse) {
-            HttpResponse httpResponse = (HttpResponse) httpObject;
-
-            dashClient.stopMpdTimeout();
-            if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
-                // 재시도 로직
-                if (!retry()) {
-                    logger.warn("[DashMpdHttpClientHandler({})] [-] [MPD] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), httpResponse.status());
-                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
-                    channelHandlerContext.close();
-                }
-                return;
-            } else {
-                if (dashClient.getMpdRetryCount() > 0) {
-                    dashClient.setMpdRetryCount(0);
-                    dashClient.setIsMpdRetrying(false);
-                }
-            }
-
-            printHeader(httpResponse);
-        }
-    }
-
-    private void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+    public void processContent(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
         if (httpObject instanceof HttpContent) {
             if (dashClient.isMpdRetrying()) {
                 return;
@@ -160,7 +97,60 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
         }
     }
 
-    private boolean retry() {
+    @Override
+    public void processResponse(HttpObject httpObject, ChannelHandlerContext channelHandlerContext) {
+        if (httpObject instanceof HttpResponse) {
+            HttpResponse httpResponse = (HttpResponse) httpObject;
+
+            dashClient.stopMpdTimeout();
+            if (!httpResponse.status().equals(HttpResponseStatus.OK)) {
+                // 재시도 로직
+                if (!retry()) {
+                    logger.warn("[DashMpdHttpClientHandler({})] [-] [MPD] !!! RECV NOT OK. DashClient will be stopped. (status={})", dashClient.getDashUnitId(), httpResponse.status());
+                    ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
+                    channelHandlerContext.close();
+                }
+                return;
+            } else {
+                if (dashClient.getMpdRetryCount() > 0) {
+                    dashClient.setMpdRetryCount(0);
+                    dashClient.setIsMpdRetrying(false);
+                }
+            }
+
+            printHeader(httpResponse);
+        }
+    }
+
+    @Override
+    protected void printHeader(HttpResponse httpResponse) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("[DashMpdHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), httpResponse.status());
+            logger.trace("> VERSION: {}", httpResponse.protocolVersion());
+
+            if (!httpResponse.headers().isEmpty()) {
+                for (CharSequence name : httpResponse.headers().names()) {
+                    for (CharSequence value : httpResponse.headers().getAll(name)) {
+                        logger.trace("[DashMpdHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
+                    }
+                }
+            }
+
+            if (HttpHeaderUtil.isTransferEncodingChunked(httpResponse)) {
+                logger.trace("[DashMpdHttpClientHandler({})] > CHUNKED CONTENT {", dashClient.getDashUnitId());
+            } else {
+                logger.trace("[DashMpdHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
+            }
+        }
+    }
+
+    @Override
+    protected void sendReqForSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
+        // Not used
+    }
+
+    @Override
+    protected boolean retry() {
         int curMpdRetryCount = dashClient.incAndGetMpdRetryCount();
         if (curMpdRetryCount > retryCount) {
             dashClient.setIsMpdRetrying(false);
@@ -178,6 +168,11 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
         dashClient.sendHttpGetRequest(dashClient.getSrcPath(), MessageType.MPD);
         //logger.warn("[DashMpdHttpClientHandler({})] [MPD] [count={}] Retrying... ({})", dashClient.getDashUnitId(), curMpdRetryCount, dashClient.getSrcPath());
         return true;
+    }
+
+    @Override
+    protected void finish(ChannelHandlerContext channelHandlerContext) {
+
     }
 
     private boolean parseMpd() {
@@ -244,8 +239,7 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
     private void requestMpdAgain() {
         /**
          * @ mediaPresentationDuration : Refers to the duration of the media content
-         *      It has 'PT' as prefix denoting that
-         *      [MPD] !!! RECV NOT OK. DashClient will be stopped.    time-range is in units of seconds (S), minutes (M), hours (H) and days (D).
+         *      It has 'PT' as prefix denoting that time-range is in units of seconds (S), minutes (M), hours (H) and days (D).
          *      In this scenario we have the value as "PT23M12.128S",
          *          i.e., the media content has a total duration of 23 minutes 12.128 seconds
          */
@@ -268,24 +262,4 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
         }
     }
 
-    private void printHeader(HttpResponse httpResponse) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("[DashMpdHttpClientHandler({})] > STATUS: {}", dashClient.getDashUnitId(), httpResponse.status());
-            logger.trace("> VERSION: {}", httpResponse.protocolVersion());
-
-            if (!httpResponse.headers().isEmpty()) {
-                for (CharSequence name : httpResponse.headers().names()) {
-                    for (CharSequence value : httpResponse.headers().getAll(name)) {
-                        logger.trace("[DashMpdHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
-                    }
-                }
-            }
-
-            if (HttpHeaderUtil.isTransferEncodingChunked(httpResponse)) {
-                logger.trace("[DashMpdHttpClientHandler({})] > CHUNKED CONTENT {", dashClient.getDashUnitId());
-            } else {
-                logger.trace("[DashMpdHttpClientHandler({})] > CONTENT {", dashClient.getDashUnitId());
-            }
-        }
-    }
 }
