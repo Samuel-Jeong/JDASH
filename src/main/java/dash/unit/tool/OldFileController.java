@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobContainer;
-import service.scheduler.schedule.ScheduleManager;
 import util.module.FileManager;
-
-import java.util.concurrent.TimeUnit;
 
 public class OldFileController extends JobContainer {
 
@@ -37,7 +34,7 @@ public class OldFileController extends JobContainer {
         );
     }
 
-    public void run() {
+    public void start() {
         if (dashPath == null) { return; }
 
         getJob().setRunnable(() -> {

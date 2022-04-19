@@ -11,12 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobContainer;
-import service.scheduler.schedule.ScheduleManager;
 import util.module.ConcurrentCyclicFIFO;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class CameraCanvasController extends JobContainer {
 
@@ -40,7 +38,7 @@ public class CameraCanvasController extends JobContainer {
         logger.debug("[{}] [CameraCanvasController] is initiated.", (isLocal? "LOCAL" : "REMOTE"));
     }
 
-    public void run() {
+    public void start() {
         getJob().setRunnable(() -> {
             try {
                 Frame frame = frameQueue.poll();

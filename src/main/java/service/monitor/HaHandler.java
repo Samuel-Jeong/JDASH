@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobContainer;
-import service.scheduler.schedule.ScheduleManager;
 import service.system.SystemManager;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author jamesj
@@ -24,7 +21,7 @@ public class HaHandler extends JobContainer {
         setJob(haHandleJob);
     }
 
-    public void run () {
+    public void start () {
         getJob().setRunnable(() -> {
             SystemManager systemManager = SystemManager.getInstance();
 

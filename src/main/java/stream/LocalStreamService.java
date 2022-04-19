@@ -6,7 +6,6 @@ import dash.server.dynamic.DynamicMediaManager;
 import dash.server.dynamic.message.StreamingStartRequest;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
-import dash.unit.tool.OldFileController;
 import network.definition.DestinationRecord;
 import network.socket.GroupSocket;
 import org.bytedeco.ffmpeg.global.avutil;
@@ -75,7 +74,7 @@ public class LocalStreamService extends JobContainer {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public boolean start() {
+    public boolean init() {
         try {
             audioService.initSampleService(scheduleManager);
 
@@ -118,6 +117,7 @@ public class LocalStreamService extends JobContainer {
                             localCameraCanvasControlJob,
                             true, frameQueue, openCVFrameGrabber.getGamma()
                     );
+                    localCameraCanvasController.start();
                     if (scheduleManager.startJob(LOCAL_STREAM_SCHEDULE_KEY, localCameraCanvasController.getJob())) {
                         logger.debug("[LocalStreamService] [+RUN] Success to start the local camera.");
                     } else {
@@ -164,7 +164,7 @@ public class LocalStreamService extends JobContainer {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public void run() {
+    public void start() {
         getJob().setRunnable(() -> {
             logger.info("[LocalStreamService] RUNNING...");
 

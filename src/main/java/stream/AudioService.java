@@ -1,7 +1,6 @@
 package stream;
 
 import config.ConfigManager;
-import dash.unit.tool.OldFileController;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +107,7 @@ public class AudioService {
                     .setIsLasted(true)
                     .build();
             audioSampler = new AudioSampler(audioSampleJob, fFmpegFrameRecorder);
+            audioSampler.start();
             if (scheduleManager.startJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler.getJob())) {
                 logger.debug("[AudioService] [+RUN] Success to start audio sampling.");
             } else {
@@ -138,7 +138,7 @@ public class AudioService {
         /////////////////////////////////
 
         /////////////////////////////////
-        public void run() {
+        public void start() {
             getJob().setRunnable(() -> {
                 try {
                     record(fFmpegFrameRecorder);

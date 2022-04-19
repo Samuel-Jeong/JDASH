@@ -10,14 +10,12 @@ import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobContainer;
-import service.scheduler.schedule.ScheduleManager;
 import util.module.FileManager;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class LongSessionRemover extends JobContainer {
 
@@ -36,7 +34,7 @@ public class LongSessionRemover extends JobContainer {
         dirDeletionLimitTime = configManager.getAutoDeleteDirLimitTime();
     }
 
-    public void run() {
+    public void start() {
         getJob().setRunnable(() -> {
             try {
                 DashServer dashServer = ServiceManager.getInstance().getDashServer();

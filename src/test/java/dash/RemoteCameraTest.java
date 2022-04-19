@@ -29,6 +29,7 @@ public class RemoteCameraTest {
                 .build();
         RemoteStreamService remoteCameraService = new RemoteStreamService(remoteStreamServiceJob);
         remoteCameraService.init();
+        remoteCameraService.start();
         if (scheduleManager.startJob(
                 "REMOTE_CAMERA_TEST",
                 remoteCameraService.getJob())) {

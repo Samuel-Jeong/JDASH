@@ -1,7 +1,6 @@
 package stream;
 
 import config.ConfigManager;
-import dash.unit.tool.OldFileController;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
@@ -107,6 +106,7 @@ public class RemoteStreamService extends JobContainer {
                             remoteCameraCanvasControlJob,
                             false, frameQueue, fFmpegFrameGrabber.getGamma()
                     );
+                    remoteCameraCanvasController.start();
                     if (scheduleManager.startJob(REMOTE_STREAM_SCHEDULE_KEY, remoteCameraCanvasController.getJob())) {
                         logger.debug("[RemoteStreamService({})] [+RUN] Success to start the remote camera.", dashUnitId);
                     } else {
@@ -146,7 +146,7 @@ public class RemoteStreamService extends JobContainer {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    public void run() {
+    public void start() {
         getJob().setRunnable(() -> {
             //logger.info("[RemoteStreamService] RUNNING...");
 

@@ -16,7 +16,6 @@ import service.AppInstance;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobBuilder;
 import service.scheduler.schedule.ScheduleManager;
-import stream.CameraCanvasController;
 import stream.RemoteStreamService;
 import stream.StreamConfigManager;
 import util.module.FileManager;
@@ -103,6 +102,7 @@ public class DashUnit {
                 );
 
                 if (remoteStreamService.init()) {
+                    remoteStreamService.start();
                     if (scheduleManager.startJob(
                             REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
                             remoteStreamService.getJob())) {

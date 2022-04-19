@@ -9,11 +9,9 @@ import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobContainer;
-import service.scheduler.schedule.ScheduleManager;
 
 import java.nio.file.*;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class FileKeeper extends JobContainer {
 
@@ -49,7 +47,7 @@ public class FileKeeper extends JobContainer {
         }
     }
 
-    public void run() {
+    public void start() {
         getJob().setRunnable(() -> {
             try {
                 //////////////////////////////

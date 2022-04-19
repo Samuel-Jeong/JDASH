@@ -192,7 +192,8 @@ public class DashServer {
                         .setIsLasted(false)
                         .build();
                 localStreamService = new LocalStreamService(localStreamServiceJob);
-                if (localStreamService.start()) {
+                if (localStreamService.init()) {
+                    localStreamService.start();
                     result = baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService.getJob());
                 } else {
                     result = false;

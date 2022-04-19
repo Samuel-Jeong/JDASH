@@ -2,7 +2,6 @@ package service;
 
 import config.ConfigManager;
 import dash.server.DashServer;
-import dash.unit.tool.OldFileController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
@@ -83,6 +82,7 @@ public class ServiceManager {
                     .setIsLasted(true)
                     .build();
             HaHandler haHandler = new HaHandler(haHandleJob);
+            haHandler.start();
             if (scheduleManager.startJob(MAIN_SCHEDULE_JOB,
                     haHandler.getJob())) {
                 logger.debug("[ServiceManager] [+RUN] HA Handler");
@@ -110,6 +110,7 @@ public class ServiceManager {
                     .build();
             FileKeeper fileKeeper = new FileKeeper(fileKeepJob);
             if (fileKeeper.init()) {
+                fileKeeper.start();
                 if (scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper.getJob())) {
                     logger.debug("[ServiceManager] [+RUN] File Keeper");
                 } else {
@@ -138,6 +139,7 @@ public class ServiceManager {
                         .setIsLasted(true)
                         .build();
                 LongSessionRemover longSessionRemover = new LongSessionRemover(longSessionRemoveJob);
+                longSessionRemover.start();
                 if (scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
                         longSessionRemover.getJob())) {
                     logger.debug("[ServiceManager] [+RUN] Long session remover");
