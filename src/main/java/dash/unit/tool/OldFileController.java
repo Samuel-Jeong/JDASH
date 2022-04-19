@@ -5,14 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.job.Job;
+import service.scheduler.job.JobContainer;
 import service.scheduler.schedule.ScheduleManager;
 import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
 
-public class OldFileController extends Job {
+public class OldFileController extends JobContainer {
 
-    ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(OldFileController.class);
 
     private final String dashUnitId; // DashUnit ID
@@ -23,15 +23,9 @@ public class OldFileController extends Job {
     private final String[] exceptFileExtensionList = new String[] { "mpd" };
 
     private final FileManager fileManager = new FileManager();
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    public OldFileController(ScheduleManager scheduleManager, String name,
-                             int initialDelay, int interval, TimeUnit timeUnit,
-                             int priority, int totalRunCount, boolean isLasted,
-                             String dashUnitId, String dashPath) {
-        super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
-
+    public OldFileController(Job oldFileControlJob, String dashUnitId, String dashPath) {
+        setJob(oldFileControlJob);
         this.dashUnitId = dashUnitId;
         this.dashPath = dashPath;
 
@@ -42,24 +36,22 @@ public class OldFileController extends Job {
                 dashUnitId, dashPath, limitTime
         );
     }
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    @Override
     public void run() {
         if (dashPath == null) { return; }
 
-        try {
-            fileManager.deleteOldFilesBySecond(
-                    dashPath,
-                    exceptFileNameList,
-                    exceptFileExtensionList,
-                    limitTime
-            );
-        } catch (Exception e) {
-            //logger.warn("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
-        }
+        getJob().setRunnable(() -> {
+            try {
+                fileManager.deleteOldFilesBySecond(
+                        dashPath,
+                        exceptFileNameList,
+                        exceptFileExtensionList,
+                        limitTime
+                );
+            } catch (Exception e) {
+                logger.trace("[DashUnit(id={})] OldFileController.run.Exception", dashUnitId, e);
+            }
+        });
     }
-    ////////////////////////////////////////////////////////////
 
 }

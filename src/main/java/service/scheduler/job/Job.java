@@ -1,66 +1,94 @@
 package service.scheduler.job;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import service.scheduler.schedule.ScheduleManager;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class Job implements Runnable {
+public class Job {
 
-    private static final Logger logger = LoggerFactory.getLogger(Job.class);
+    private ScheduleManager scheduleManager = null;
+    private String name = null;
+    private int initialDelay = 0;
+    private int interval = 0;
+    private TimeUnit timeUnit = null; // ex) TimeUnit.MILLISECONDS
 
-    ////////////////////////////////////////////////////////////////////////////////
-    private final ScheduleManager scheduleManager;
-    private final String name;
-    private final int initialDelay;
-    private final int interval;
-    private final TimeUnit timeUnit; // ex) TimeUnit.MILLISECONDS
-
-    private final int priority;
-    private final int totalRunCount;
+    private int priority = 0;
+    private int totalRunCount = 0;
+    private boolean isLasted = false;
     private final AtomicInteger curRemainRunCount = new AtomicInteger(0);
-    private final boolean isLasted;
     private final AtomicBoolean isFinished = new AtomicBoolean(false);
 
-    private String scheduleUnitKey;
-    ////////////////////////////////////////////////////////////////////////////////
+    private String scheduleUnitKey = null;
+    private Runnable runnable = null;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    public Job(ScheduleManager scheduleManager, String name, int initialDelay, int interval, TimeUnit timeUnit, int priority, int totalRunCount, boolean isLasted) {
+    public Job() {
+        // Nothing
+    }
+
+    public ScheduleManager getScheduleManager() {
+        return scheduleManager;
+    }
+
+    public void setScheduleManager(ScheduleManager scheduleManager) {
         this.scheduleManager = scheduleManager;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
         this.name = name;
+    }
+
+    public int getInitialDelay() {
+        return initialDelay;
+    }
+
+    public void setInitialDelay(int initialDelay) {
         this.initialDelay = initialDelay;
+    }
+
+    public int getInterval() {
+        return interval;
+    }
+
+    public void setInterval(int interval) {
         this.interval = interval;
+    }
+
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    public void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
-        this.priority = priority;
-        this.totalRunCount = totalRunCount;
-        this.curRemainRunCount.set(totalRunCount);
-        this.isLasted = isLasted;
-    }
-    ////////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////////
-    public String getScheduleUnitKey() {
-        return scheduleUnitKey;
-    }
-
-    public void setScheduleUnitKey(String scheduleUnitKey) {
-        this.scheduleUnitKey = scheduleUnitKey;
     }
 
     public int getPriority() {
         return priority;
     }
 
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
     public int getTotalRunCount() {
         return totalRunCount;
     }
 
-    public void setCurRemainRunCount(int count) {
-        curRemainRunCount.set(count);
+    public void setTotalRunCount(int totalRunCount) {
+        this.totalRunCount = totalRunCount;
+    }
+
+    public int getCurRemainRunCount() {
+        return curRemainRunCount.get();
+    }
+
+    public void setCurRemainRunCount(int curRemainRunCount) {
+        this.curRemainRunCount.set(curRemainRunCount);
     }
 
     public int incCurRemainRunCount() {
@@ -71,28 +99,12 @@ public abstract class Job implements Runnable {
         return curRemainRunCount.decrementAndGet();
     }
 
-    public int getCurRemainRunCount() {
-        return curRemainRunCount.get();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getInitialDelay() {
-        return initialDelay;
-    }
-
-    public int getInterval() {
-        return interval;
-    }
-
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
-    }
-
     public boolean isLasted() {
         return isLasted;
+    }
+
+    public void setLasted(boolean lasted) {
+        isLasted = lasted;
     }
 
     public boolean getIsFinished() {
@@ -103,8 +115,20 @@ public abstract class Job implements Runnable {
         this.isFinished.set(isFinished);
     }
 
-    public ScheduleManager getScheduleManager() {
-        return scheduleManager;
+    public String getScheduleUnitKey() {
+        return scheduleUnitKey;
+    }
+
+    public void setScheduleUnitKey(String scheduleUnitKey) {
+        this.scheduleUnitKey = scheduleUnitKey;
+    }
+
+    public Runnable getRunnable() {
+        return runnable;
+    }
+
+    public void setRunnable(Runnable runnable) {
+        this.runnable = runnable;
     }
 
     @Override
@@ -122,5 +146,5 @@ public abstract class Job implements Runnable {
                 ", scheduleUnitKey=" + scheduleUnitKey +
                 '}';
     }
-    ////////////////////////////////////////////////////////////////////////////////
+
 }

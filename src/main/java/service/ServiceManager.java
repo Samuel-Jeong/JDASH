@@ -2,11 +2,14 @@ package service;
 
 import config.ConfigManager;
 import dash.server.DashServer;
+import dash.unit.tool.OldFileController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.monitor.FileKeeper;
 import service.monitor.HaHandler;
 import service.monitor.LongSessionRemover;
+import service.scheduler.job.Job;
+import service.scheduler.job.JobBuilder;
 import service.scheduler.schedule.ScheduleManager;
 
 import java.io.File;
@@ -69,13 +72,19 @@ public class ServiceManager {
 
         if (scheduleManager.initJob(MAIN_SCHEDULE_JOB, threadPoolSize, threadPoolSize * 2)) {
             // FOR CHECKING the availability of this program
+            Job haHandleJob = new JobBuilder()
+                    .setScheduleManager(scheduleManager)
+                    .setName(HaHandler.class.getSimpleName())
+                    .setInitialDelay(0)
+                    .setInterval(DELAY)
+                    .setTimeUnit(TimeUnit.MILLISECONDS)
+                    .setPriority(5)
+                    .setTotalRunCount(1)
+                    .setIsLasted(true)
+                    .build();
+            HaHandler haHandler = new HaHandler(haHandleJob);
             if (scheduleManager.startJob(MAIN_SCHEDULE_JOB,
-                    new HaHandler(
-                            scheduleManager,
-                            HaHandler.class.getSimpleName(),
-                            0, DELAY, TimeUnit.MILLISECONDS,
-                            5, 0, true
-                    ))) {
+                    haHandler.getJob())) {
                 logger.debug("[ServiceManager] [+RUN] HA Handler");
             } else {
                 logger.warn("[ServiceManager] [-RUN FAIL] HA Handler");
@@ -83,14 +92,25 @@ public class ServiceManager {
             }
 
             // FOR CHECKING [~/media_info/~]
-            FileKeeper fileKeeper = new FileKeeper(
-                    scheduleManager,
-                    FileKeeper.class.getSimpleName(),
-                    0, DELAY, TimeUnit.MILLISECONDS,
-                    10, 0, true
-            );
+            /**
+             * scheduleManager,
+             *                     FileKeeper.class.getSimpleName(),
+             *                     0, DELAY, TimeUnit.MILLISECONDS,
+             *                     10, 0, true
+             */
+            Job fileKeepJob = new JobBuilder()
+                    .setScheduleManager(scheduleManager)
+                    .setName(FileKeeper.class.getSimpleName())
+                    .setInitialDelay(0)
+                    .setInterval(DELAY)
+                    .setTimeUnit(TimeUnit.MILLISECONDS)
+                    .setPriority(10)
+                    .setTotalRunCount(1)
+                    .setIsLasted(true)
+                    .build();
+            FileKeeper fileKeeper = new FileKeeper(fileKeepJob);
             if (fileKeeper.init()) {
-                if (scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper)) {
+                if (scheduleManager.startJob(MAIN_SCHEDULE_JOB, fileKeeper.getJob())) {
                     logger.debug("[ServiceManager] [+RUN] File Keeper");
                 } else {
                     logger.warn("[ServiceManager] [-RUN FAIL] File Keeper");
@@ -107,13 +127,19 @@ public class ServiceManager {
         if (configManager.isEnableAutoDeleteUselessSession() || configManager.isEnableAutoDeleteUselessDir()) {
             if (scheduleManager.initJob(LONG_SESSION_REMOVE_SCHEDULE_JOB, 1, 1)) {
                 // FOR REMOVING the old session & folder for this service
+                Job longSessionRemoveJob = new JobBuilder()
+                        .setScheduleManager(scheduleManager)
+                        .setName(LongSessionRemover.class.getSimpleName())
+                        .setInitialDelay(0)
+                        .setInterval(DELAY)
+                        .setTimeUnit(TimeUnit.MILLISECONDS)
+                        .setPriority(3)
+                        .setTotalRunCount(1)
+                        .setIsLasted(true)
+                        .build();
+                LongSessionRemover longSessionRemover = new LongSessionRemover(longSessionRemoveJob);
                 if (scheduleManager.startJob(LONG_SESSION_REMOVE_SCHEDULE_JOB,
-                        new LongSessionRemover(
-                                scheduleManager,
-                                LongSessionRemover.class.getSimpleName(),
-                                0, DELAY, TimeUnit.MILLISECONDS,
-                                3, 0, true
-                        ))) {
+                        longSessionRemover.getJob())) {
                     logger.debug("[ServiceManager] [+RUN] Long session remover");
                 } else {
                     logger.warn("[ServiceManager] [-RUN FAIL] Long session remover");

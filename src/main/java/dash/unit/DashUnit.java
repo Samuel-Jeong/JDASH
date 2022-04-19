@@ -13,7 +13,10 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
+import service.scheduler.job.Job;
+import service.scheduler.job.JobBuilder;
 import service.scheduler.schedule.ScheduleManager;
+import stream.CameraCanvasController;
 import stream.RemoteStreamService;
 import stream.StreamConfigManager;
 import util.module.FileManager;
@@ -84,18 +87,25 @@ public class DashUnit {
         try {
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
                 // REMOTE CAMERA SERVICE with RTMP
+                Job remoteStreamServiceJob = new JobBuilder()
+                        .setScheduleManager(scheduleManager)
+                        .setName(RemoteStreamService.class.getSimpleName() + "_" + id)
+                        .setInitialDelay(0)
+                        .setInterval(10)
+                        .setTimeUnit(TimeUnit.MILLISECONDS)
+                        .setPriority(1)
+                        .setTotalRunCount(1)
+                        .setIsLasted(true)
+                        .build();
                 remoteStreamService = new RemoteStreamService(
-                        scheduleManager,
-                        RemoteStreamService.class.getSimpleName() + "_" + id,
-                        0, 10, TimeUnit.MILLISECONDS,
-                        1, 1, true,
+                        remoteStreamServiceJob,
                         id, configManager, uriFileName, sourceUri, mpdPath
                 );
 
                 if (remoteStreamService.init()) {
                     if (scheduleManager.startJob(
                             REMOTE_CAMERA_SERVICE_SCHEDULE_KEY,
-                            remoteStreamService)) {
+                            remoteStreamService.getJob())) {
                         logger.debug("[DashUnit(id={})] [+RUN] Rtmp client streaming", id);
                     } else {
                         logger.warn("[DashUnit(id={})] [-RUN FAIL] Rtmp client streaming", id);
@@ -142,16 +152,21 @@ public class DashUnit {
                     logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
                 }
 
-                oldFileController = new OldFileController(
-                        scheduleManager,
-                        OldFileController.class.getSimpleName() + "_" + id,
-                        0, 1000, TimeUnit.MILLISECONDS,
-                        1, 1, true,
-                        id, dashPath
-                );
+                Job oldFileControlJob = new JobBuilder()
+                        .setScheduleManager(scheduleManager)
+                        .setName(OldFileController.class.getSimpleName() + "_" + id)
+                        .setInitialDelay(0)
+                        .setInterval(1000)
+                        .setTimeUnit(TimeUnit.MILLISECONDS)
+                        .setPriority(1)
+                        .setTotalRunCount(1)
+                        .setIsLasted(true)
+                        .build();
+                oldFileController = new OldFileController(oldFileControlJob, id, dashPath);
+
                 if (scheduleManager.startJob(
                         OLD_FILE_CONTROL_SCHEDULE_KEY,
-                        oldFileController)) {
+                        oldFileController.getJob())) {
                     logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
                 } else {
                     logger.warn("[DashUnit(id={})] [-RUN FAIL] OldFileController", id);
@@ -177,7 +192,7 @@ public class DashUnit {
             //////////////////////////////
             // OLD FILE CONTROLLER
             if (oldFileController != null) {
-                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController);
+                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController.getJob());
                 oldFileController = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
             }
@@ -186,7 +201,7 @@ public class DashUnit {
             //////////////////////////////
             // REMOTE CAMERA SERVICE with RTMP
             if (remoteStreamService != null) {
-                scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteStreamService);
+                scheduleManager.stopJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, remoteStreamService.getJob());
                 remoteStreamService.stop();
                 remoteStreamService = null;
                 logger.debug("[DashUnit(id={})] [-FINISH] Rtmp client streaming", id);

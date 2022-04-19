@@ -3,6 +3,8 @@ package dash;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.scheduler.job.Job;
+import service.scheduler.job.JobBuilder;
 import service.scheduler.schedule.ScheduleManager;
 import stream.RemoteStreamService;
 
@@ -14,16 +16,22 @@ public class RemoteCameraTest {
 
     public void test() {
         ScheduleManager scheduleManager = new ScheduleManager();
-        RemoteStreamService remoteCameraService = new RemoteStreamService(
-                scheduleManager,
-                RemoteStreamService.class.getSimpleName(),
-                0, 1, TimeUnit.MILLISECONDS,
-                1, 1, false
-        );
+
+        Job remoteStreamServiceJob = new JobBuilder()
+                .setScheduleManager(scheduleManager)
+                .setName(RemoteStreamService.class.getSimpleName())
+                .setInitialDelay(0)
+                .setInterval(10)
+                .setTimeUnit(TimeUnit.MILLISECONDS)
+                .setPriority(1)
+                .setTotalRunCount(1)
+                .setIsLasted(true)
+                .build();
+        RemoteStreamService remoteCameraService = new RemoteStreamService(remoteStreamServiceJob);
         remoteCameraService.init();
         if (scheduleManager.startJob(
                 "REMOTE_CAMERA_TEST",
-                remoteCameraService)) {
+                remoteCameraService.getJob())) {
             logger.debug("[RemoteCameraTest] [+RUN] Success to start the remote camera.");
         } else {
             logger.warn("[RemoteCameraTest)] [-RUN FAIL] Fail to start the remote camera.");

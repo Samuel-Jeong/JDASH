@@ -1,11 +1,14 @@
 package stream;
 
 import config.ConfigManager;
+import dash.unit.tool.OldFileController;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.scheduler.job.Job;
+import service.scheduler.job.JobBuilder;
+import service.scheduler.job.JobContainer;
 import service.scheduler.schedule.ScheduleManager;
 
 import javax.sound.sampled.AudioFormat;
@@ -74,7 +77,7 @@ public class AudioService {
     public void releaseOutputResource() {
         if (audioSampler != null) {
             if (scheduleManager != null) {
-                scheduleManager.stopJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler);
+                scheduleManager.stopJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler.getJob());
             }
             audioSampler = null;
         }
@@ -94,14 +97,18 @@ public class AudioService {
         }
 
         if (scheduleManager != null) {
-            audioSampler = new AudioSampler(
-                    scheduleManager,
-                    AudioSampler.class.getSimpleName(),
-                    0, 1, TimeUnit.MILLISECONDS,
-                    1, 1, true,
-                    fFmpegFrameRecorder
-            );
-            if (scheduleManager.startJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler)) {
+            Job audioSampleJob = new JobBuilder()
+                    .setScheduleManager(scheduleManager)
+                    .setName(AudioSampler.class.getSimpleName())
+                    .setInitialDelay(0)
+                    .setInterval(1000)
+                    .setTimeUnit(TimeUnit.MILLISECONDS)
+                    .setPriority(1)
+                    .setTotalRunCount(1)
+                    .setIsLasted(true)
+                    .build();
+            audioSampler = new AudioSampler(audioSampleJob, fFmpegFrameRecorder);
+            if (scheduleManager.startJob(AUDIO_SERVICE_SCHEDULE_KEY, audioSampler.getJob())) {
                 logger.debug("[AudioService] [+RUN] Success to start audio sampling.");
             } else {
                 logger.warn("[AudioService] [-RUN FAIL] Fail to start audio sampling.");
@@ -117,32 +124,28 @@ public class AudioService {
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    private class AudioSampler extends Job {
+    private class AudioSampler extends JobContainer {
 
         /////////////////////////////////
         private final FFmpegFrameRecorder fFmpegFrameRecorder;
         /////////////////////////////////
 
         /////////////////////////////////
-        public AudioSampler(ScheduleManager scheduleManager,
-                            String name,
-                            int initialDelay, int interval, TimeUnit timeUnit,
-                            int priority, int totalRunCount, boolean isLasted,
-                            FFmpegFrameRecorder fFmpegFrameRecorder) {
-            super(scheduleManager, name, initialDelay, interval, timeUnit, priority, totalRunCount, isLasted);
-
+        public AudioSampler(Job audioSampleJob, FFmpegFrameRecorder fFmpegFrameRecorder) {
+            setJob(audioSampleJob);
             this.fFmpegFrameRecorder = fFmpegFrameRecorder;
         }
         /////////////////////////////////
 
         /////////////////////////////////
-        @Override
         public void run() {
-            try {
-                record(fFmpegFrameRecorder);
-            } catch (Exception e) {
-                logger.warn("[AudioService] [AudioSampler] run.Exception", e);
-            }
+            getJob().setRunnable(() -> {
+                try {
+                    record(fFmpegFrameRecorder);
+                } catch (Exception e) {
+                    logger.warn("[AudioService] [AudioSampler] run.Exception", e);
+                }
+            });
         }
         /////////////////////////////////
 

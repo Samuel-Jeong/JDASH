@@ -15,6 +15,7 @@ import dash.server.handler.HttpMessageManager;
 import dash.server.network.DashLocalAddressManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import dash.unit.tool.OldFileController;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.netty.buffer.ByteBuf;
@@ -32,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ObjectSupplier;
 import service.ServiceManager;
+import service.scheduler.job.Job;
+import service.scheduler.job.JobBuilder;
 import service.scheduler.schedule.ScheduleManager;
 import service.system.ResourceManager;
 import stream.LocalStreamService;
@@ -178,15 +181,19 @@ public class DashServer {
 
         if (configManager.isEnableClient()) {
             if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
-                localStreamService = new LocalStreamService(
-                        baseEnvironment.getScheduleManager(),
-                        LocalStreamService.class.getSimpleName(),
-                        0, 0, TimeUnit.MILLISECONDS,
-                        1, 1, false
-                );
-
+                Job localStreamServiceJob = new JobBuilder()
+                        .setScheduleManager(baseEnvironment.getScheduleManager())
+                        .setName(OldFileController.class.getSimpleName())
+                        .setInitialDelay(0)
+                        .setInterval(0)
+                        .setTimeUnit(TimeUnit.MILLISECONDS)
+                        .setPriority(1)
+                        .setTotalRunCount(1)
+                        .setIsLasted(false)
+                        .build();
+                localStreamService = new LocalStreamService(localStreamServiceJob);
                 if (localStreamService.start()) {
-                    result = baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService);
+                    result = baseEnvironment.getScheduleManager().startJob(DASH_SCHEDULE_JOB, localStreamService.getJob());
                 } else {
                     result = false;
                 }
