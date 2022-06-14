@@ -184,12 +184,11 @@ public class StreamConfigManager {
         if (configManager.getRemoteVideoCodec() == avcodec.AV_CODEC_ID_H265) {
             //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265); // > NOT WORKING > BUG?
             fFmpegFrameRecorder.setVideoCodecName("H265");
+            fFmpegFrameRecorder.setFormat("matroska");
         } else {
             fFmpegFrameRecorder.setVideoCodec(configManager.getRemoteVideoCodec());
+            fFmpegFrameRecorder.setFormat("flv");
         }
-
-        //fFmpegFrameRecorder.setFormat("flv");
-        fFmpegFrameRecorder.setFormat("matroska");
 
         fFmpegFrameRecorder.setVideoOption("crf", "28");
         fFmpegFrameRecorder.setGopSize(GOP_LENGTH_IN_FRAMES);
@@ -208,24 +207,23 @@ public class StreamConfigManager {
         if (configManager.getLocalVideoCodec() == avcodec.AV_CODEC_ID_H265) {
             //fFmpegFrameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H265); // > NOT WORKING > BUG?
             fFmpegFrameRecorder.setVideoCodecName("H265");
+            /**
+             * 2. Matroska (wp, .mkv/.mka/.mks)
+             * - Owner : CoreCodec
+             * [Video] : H.264, Realvideo, DivX, XviD, HEVC
+             * [Audio] : AAC, Vorbis, Dolby AC3, MP3
+             */
+            fFmpegFrameRecorder.setFormat("matroska");
         } else {
             fFmpegFrameRecorder.setVideoCodec(configManager.getLocalVideoCodec());
+            /**
+             * 1. Flash Video (.flv)
+             * - Owner : Adobe
+             * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
+             * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
+             */
+            fFmpegFrameRecorder.setFormat("flv");
         }
-
-        /**
-         * 1. Flash Video (.flv)
-         * - Owner : Adobe
-         * [Video] : Sorenson H.263 (Flash v6, v7), VP6 (Flash v8), Screen video, H.264
-         * [Audio] : MP3, ADPCM, Linear PCM, Nellymoser, Speex, AAC, G.711
-         */
-        fFmpegFrameRecorder.setFormat("flv");
-        /**
-         * 2. Matroska (wp, .mkv/.mka/.mks)
-         * - Owner : CoreCodec
-         * [Video] : H.264, Realvideo, DivX, XviD, HEVC
-         * [Audio] : AAC, Vorbis, Dolby AC3, MP3
-         */
-        //fFmpegFrameRecorder.setFormat("matroska");
 
         /**
          * The range of the CRF scale is 0–51,

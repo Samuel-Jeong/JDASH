@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>JDASH</groupId>
-    <artifactId>JDASH</artifactId>
+    <groupId>jdash</groupId>
+    <artifactId>jdash</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -161,6 +161,31 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-App</id>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>DashServerMain</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <executions>
@@ -189,7 +214,7 @@
                         <arg>${project.build.directory}/native/javah/</arg>
                     </compilerArgs>
                 </configuration>
-            </plugin>
+            </plugin>-->
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -255,20 +280,20 @@
                     <defaultGroupname>${service.group}</defaultGroupname>
                     <mappings>
                         <mapping>
-                            <directory>${service.home}/jdash/</directory>
+                            <directory>${service.home}/${project.artifactId}/</directory>
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/jdash/lib/</directory>
+                            <directory>${service.home}/${project.artifactId}/lib/</directory>
                             <sources>
                                 <source>
-                                    <location>${project.basedir}/out/artifacts/JDASH_jar/</location>
+                                    <location>${project.basedir}/target/${project.artifactId}-${project.version}-jar-with-dependencies.jar</location>
                                 </source>
                             </sources>
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/jdash/bin/</directory>
+                            <directory>${service.home}/${project.artifactId}/bin/</directory>
                             <filemode>755</filemode>
                             <directoryIncluded>false</directoryIncluded>
                             <sources>
@@ -280,7 +305,7 @@
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>${service.home}/jdash/config/</directory>
+                            <directory>${service.home}/${project.artifactId}/config/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/config/user_conf.ini</location>
@@ -292,16 +317,16 @@
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/jdash/logs/</directory>
+                            <directory>${service.home}/${project.artifactId}/logs/</directory>
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/jdash/media/</directory>
+                            <directory>${service.home}/${project.artifactId}/media/</directory>
                         </mapping>
 
                         <mapping>
                             <configuration>noreplace</configuration>
-                            <directory>${service.home}/jdash/media_info/</directory>
+                            <directory>${service.home}/${project.artifactId}/media_info/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/white_list.txt</location>
@@ -310,7 +335,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>/home/jdash/jdash/media_info/</directory>
+                            <directory>/home/${project.artifactId}/${project.artifactId}/media_info/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/media_info/codec_list.txt</location>
@@ -322,7 +347,7 @@
                         </mapping>
 
                         <mapping>
-                            <directory>${service.home}/jdash/validation_xsd/</directory>
+                            <directory>${service.home}/${project.artifactId}/validation_xsd/</directory>
                             <sources>
                                 <source>
                                     <location>${project.basedir}/src/main/resources/validation_xsd/DASH-MPD.xsd</location>
