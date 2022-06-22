@@ -73,7 +73,7 @@ public class FileManager {
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileName))) {
             return bufferedInputStream.readAllBytes();
         } catch (Exception e) {
-            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
+            //logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
             return new byte[0];
         }
     }
@@ -89,7 +89,7 @@ public class FileManager {
             }
             return lines;
         } catch (Exception e) {
-            logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
+            //logger.warn("[FileManager] Fail to read the file. (fileName={})", fileName);
             return lines;
         }
     }

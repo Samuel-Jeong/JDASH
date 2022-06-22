@@ -27,8 +27,6 @@ public class StreamConfigManager {
     public static final String V_SIZE_6 = "1920x1080";
 
     public static final double FRAME_RATE = 30;
-    public static final int CAPTURE_WIDTH = 640;
-    public static final int CAPTURE_HEIGHT = 320;
     public static final int GOP_LENGTH_IN_FRAMES = 2;
 
     public static final int DEFAULT_SEGMENT_START_NUMBER = 1;

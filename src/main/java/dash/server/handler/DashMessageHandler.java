@@ -126,8 +126,8 @@ public class DashMessageHandler implements HttpMessageHandler {
             FFmpegFrameRecorder videoFrameRecorder = null;
             try (FFmpegFrameGrabber fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(mp4Path);) {
                 if (!configManager.isAudioOnly()) {
-                    fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
-                    fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                    fFmpegFrameGrabber.setImageWidth(configManager.getRemoteVideoWidth());
+                    fFmpegFrameGrabber.setImageHeight(configManager.getRemoteVideoHeight());
                 }
                 fFmpegFrameGrabber.start();
 
@@ -146,7 +146,7 @@ public class DashMessageHandler implements HttpMessageHandler {
                 } else {
                     videoFrameRecorder = new FFmpegFrameRecorder(
                             mpdPath,
-                            StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                            configManager.getRemoteVideoWidth(), configManager.getRemoteVideoHeight(),
                             AudioService.CHANNEL_NUM
                     );
                     StreamConfigManager.setRemoteStreamVideoOptions(videoFrameRecorder);

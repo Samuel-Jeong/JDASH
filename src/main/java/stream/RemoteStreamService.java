@@ -80,8 +80,8 @@ public class RemoteStreamService extends JobContainer {
             // [INPUT] FFmpegFrameGrabber
             fFmpegFrameGrabber = FFmpegFrameGrabber.createDefault(RTMP_PATH);
             if (!configManager.isAudioOnly()) {
-                fFmpegFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
-                fFmpegFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                fFmpegFrameGrabber.setImageWidth(configManager.getRemoteVideoWidth());
+                fFmpegFrameGrabber.setImageHeight(configManager.getRemoteVideoHeight());
             }
             fFmpegFrameGrabber.start();
             /////////////////////////////////
@@ -169,7 +169,7 @@ public class RemoteStreamService extends JobContainer {
                 } else {
                     videoFrameRecorder = new FFmpegFrameRecorder(
                             DASH_PATH,
-                            StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                            configManager.getRemoteVideoWidth(), configManager.getRemoteVideoHeight(),
                             AudioService.CHANNEL_NUM
                     );
                     StreamConfigManager.setRemoteStreamVideoOptions(videoFrameRecorder);

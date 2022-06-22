@@ -83,14 +83,14 @@ public class LocalStreamService extends JobContainer {
             if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 if (!configManager.isAudioOnly()) {
                     openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
-                    openCVFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
-                    openCVFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                    openCVFrameGrabber.setImageWidth(configManager.getLocalVideoWidth());
+                    openCVFrameGrabber.setImageHeight(configManager.getLocalVideoHeight());
                     openCVFrameGrabber.start();
                 }
             } else {
                 openCVFrameGrabber = new OpenCVFrameGrabber(CAMERA_INDEX);
-                openCVFrameGrabber.setImageWidth(StreamConfigManager.CAPTURE_WIDTH);
-                openCVFrameGrabber.setImageHeight(StreamConfigManager.CAPTURE_HEIGHT);
+                openCVFrameGrabber.setImageWidth(configManager.getLocalVideoWidth());
+                openCVFrameGrabber.setImageHeight(configManager.getRemoteVideoHeight());
                 openCVFrameGrabber.start();
             }
             /////////////////////////////////
@@ -181,7 +181,7 @@ public class LocalStreamService extends JobContainer {
                     } else {
                         fFmpegFrameRecorder = new FFmpegFrameRecorder(
                                 URI,
-                                StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                                configManager.getLocalVideoWidth(), configManager.getLocalVideoHeight(),
                                 AudioService.CHANNEL_NUM
                         );
                         StreamConfigManager.setLocalStreamVideoOptions(fFmpegFrameRecorder);
@@ -203,7 +203,7 @@ public class LocalStreamService extends JobContainer {
                 else {
                     fFmpegFrameRecorder = new FFmpegFrameRecorder(
                             URI,
-                            StreamConfigManager.CAPTURE_WIDTH, StreamConfigManager.CAPTURE_HEIGHT,
+                            configManager.getLocalVideoWidth(), configManager.getLocalVideoHeight(),
                             AudioService.CHANNEL_NUM
                     );
                     StreamConfigManager.setLocalStreamVideoOptions(fFmpegFrameRecorder);

@@ -90,10 +90,14 @@ public class ConfigManager {
     public static final String FIELD_LOCAL_AUDIO_SAMPLERATE = "LOCAL_AUDIO_SAMPLERATE";
     public static final String FIELD_LOCAL_VIDEO_CODEC = "LOCAL_VIDEO_CODEC";
     public static final String FIELD_LOCAL_VIDEO_PIXEL_FORMAT = "LOCAL_VIDEO_PIXEL_FORMAT";
+    public static final String FIELD_MEDIA_LOCAL_VIDEO_WIDTH = "LOCAL_VIDEO_WIDTH";
+    public static final String FIELD_MEDIA_LOCAL_VIDEO_HEIGHT = "LOCAL_VIDEO_HEIGHT";
     public static final String FIELD_REMOTE_AUDIO_CODEC = "REMOTE_AUDIO_CODEC";
     public static final String FIELD_REMOTE_AUDIO_SAMPLERATE = "REMOTE_AUDIO_SAMPLERATE";
     public static final String FIELD_REMOTE_VIDEO_CODEC = "REMOTE_VIDEO_CODEC";
     public static final String FIELD_REMOTE_VIDEO_PIXEL_FORMAT = "REMOTE_VIDEO_PIXEL_FORMAT";
+    public static final String FIELD_MEDIA_REMOTE_VIDEO_WIDTH = "REMOTE_VIDEO_WIDTH";
+    public static final String FIELD_MEDIA_REMOTE_VIDEO_HEIGHT = "REMOTE_VIDEO_HEIGHT";
 
     // MPD
     public static final String FIELD_ENABLE_VALIDATION = "ENABLE_VALIDATION";
@@ -160,10 +164,14 @@ public class ConfigManager {
     private int localAudioSampleRate = 0;
     private int localVideoCodec = 0;
     private int localVideoPixelFormat = 0;
+    private int localVideoWidth = 0;
+    private int localVideoHeight = 0;
     private int remoteAudioCodec = 0;
     private int remoteAudioSampleRate = 0;
     private int remoteVideoCodec = 0;
     private int remoteVideoPixelFormat = 0;
+    private int remoteVideoWidth = 0;
+    private int remoteVideoHeight = 0;
 
     // MPD
     private boolean enableValidation = false;
@@ -619,6 +627,30 @@ public class ConfigManager {
             }
         }
 
+        String localVideoWidthString = getIniValue(SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_WIDTH);
+        if (localVideoWidthString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_WIDTH);
+            System.exit(1);
+        } else {
+            this.localVideoWidth = Integer.parseInt(localVideoWidthString);
+            if (this.localVideoWidth < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_WIDTH);
+                System.exit(1);
+            }
+        }
+
+        String localVideoHeightString = getIniValue(SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_HEIGHT);
+        if (localVideoHeightString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_HEIGHT);
+            System.exit(1);
+        } else {
+            this.localVideoHeight = Integer.parseInt(localVideoHeightString);
+            if (this.localVideoHeight < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_LOCAL_VIDEO_HEIGHT);
+                System.exit(1);
+            }
+        }
+
         String remoteAudioCodecString = getIniValue(SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
         if (remoteAudioCodecString == null) {
             logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_AUDIO_CODEC);
@@ -663,6 +695,30 @@ public class ConfigManager {
             this.remoteVideoPixelFormat = Integer.parseInt(remoteVideoPixelFormatString);
             if (this.remoteVideoPixelFormat < 0) { // 0 : YUV420P
                 logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_REMOTE_VIDEO_PIXEL_FORMAT);
+                System.exit(1);
+            }
+        }
+
+        String remoteVideoWidthString = getIniValue(SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_WIDTH);
+        if (remoteVideoWidthString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_WIDTH);
+            System.exit(1);
+        } else {
+            this.remoteVideoWidth = Integer.parseInt(remoteVideoWidthString);
+            if (this.remoteVideoWidth < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_WIDTH);
+                System.exit(1);
+            }
+        }
+
+        String remoteVideoHeightString = getIniValue(SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_HEIGHT);
+        if (remoteVideoHeightString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_HEIGHT);
+            System.exit(1);
+        } else {
+            this.remoteVideoHeight = Integer.parseInt(remoteVideoHeightString);
+            if (this.remoteVideoHeight < 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_MEDIA_REMOTE_VIDEO_HEIGHT);
                 System.exit(1);
             }
         }
