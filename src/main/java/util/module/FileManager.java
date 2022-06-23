@@ -148,11 +148,11 @@ public class FileManager {
         return uri;
     }
 
-    public void deleteFile(String path) {
+    public boolean deleteFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
             logger.warn("[FileManager] Fail to delete the file. File is not exist. (path={})", path);
-            return;
+            return false;
         }
 
         try {
@@ -161,14 +161,16 @@ public class FileManager {
             } else {
                 FileUtils.fileDelete(path);
             }
-            logger.debug("[FileManager] Success to delete the file. (path={})", path);
+            //logger.debug("[FileManager] Success to delete the file. (path={})", path);
+            return true;
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to delete the file. (path={})", path, e);
+            return false;
         }
     }
 
-    public void deleteFile(File file) {
-        if (file == null) { return; }
+    public boolean deleteFile(File file) {
+        if (file == null) { return false; }
 
         try {
             if (file.isDirectory()) {
@@ -176,16 +178,18 @@ public class FileManager {
             } else {
                 FileUtils.fileDelete(file.getAbsolutePath());
             }
-            logger.debug("[FileManager] Success to delete the file. (path={})", file.getAbsolutePath());
+            //logger.debug("[FileManager] Success to delete the file. (path={})", file.getAbsolutePath());
+            return true;
         } catch (Exception e) {
             logger.warn("[FileManager] Fail to delete the file. (path={})", file.getAbsolutePath(), e);
+            return false;
         }
     }
 
-    public void deleteOldFilesBySecond(String rootPath, String[] exceptFileNameList, String[] exceptFileExtensionList, long limitTime) throws IOException {
+    public boolean deleteOldFileBySecond(String rootPath, String[] exceptFileNameList, String[] exceptFileExtensionList, long limitTime) throws IOException {
         File rootPathFile = new File(rootPath);
         File[] files = rootPathFile.listFiles();
-        if (files == null || files.length == 0) { return; }
+        if (files == null || files.length == 0) { return false; }
 
         for (File curFile : files) {
             if (curFile == null || !curFile.exists() || curFile.isDirectory()) { continue; }
@@ -222,13 +226,16 @@ public class FileManager {
             long lastModifiedTime = getLastModificationSecondTime(curFile);
             if (lastModifiedTime >= limitTime) { // 제한 시간 [이상] 경과
                 Files.delete(curFile.toPath());
-                logger.trace("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
+                /*logger.trace("[FileManager] Old file({}) is deleted. (lastModifiedTime=[{}]sec, limitTime=[{}]sec)",
                         curFile.getAbsolutePath(),
                         lastModifiedTime, limitTime
-                );
+                );*/
+                return true;
             }
             ///////////////////////////////
         }
+
+        return false;
     }
 
     public void deleteOldDirectoriesBySecond(File rootDir, List<String> exceptDirNameList, long limitTime) throws IOException {

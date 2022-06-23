@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -44,16 +45,15 @@ public class MpdManager {
     private static final Logger logger = LoggerFactory.getLogger(MpdManager.class);
 
     //transient public static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-    transient public static final String CONTENT_AUDIO_TYPE = "audio";
-    transient public static final String CONTENT_VIDEO_TYPE = "video";
-    transient public static final long MICRO_SEC = 1000000;
+    public static final String CONTENT_AUDIO_TYPE = "audio";
+    public static final String CONTENT_VIDEO_TYPE = "video";
+    public static final long MICRO_SEC = 1000000;
 
     private final String dashUnitId;
 
     private final MPDParser mpdParser;
     private MPDValidator mpdValidator = null;
     private MPD mpd = null;
-    private final String targetMpdPath;
     private final AtomicBoolean isMpdDone = new AtomicBoolean(false);
     private OffsetDateTime remoteMpdAvailabilityStartTime = null;
     private final AtomicLong lastMpdParsedTime = new AtomicLong(0); // milli-sec
@@ -64,8 +64,8 @@ public class MpdManager {
     private List<Integer> videoRepresentationIdList;
     private List<Integer> audioRepresentationIdList;
 
-    private int curVideoIndex; // 비디오 Representation List 중 현재 비디오 ID
-    private int curAudioIndex; // 오디오 Representation List 중 현재 오디오 ID
+    private final AtomicInteger curVideoIndex = new AtomicInteger(0); // 비디오 Representation List 중 현재 비디오 ID
+    private final AtomicInteger curAudioIndex = new AtomicInteger(0); // 오디오 Representation List 중 현재 오디오 ID
 
     private final int curPeriodId = 0;
     private boolean isVideoDefinitionFirst = false;
@@ -74,12 +74,14 @@ public class MpdManager {
 
     private final transient ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     private final transient FileManager fileManager = new FileManager();
+
+    private final String localMpdPath;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public MpdManager(String dashUnitId, String targetMpdPath) {
+    public MpdManager(String dashUnitId, String localMpdPath) {
         this.dashUnitId = dashUnitId;
-        this.targetMpdPath = targetMpdPath;
+        this.localMpdPath = localMpdPath;
         this.mpdParser = new MPDParser();
         if (configManager.isEnableValidation()) {
             try {
@@ -161,7 +163,7 @@ public class MpdManager {
                 if (configManager.isAudioOnly()) {
                     videoRepresentationIdList = null;
                     videoSegmentSeqNumList = null;
-                    curVideoIndex = -1;
+                    curVideoIndex.set(-1);
                 } else {
                     if (videoRepresentationCount > 0) {
                         if (videoRepresentationIdList != null && !videoRepresentationIdList.isEmpty()) {
@@ -201,11 +203,11 @@ public class MpdManager {
                             }
                         }
                         curVideoRepresentationCount = videoRepresentationCount;
-                        curVideoIndex = videoRepresentationIdList.get(0);
+                        curVideoIndex.set(videoRepresentationIdList.get(0));
                     } else {
                         videoRepresentationIdList = null;
                         videoSegmentSeqNumList = null;
-                        curVideoIndex = -1;
+                        curVideoIndex.set(-1);
                     }
                 }
 
@@ -248,11 +250,11 @@ public class MpdManager {
                     }
 
                     curAudioRepresentationCount = audioRepresentationCount;
-                    curAudioIndex = audioRepresentationIdList.get(0);
+                    curAudioIndex.set(audioRepresentationIdList.get(0));
                 } else {
                     audioRepresentationIdList = null;
                     audioSegmentSeqNumList = null;
-                    curAudioIndex = -1;
+                    curAudioIndex.set(-1);
                 }
             } else { // audio definition first
                 // AUDIO REPRESENTATION
@@ -296,18 +298,18 @@ public class MpdManager {
                     }
 
                     curAudioRepresentationCount = audioRepresentationCount;
-                    curAudioIndex = audioRepresentationIdList.get(0);
+                    curAudioIndex.set(audioRepresentationIdList.get(0));
                 } else {
                     audioRepresentationIdList = null;
                     audioSegmentSeqNumList = null;
-                    curAudioIndex = -1;
+                    curAudioIndex.set(-1);
                 }
 
                 // VIDEO REPRESENTATION
                 if (configManager.isAudioOnly()) {
                     videoRepresentationIdList = null;
                     videoSegmentSeqNumList = null;
-                    curVideoIndex = -1;
+                    curVideoIndex.set(-1);
                 } else {
                     if (videoRepresentationCount > 0) {
                         if (videoRepresentationIdList != null && !videoRepresentationIdList.isEmpty()) {
@@ -347,11 +349,11 @@ public class MpdManager {
                             }
                         }
 
-                        curVideoIndex = videoRepresentationIdList.get(0);
+                        curVideoIndex.set(videoRepresentationIdList.get(0));
                     } else {
                         videoRepresentationIdList = null;
                         videoSegmentSeqNumList = null;
-                        curVideoIndex = -1;
+                        curVideoIndex.set(-1);
                     }
                 }
             }
@@ -495,12 +497,12 @@ public class MpdManager {
             if (mpdString == null) { return; }
 
             fileManager.writeBytes(
-                    targetMpdPath,
+                    localMpdPath,
                     mpdString.getBytes(),
                     false
             );
         } catch (Exception e) {
-            logger.warn("[MpdManager({})] Fail to write the mpd. (path={})", dashUnitId, targetMpdPath);
+            logger.warn("[MpdManager({})] Fail to write the mpd. (path={})", dashUnitId, localMpdPath);
         }
     }
 
@@ -692,7 +694,8 @@ public class MpdManager {
     }
 
     public String getAudioInitSegmentName() {
-        if (curAudioIndex < 0) { return null; }
+        int audioIndex = curAudioIndex.get();
+        if (audioIndex < 0) { return null; }
 
         int representationId = getRepresentationIndex(CONTENT_AUDIO_TYPE);
         List<Representation> representations = getRepresentations(MpdManager.CONTENT_AUDIO_TYPE);
@@ -701,7 +704,7 @@ public class MpdManager {
             String audioInitSegmentName = getRawInitializationSegmentName(representations.get(representationId));
             audioInitSegmentName = audioInitSegmentName.replace(
                     AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
-                    curAudioIndex + ""
+                    audioIndex + ""
             );
             // outdoor_market_ambiance_Dolby_init1.m4s
             return audioInitSegmentName;
@@ -711,7 +714,14 @@ public class MpdManager {
     }
 
     public String getAudioMediaSegmentName() {
-        if (curAudioIndex < 0) { return null; }
+        return getAudioMediaSegmentName(getAudioSegmentSeqNum());
+    }
+
+    public String getAudioMediaSegmentName(long audioSegmentSeqNum) {
+        if (audioSegmentSeqNum <= 0) { return null; }
+
+        int audioIndex = curAudioIndex.get();
+        if (audioIndex < 0) { return null; }
 
         int representationId = getRepresentationIndex(CONTENT_AUDIO_TYPE);
         List<Representation> representations = getRepresentations(CONTENT_AUDIO_TYPE);
@@ -722,11 +732,11 @@ public class MpdManager {
             // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getRepresentationIdFormat(),
-                    curAudioIndex + ""
+                    audioIndex + ""
             );
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
-                    String.format(configManager.getSegmentNumberFormat(), getAudioSegmentSeqNum())
+                    String.format(configManager.getSegmentNumberFormat(), audioSegmentSeqNum)
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             return mediaSegmentName;
@@ -736,7 +746,8 @@ public class MpdManager {
     }
 
     public String getVideoInitSegmentName() {
-        if (curVideoIndex < 0) { return null; }
+        int videoIndex = curVideoIndex.get();
+        if (videoIndex < 0) { return null; }
 
         int representationId = getRepresentationIndex(CONTENT_VIDEO_TYPE);
         List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
@@ -745,7 +756,7 @@ public class MpdManager {
             String videoInitSegmentName = getRawInitializationSegmentName(representations.get(representationId));
             videoInitSegmentName = videoInitSegmentName.replace(
                     AppInstance.getInstance().getConfigManager().getRepresentationIdFormat(),
-                    curVideoIndex + ""
+                    videoIndex + ""
             );
             // outdoor_market_ambiance_Dolby_init0.m4s
             return videoInitSegmentName;
@@ -755,7 +766,12 @@ public class MpdManager {
     }
 
     public String getVideoMediaSegmentName() {
-        if (curVideoIndex < 0) { return null; }
+        return getVideoMediaSegmentName(getVideoSegmentSeqNum());
+    }
+
+    public String getVideoMediaSegmentName(long videoSegmentSeqNum) {
+        int videoIndex = curVideoIndex.get();
+        if (videoIndex < 0) { return null; }
 
         int representationId = getRepresentationIndex(CONTENT_VIDEO_TYPE);
         List<Representation> representations = getRepresentations(CONTENT_VIDEO_TYPE);
@@ -766,11 +782,11 @@ public class MpdManager {
             // outdoor_market_ambiance_Dolby_chunk$RepresentationID$_$Number%05d$.m4s
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getRepresentationIdFormat(),
-                    curVideoIndex + ""
+                    videoIndex + ""
             );
             mediaSegmentName = mediaSegmentName.replace(
                     configManager.getChunkNumberFormat(),
-                    String.format(configManager.getSegmentNumberFormat(), getVideoSegmentSeqNum())
+                    String.format(configManager.getSegmentNumberFormat(), videoSegmentSeqNum)
             );
             // outdoor_market_ambiance_Dolby_chunk0_00001.m4s
             return mediaSegmentName;
@@ -790,16 +806,16 @@ public class MpdManager {
         int representationId;
         if (isVideoDefinitionFirst) {
             if (contentType.equals(CONTENT_AUDIO_TYPE)) {
-                representationId = curAudioIndex;
+                representationId = curAudioIndex.get();
                 representationId -= audioRepresentationIdList.get(0);
             } else {
-                representationId = curVideoIndex;
+                representationId = curVideoIndex.get();
             }
         } else {
             if (contentType.equals(CONTENT_AUDIO_TYPE)) {
-                representationId = curAudioIndex;
+                representationId = curAudioIndex.get();
             } else {
-                representationId = curVideoIndex;
+                representationId = curVideoIndex.get();
                 representationId -= videoRepresentationIdList.get(0);
             }
         }
@@ -963,6 +979,10 @@ public class MpdManager {
         //curMpdMaxSegmentDuration = curMpdMaxSegmentDuration.plusSeconds(segmentDurationOffsetSec);
 
         OffsetDateTime curAst = mpd.getAvailabilityStartTime();
+        if (curAst == null) {
+            curAst = OffsetDateTime.now();
+        }
+
         remoteMpdAvailabilityStartTime = curAst;
         OffsetDateTime newAst = curAst.plusSeconds(segmentDurationOffsetSec);
         logger.debug("[MpdManager({})] [REMOTE] AvailabilityStartTime has changed. ({} > {}, offset={})",
@@ -973,7 +993,7 @@ public class MpdManager {
 
         mpd = mpd.buildUpon()
                 .withAvailabilityStartTime(newAst)
-                .withMediaPresentationDuration(Duration.ofSeconds(configManager.getChunkFileDeletionIntervalSeconds()))
+                .withMediaPresentationDuration(Duration.ofSeconds(configManager.getChunkFileDeletionWindowSize()))
                 //.withMinBufferTime(Duration.ofSeconds(StreamConfigManager.MIN_BUFFER_TIME))
                 //.withMaxSegmentDuration(curMpdMaxSegmentDuration)
                 .build();
@@ -983,6 +1003,10 @@ public class MpdManager {
         long segmentDurationOffsetSec = (long) AppInstance.getInstance().getConfigManager().getLocalTimeOffset(); // seconds
 
         OffsetDateTime curAst = mpd.getAvailabilityStartTime();
+        if (curAst == null) {
+            curAst = OffsetDateTime.now();
+        }
+
         remoteMpdAvailabilityStartTime = curAst;
         OffsetDateTime newAst = curAst.plusSeconds(segmentDurationOffsetSec);
         logger.debug("[MpdManager({})] [LOCAL] AvailabilityStartTime has changed. ({} > {}, offset={})",
@@ -1036,6 +1060,14 @@ public class MpdManager {
 
     public void setIsMpdDone(boolean isMpdDone) {
         this.isMpdDone.set(isMpdDone);
+    }
+
+    public int getCurVideoIndex() {
+        return curVideoIndex.get();
+    }
+
+    public int getCurAudioIndex() {
+        return curAudioIndex.get();
     }
     ////////////////////////////////////////////////////////////
 

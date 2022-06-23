@@ -6,7 +6,8 @@ import config.ConfigManager;
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
 import dash.mpd.parser.mpd.MPD;
-import dash.unit.tool.OldFileController;
+import dash.unit.segment.MediaSegmentController;
+import dash.unit.segment.OldFileController;
 import network.definition.NetAddress;
 import network.socket.SocketProtocol;
 import org.apache.commons.io.FileUtils;
@@ -39,19 +40,21 @@ public class DashUnit {
 
     private String inputFilePath = null;
     private String outputFilePath = null;
+    private String mpdParentPath = null;
 
     private final AtomicBoolean isRegistered = new AtomicBoolean(false);
     private final AtomicBoolean isLiveStreaming = new AtomicBoolean(false);
 
     public final String REMOTE_CAMERA_SERVICE_SCHEDULE_KEY;
-    public final String OLD_FILE_CONTROL_SCHEDULE_KEY;
 
     private final transient ScheduleManager scheduleManager = new ScheduleManager();
     private transient RemoteStreamService remoteStreamService = null;
 
     private transient DashClient dashClient = null;
-    private transient OldFileController oldFileController = null;
     private final transient FileManager fileManager = new FileManager();
+
+    private transient MediaSegmentController audioSegmentController = null;
+    private transient MediaSegmentController videoSegmentController = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -63,14 +66,9 @@ public class DashUnit {
         this.expires = expires;
 
         this.REMOTE_CAMERA_SERVICE_SCHEDULE_KEY = "REMOTE_CAMERA_SERVICE_SCHEDULE_KEY:" + id;
-        this.OLD_FILE_CONTROL_SCHEDULE_KEY = "OLD_FILE_CONTROL_SCHEDULE_KEY:" + id;
         if (isDynamic) {
             if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
                 logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
-            }
-
-            if (scheduleManager.initJob(OLD_FILE_CONTROL_SCHEDULE_KEY, 1, 1)) {
-                logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, OLD_FILE_CONTROL_SCHEDULE_KEY);
             }
         }
     }
@@ -144,7 +142,9 @@ public class DashUnit {
                     }
                 }).start();
 
-                // OLD FILE CONTROLLER
+                //////////////////////////////
+                // AUDIO SEGMENT CONTROLLER
+                // VIDEO SEGMENT CONTROLLER
                 String dashPath = mpdPath;
                 String dashPathExtension = FileUtils.getExtension(dashPath);
                 if (!dashPathExtension.isEmpty()) {
@@ -152,24 +152,26 @@ public class DashUnit {
                     logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", id, dashPathExtension, dashPath);
                 }
 
-                Job oldFileControlJob = new JobBuilder()
-                        .setScheduleManager(scheduleManager)
-                        .setName(OldFileController.class.getSimpleName() + "_" + id)
-                        .setInitialDelay(0)
-                        .setInterval(1000)
-                        .setTimeUnit(TimeUnit.MILLISECONDS)
-                        .setPriority(1)
-                        .setTotalRunCount(1)
-                        .setIsLasted(true)
-                        .build();
-                oldFileController = new OldFileController(oldFileControlJob, id, dashPath);
-
-                if (scheduleManager.startJob(
-                        OLD_FILE_CONTROL_SCHEDULE_KEY,
-                        oldFileController.getJob())) {
-                    logger.debug("[DashUnit(id={})] [+RUN] OldFileController", id);
-                } else {
-                    logger.warn("[DashUnit(id={})] [-RUN FAIL] OldFileController", id);
+                /**
+                 * # 문제
+                 * - 일정 시간이 지나면 오디오가 들리지 않는다.
+                 *
+                 * # 원인
+                 * - 비디오가 오디오보다 느리게 수신되기 때문이다.
+                 * > 비디오 세그먼트 번호가 오디오 세그먼트 번호보다 느려진다.
+                 * > 일정한 간격이 없이 계속해서 느려진다.
+                 * > 결국 해당 미디어(음성)는 스트림 참여자가 수신하기 전에 삭제된다. (데이터 유실, 소리가 안들림)
+                 * - 흘러가는 시간은 동일하지만 생성되는 비디오 세그먼트 번호는 점점 느려지고, 오디오 세그먼트 번호는 점점 빨라진다.
+                 *
+                 * # 해결 방안
+                 * - 다른 미디어 세그먼트 종류이므로 각 미디어마다 독립적인 삭제를 적용해야 한다. 즉, 흘러가는 시간을 각 미디어 종류마다 적용해야 한다.
+                 * - 요청받은 미디어 세그먼트 번호가 첫 번째 세그먼트 번호와 가깝다면(전체 세그먼트 파일 개수의 중간보다 작거나 같으면), 삭제하지 않도록 해서 미디어 연속성을 유지하도록 한다.
+                 */
+                audioSegmentController = new MediaSegmentController(id, MediaType.AUDIO, scheduleManager);
+                audioSegmentController.start(dashClient.getMpdManager(), dashPath);
+                if (!configManager.isAudioOnly()) {
+                    videoSegmentController = new MediaSegmentController(id, MediaType.VIDEO, scheduleManager);
+                    videoSegmentController.start(dashClient.getMpdManager(), dashPath);
                 }
 
                 logger.debug("[DashUnit(id={})] [+RUN] Dash client streaming", id);
@@ -190,11 +192,14 @@ public class DashUnit {
     public void finishLiveStreaming() {
         if (isLiveStreaming.get()) {
             //////////////////////////////
-            // OLD FILE CONTROLLER
-            if (oldFileController != null) {
-                scheduleManager.stopJob(OLD_FILE_CONTROL_SCHEDULE_KEY, oldFileController.getJob());
-                oldFileController = null;
-                logger.debug("[DashUnit(id={})] [-FINISH] OldFileController", id);
+            // AUDIO SEGMENT CONTROLLER
+            if (audioSegmentController != null) {
+                audioSegmentController.stop();
+            }
+
+            // VIDEO SEGMENT CONTROLLER
+            if (videoSegmentController != null) {
+                videoSegmentController.stop();
             }
             //////////////////////////////
 
@@ -226,7 +231,6 @@ public class DashUnit {
     }
 
     public void stop() {
-        scheduleManager.stopAll(OLD_FILE_CONTROL_SCHEDULE_KEY);
         scheduleManager.stopAll(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
     }
 
@@ -312,6 +316,22 @@ public class DashUnit {
 
     public void setDashClient(DashClient dashClient) {
         this.dashClient = dashClient;
+    }
+
+    public MediaSegmentController getAudioSegmentController() {
+        return audioSegmentController;
+    }
+
+    public void setAudioSegmentController(MediaSegmentController audioSegmentController) {
+        this.audioSegmentController = audioSegmentController;
+    }
+
+    public MediaSegmentController getVideoSegmentController() {
+        return videoSegmentController;
+    }
+
+    public void setVideoSegmentController(MediaSegmentController videoSegmentController) {
+        this.videoSegmentController = videoSegmentController;
     }
     ////////////////////////////////////////////////////////////
 

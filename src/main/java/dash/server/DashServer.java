@@ -15,7 +15,6 @@ import dash.server.handler.HttpMessageManager;
 import dash.server.network.DashLocalAddressManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
-import dash.unit.tool.OldFileController;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import io.netty.buffer.ByteBuf;
@@ -183,7 +182,7 @@ public class DashServer {
             if (baseEnvironment.getScheduleManager().initJob(DASH_SCHEDULE_JOB, 5, 5 * 2)) {
                 Job localStreamServiceJob = new JobBuilder()
                         .setScheduleManager(baseEnvironment.getScheduleManager())
-                        .setName(OldFileController.class.getSimpleName())
+                        .setName(LocalStreamService.class.getSimpleName())
                         .setInitialDelay(0)
                         .setInterval(0)
                         .setTimeUnit(TimeUnit.MILLISECONDS)
@@ -445,6 +444,13 @@ public class DashServer {
             final FullHttpRequest request) {
 
         writeErrorResponse(ctx, request, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    public void writeBadRequestError(
+            final ChannelHandlerContext ctx,
+            final FullHttpRequest request) {
+
+        writeErrorResponse(ctx, request, HttpResponseStatus.BAD_REQUEST);
     }
 
     private void writeErrorResponse(

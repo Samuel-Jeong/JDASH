@@ -84,7 +84,7 @@ public class ConfigManager {
     public static final String FIELD_MEDIA_BASE_PATH = "MEDIA_BASE_PATH";
     public static final String FIELD_MEDIA_LIST_PATH = "MEDIA_LIST_PATH";
     public static final String FIELD_CLEAR_DASH_DATA_IF_SESSION_CLOSED = "CLEAR_DASH_DATA_IF_SESSION_CLOSED";
-    public static final String FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC = "CHUNK_FILE_DELETION_INTERVAL_SEC";
+    public static final String FIELD_CHUNK_FILE_DELETION_WINDOW_SIZE = "CHUNK_FILE_DELETION_WINDOW_SIZE";
     public static final String FIELD_AUDIO_ONLY = "AUDIO_ONLY";
     public static final String FIELD_LOCAL_AUDIO_CODEC = "LOCAL_AUDIO_CODEC";
     public static final String FIELD_LOCAL_AUDIO_SAMPLERATE = "LOCAL_AUDIO_SAMPLERATE";
@@ -158,7 +158,7 @@ public class ConfigManager {
     private String mediaBasePath = null;
     private String mediaListPath = null;
     private boolean clearDashDataIfSessionClosed = true;
-    private int chunkFileDeletionIntervalSeconds = 0;
+    private int chunkFileDeletionWindowSize = 0;
     private boolean audioOnly = false;
     private int localAudioCodec = 0;
     private int localAudioSampleRate = 0;
@@ -559,14 +559,14 @@ public class ConfigManager {
             this.clearDashDataIfSessionClosed = Boolean.parseBoolean(clearDashDataIfSessionClosedString);
         }
 
-        String chunkFileDeletionIntervalSecondsString = getIniValue(SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
-        if (chunkFileDeletionIntervalSecondsString == null) {
-            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+        String chunkFileDeletionWindowSizeString = getIniValue(SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_WINDOW_SIZE);
+        if (chunkFileDeletionWindowSizeString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_WINDOW_SIZE);
             System.exit(1);
         } else {
-            this.chunkFileDeletionIntervalSeconds = Integer.parseInt(chunkFileDeletionIntervalSecondsString);
-            if (this.chunkFileDeletionIntervalSeconds <= 0) {
-                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_INTERVAL_SEC);
+            this.chunkFileDeletionWindowSize = Integer.parseInt(chunkFileDeletionWindowSizeString);
+            if (this.chunkFileDeletionWindowSize <= 0) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_MEDIA, FIELD_CHUNK_FILE_DELETION_WINDOW_SIZE);
                 System.exit(1);
             }
         }

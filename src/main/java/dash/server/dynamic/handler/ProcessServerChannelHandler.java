@@ -266,6 +266,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
         mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
         dashUnit.setInputFilePath(sourceUri);
         dashUnit.setOutputFilePath(mpdPath);
+
         if (dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath)) {
             logger.debug("[ProcessServerChannelHandler] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
                     dashUnit.getId(), mpdPath, streamUri, sourceUri

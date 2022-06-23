@@ -39,7 +39,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
 
     public DashMpdHttpMessageHandler(DashClient dashClient) {
         this.dashClient = dashClient;
-        this.defaultMediaPresentationDuration = AppInstance.getInstance().getConfigManager().getChunkFileDeletionIntervalSeconds();
+        this.defaultMediaPresentationDuration = AppInstance.getInstance().getConfigManager().getChunkFileDeletionWindowSize();
         this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
     }
 
