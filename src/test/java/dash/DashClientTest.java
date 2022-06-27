@@ -37,6 +37,7 @@ public class DashClientTest {
         String targetBasePath = System.getProperty("user.dir") + "/src/test/resources/client_test_resources/jamesj";
         DashClient dashClient = new DashClient(
                 "TEST_1",
+                targetBasePath + "/live/jamesj/jamesj.mpd",
                 "http://" + configManager.getHttpTargetIp() +
                         ":" + configManager.getHttpTargetPort() +
                         "/live/jamesj/jamesj.mpd",
@@ -48,7 +49,7 @@ public class DashClientTest {
                 configManager.getHttpTargetPort(),
                 true, SocketProtocol.TCP
         );
-        dashClient.start(targetAddress);
+        dashClient.start(new ScheduleManager(), targetAddress);
         ////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////

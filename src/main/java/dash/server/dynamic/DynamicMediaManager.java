@@ -1,7 +1,7 @@
 package dash.server.dynamic;
 
-import dash.server.dynamic.handler.ProcessClientChannelHandler;
-import dash.server.dynamic.handler.ProcessServerChannelHandler;
+import dash.server.dynamic.handler.PreProcessClientChannelHandler;
+import dash.server.dynamic.handler.PreProcessServerChannelHandler;
 import dash.unit.DashUnit;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -130,7 +130,7 @@ public class DynamicMediaManager {
         @Override
         public void initChannel(NioDatagramChannel nioDatagramChannel) {
             final ChannelPipeline p = nioDatagramChannel.pipeline();
-            p.addLast("client_handler", new ProcessClientChannelHandler());
+            p.addLast("client_handler", new PreProcessClientChannelHandler());
         }
     }
 
@@ -141,7 +141,7 @@ public class DynamicMediaManager {
         @Override
         public void initChannel(NioDatagramChannel nioDatagramChannel) {
             final ChannelPipeline p = nioDatagramChannel.pipeline();
-            p.addLast("server_handler", new ProcessServerChannelHandler());
+            p.addLast("server_handler", new PreProcessServerChannelHandler());
         }
     }
     ////////////////////////////////////////////////////////////

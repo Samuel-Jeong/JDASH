@@ -4,6 +4,7 @@ import config.ConfigManager;
 import dash.server.handler.definition.HttpMessageHandler;
 import dash.server.handler.definition.HttpMessageRoute;
 import dash.server.handler.definition.HttpMessageRouteTable;
+import instance.BaseEnvironment;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -52,12 +53,19 @@ public class HttpMessageManager {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public HttpMessageManager(ScheduleManager scheduleManager, SocketManager socketManager) {
+    public HttpMessageManager(BaseEnvironment baseEnvironment) {
         ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         this.serviceName = configManager.getServiceName();
 
-        this.scheduleManager = scheduleManager;
-        this.socketManager = socketManager;
+        this.scheduleManager = baseEnvironment.getScheduleManager();
+        this.socketManager = new SocketManager(
+                baseEnvironment,
+                true, true,
+                configManager.getThreadCount(),
+                configManager.getSendBufSize(),
+                configManager.getRecvBufSize()
+        ); // eager initialization
+
         this.routeTable = new HttpMessageRouteTable();
 
         localListenAddress = new NetAddress(

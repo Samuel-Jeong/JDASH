@@ -8,6 +8,7 @@ import dash.server.handler.definition.HttpMessageRoute;
 import dash.server.handler.definition.HttpMessageRouteTable;
 import dash.server.handler.definition.HttpRequest;
 import dash.unit.DashUnit;
+import dash.unit.segment.MediaSegmentController;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -251,9 +252,15 @@ public class DashHttpMessageFilter extends SimpleChannelInboundHandler<Object> {
                             representationId = Integer.parseInt(representationIdString);
 
                             if (representationId == curAudioIndex) { // 요청된 오디오 세그먼트 번호 등록 > 통과
-                                dashUnit.getAudioSegmentController().getMediaSegmentInfo().setRequestedSegmentNumber(segmentNumber);
+                                MediaSegmentController audioSegmentController = dashClient.getAudioSegmentController();
+                                if (audioSegmentController != null) {
+                                    audioSegmentController.getMediaSegmentInfo().setRequestedSegmentNumber(segmentNumber);
+                                }
                             } else if (representationId == curVideoIndex) { // 요청된 비디오 세그먼트 번호 등록 > 통과
-                                dashUnit.getVideoSegmentController().getMediaSegmentInfo().setRequestedSegmentNumber(segmentNumber);
+                                MediaSegmentController videoSegmentController = dashClient.getVideoSegmentController();
+                                if (videoSegmentController != null) {
+                                    videoSegmentController.getMediaSegmentInfo().setRequestedSegmentNumber(segmentNumber);
+                                }
                             } else { // 전달받은 MPD 정보와 일치하지 않음 (RepresentationID for audio, video)
                                 logger.warn("[DashHttpMessageFilter({})] Fail to match with the mpd manager. (value={}, audioIndex={}, videoIndex={}, segmentNumber={})",
                                         dashUnit.getId(), representationId, curAudioIndex, curVideoIndex, segmentNumber

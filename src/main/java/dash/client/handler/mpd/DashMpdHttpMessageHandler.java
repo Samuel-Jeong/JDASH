@@ -9,6 +9,7 @@ import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import dash.unit.segment.MediaSegmentController;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -53,7 +54,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
             HttpContent httpContent = (HttpContent) httpObject;
             ByteBuf buf = httpContent.content();
             if (buf == null) {
-                logger.warn("[ProcessClientChannelHandler] DatagramPacket's content is null.");
+                logger.warn("[PreProcessClientChannelHandler] DatagramPacket's content is null.");
                 ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
                 channelHandlerContext.close();
                 return;
@@ -61,7 +62,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
 
             int readBytes = buf.readableBytes();
             if (buf.readableBytes() <= 0) {
-                logger.warn("[ProcessClientChannelHandler] Message is null. Fail to get the mpd.");
+                logger.warn("[PreProcessClientChannelHandler] Message is null. Fail to get the mpd.");
                 ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
                 channelHandlerContext.close();
                 return;
@@ -89,6 +90,22 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
                     ServiceManager.getInstance().getDashServer().deleteDashUnit(dashClient.getDashUnitId());
                     channelHandlerContext.close();
                     return;
+                }
+
+                MediaSegmentController audioSegmentController = dashClient.getAudioSegmentController();
+                if (audioSegmentController != null
+                        && audioSegmentController.getMediaSegmentInfo().getFirstSegmentNumber() == 0) {
+                    audioSegmentController.getMediaSegmentInfo().setFirstSegmentNumber(
+                            dashClient.getMpdManager().getAudioSegmentSeqNum()
+                    );
+                }
+
+                MediaSegmentController videoSegmentController = dashClient.getVideoSegmentController();
+                if (videoSegmentController != null
+                        && videoSegmentController.getMediaSegmentInfo().getFirstSegmentNumber() == 0) {
+                    videoSegmentController.getMediaSegmentInfo().setFirstSegmentNumber(
+                            dashClient.getMpdManager().getVideoSegmentSeqNum()
+                    );
                 }
 
                 // MPD 재요청

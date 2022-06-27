@@ -13,13 +13,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.ServiceManager;
 
-public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+public class PreProcessClientChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcessClientChannelHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PreProcessClientChannelHandler.class);
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    public ProcessClientChannelHandler() {
+    public PreProcessClientChannelHandler() {
         logger.debug("ClientHandler is created.");
     }
 
@@ -27,13 +27,13 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, DatagramPacket datagramPacket) throws Exception {
         ByteBuf buf = datagramPacket.content();
         if (buf == null) {
-            logger.warn("[ProcessClientChannelHandler] DatagramPacket's content is null.");
+            logger.warn("[PreProcessClientChannelHandler] DatagramPacket's content is null.");
             return;
         }
 
         int readBytes = buf.readableBytes();
         if (buf.readableBytes() <= 0) {
-            logger.warn("[ProcessClientChannelHandler] Message is null.");
+            logger.warn("[PreProcessClientChannelHandler] Message is null.");
             return;
         }
 
@@ -49,19 +49,19 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
             StreamingStartResponse streamingStartResponse = new StreamingStartResponse(data);
             int statusCode = streamingStartResponse.getStatusCode();
             String reason = streamingStartResponse.getReason();
-            logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
+            logger.debug("[PreProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
 
             if (statusCode == ResponseType.NOT_FOUND) {
-                logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
+                logger.debug("[PreProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
                 ServiceManager.getInstance().stop();
             }
         } else if (messageHeader.getMessageType() == MessageType.STREAMING_STOP_RES) {
             StreamingStopResponse streamingStopResponse = new StreamingStopResponse(data);
             int statusCode = streamingStopResponse.getStatusCode();
             String reason = streamingStopResponse.getReason();
-            logger.debug("[ProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
+            logger.debug("[PreProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
         } else {
-            logger.debug("[ProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);
+            logger.debug("[PreProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);
         }
     }
 
@@ -69,13 +69,13 @@ public class ProcessClientChannelHandler extends SimpleChannelInboundHandler<Dat
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        logger.warn("ProcessClientChannelHandler is inactive.");
+        logger.warn("PreProcessClientChannelHandler is inactive.");
         ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        //logger.warn("ProcessClientChannelHandler.Exception", cause);
+        //logger.warn("PreProcessClientChannelHandler.Exception", cause);
         ctx.close();
     }
 

@@ -27,7 +27,6 @@ public class DashLocalAddressManager {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(DashLocalAddressManager.class);
 
-    // TODO : 네트워크 자원 관리 필요
     // 1) [1~N] 개의 MPD local listen address 사전에 할당 필요
     // 2) [1~N] 개의 Audio local listen address 사전에 할당 필요
     // 3) [1~N] 개의 Video local listen address 사전에 할당 필요

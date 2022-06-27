@@ -9,6 +9,7 @@ import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import dash.unit.segment.MediaSegmentController;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -61,6 +62,7 @@ public class DashAudioHttpMessageHandler extends DashHttpMessageHandler {
             byte[] data = new byte[readBytes];
             buf.getBytes(0, data);
 
+            long audioSegmentSeqNum = dashClient.getMpdManager().getAudioSegmentSeqNum();
             String curAudioSegmentName = dashClient.getMpdManager().getAudioMediaSegmentName();
             if (curAudioSegmentName == null) {
                 logger.warn("[DashVideoHttpClientHandler({})] [+] [AUDIO] MediaSegment name is not defined. (audioSeqNum={})",
@@ -92,6 +94,11 @@ public class DashAudioHttpMessageHandler extends DashHttpMessageHandler {
                             dashClient.getMpdManager().getAudioMediaSegmentName()
                     );
                     dashClient.getMpdManager().makeMediaSegment(fileManager, targetAudioMediaSegPath, data);
+
+                    MediaSegmentController audioSegmentController = dashClient.getAudioSegmentController();
+                    if (audioSegmentController != null) {
+                        audioSegmentController.getMediaSegmentInfo().setLastSegmentNumber(audioSegmentSeqNum);
+                    }
                     break;
                 default:
                     break;

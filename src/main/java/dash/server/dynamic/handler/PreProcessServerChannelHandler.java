@@ -29,16 +29,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+public class PreProcessServerChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcessServerChannelHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PreProcessServerChannelHandler.class);
 
     private final ConfigManager configManager;
     private final FileManager fileManager = new FileManager();
 
     private final List<String> validatedStreamNames = new ArrayList<>();
     ////////////////////////////////////////////////////////////////////////////////
-    public ProcessServerChannelHandler() {
+    public PreProcessServerChannelHandler() {
         List<String> mediaListFileLines = fileManager.readAllLines(AppInstance.getInstance().getConfigManager().getMediaListPath());
         mediaListFileLines.stream()
                 .filter(mediaListFileLine -> mediaListFileLine != null && !mediaListFileLine.isEmpty())
@@ -61,25 +61,25 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
 
             GroupSocket groupSocket = dynamicMediaManager.getLocalGroupSocket();
             if (groupSocket == null) {
-                logger.warn("[ProcessServerChannelHandler]Listen socket is not found... Fail to process the request.");
+                logger.warn("[PreProcessServerChannelHandler]Listen socket is not found... Fail to process the request.");
                 return;
             }
 
             DestinationRecord destinationRecord = groupSocket.getDestination(dynamicMediaManager.getSessionId());
             if (destinationRecord == null) {
-                logger.warn("[ProcessServerChannelHandler] DestinationRecord is not found... Fail to process the request.");
+                logger.warn("[PreProcessServerChannelHandler] DestinationRecord is not found... Fail to process the request.");
                 return;
             }
 
             ByteBuf buf = datagramPacket.content();
             if (buf == null) {
-                logger.warn("[ProcessServerChannelHandler] DatagramPacket's content is null.");
+                logger.warn("[PreProcessServerChannelHandler] DatagramPacket's content is null.");
                 return;
             }
 
             int readBytes = buf.readableBytes();
             if (buf.readableBytes() <= 0) {
-                logger.warn("[ProcessServerChannelHandler] Message is null.");
+                logger.warn("[PreProcessServerChannelHandler] Message is null.");
                 return;
             }
 
@@ -98,14 +98,14 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 String sourceIp = streamingStartRequest.getSourceIp();
                 String streamUri = streamingStartRequest.getUri();
                 long expires = streamingStartRequest.getExpires();
-                logger.debug("[ProcessServerChannelHandler] RECV StreamingStartRequest(sourceIp={}, uri={}, expires={})", sourceIp, streamUri, expires);
+                logger.debug("[PreProcessServerChannelHandler] RECV StreamingStartRequest(sourceIp={}, uri={}, expires={})", sourceIp, streamUri, expires);
 
                 // CHECK URI is validated
                 if (!checkUriIsValidated(streamUri)) {
                     streamingStartResponse = makeResponseForStreamingStart(dashServer, ResponseType.NOT_FOUND, ResponseType.REASON_NOT_FOUND);
                 } else {
                     String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(streamUri);
-                    logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
+                    logger.debug("[PreProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                     DashUnit dashUnit = dashServer.addDashUnit(
                             StreamType.DYNAMIC, dashUnitId,
                             null, expires, true
@@ -130,37 +130,37 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 }
 
                 responseByteData = streamingStartResponse.getByteData();
-                logger.debug("[ProcessServerChannelHandler] SEND StreamingStartResponse(sourceIp={}, uri={}, streamingStartResponse=\n{})", sourceIp, streamUri, streamingStartResponse);
+                logger.debug("[PreProcessServerChannelHandler] SEND StreamingStartResponse(sourceIp={}, uri={}, streamingStartResponse=\n{})", sourceIp, streamUri, streamingStartResponse);
             } else if (messageHeader.getMessageType() == MessageType.STREAMING_STOP_REQ) {
                 StreamingStopRequest streamingStopRequest = new StreamingStopRequest(data);
                 String sourceIp = streamingStopRequest.getSourceIp();
                 String uri = streamingStopRequest.getUri();
-                logger.debug("[ProcessServerChannelHandler] RECV StreamingStopRequest(sourceIp={}, uri={})", sourceIp, uri);
+                logger.debug("[PreProcessServerChannelHandler] RECV StreamingStopRequest(sourceIp={}, uri={})", sourceIp, uri);
 
                 String dashUnitId = sourceIp + ":" + fileManager.getFilePathWithoutExtensionFromUri(uri);
-                logger.debug("[ProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
+                logger.debug("[PreProcessServerChannelHandler] DashUnitId: [{}]", dashUnitId);
                 DashUnit dashUnit = dashServer.getDashUnitById(dashUnitId);
 
                 StreamingStopResponse streamingStopResponse;
                 if (dashUnit == null) {
-                    logger.warn("[ProcessServerChannelHandler] DashUnit is not exist! (id={})", dashUnitId);
+                    logger.warn("[PreProcessServerChannelHandler] DashUnit is not exist! (id={})", dashUnitId);
                     streamingStopResponse = makeResponseForStreamingStop(dashServer, ResponseType.NOT_FOUND, ResponseType.REASON_NOT_FOUND);
                 } else {
                     dashServer.deleteDashUnit(dashUnitId);
 
-                    logger.debug("[ProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, streamingStopRequest);
+                    logger.debug("[PreProcessServerChannelHandler] DashUnit[{}]'s pre live media process is finished. (request={}", dashUnitId, streamingStopRequest);
                     streamingStopResponse = makeResponseForStreamingStop(dashServer, ResponseType.SUCCESS, ResponseType.REASON_SUCCESS);
                 }
                 responseByteData = streamingStopResponse.getByteData();
-                logger.debug("[ProcessServerChannelHandler] SEND StreamingStopResponse(sourceIp={}, uri={}, streamingStopResponse=\n{})", sourceIp, uri, streamingStopResponse);
+                logger.debug("[PreProcessServerChannelHandler] SEND StreamingStopResponse(sourceIp={}, uri={}, streamingStopResponse=\n{})", sourceIp, uri, streamingStopResponse);
             } else if (messageHeader.getMessageType() == MessageType.STREAMING_START_RES) {
                 StreamingStartResponse streamingStartResponse = new StreamingStartResponse(data);
                 int statusCode = streamingStartResponse.getStatusCode();
                 String reason = streamingStartResponse.getReason();
-                logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
+                logger.debug("[PreProcessClientChannelHandler] RECV StreamingStartResponse(statusCode={}, reason={})", statusCode, reason);
 
                 if (statusCode == ResponseType.NOT_FOUND) {
-                    logger.debug("[ProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
+                    logger.debug("[PreProcessClientChannelHandler] RECV StreamingStartResponse [404 NOT FOUND], Fail to start service.");
                     System.exit(1);
                 }
                 responseByteData = null;
@@ -168,10 +168,10 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 StreamingStopResponse streamingStopResponse = new StreamingStopResponse(data);
                 int statusCode = streamingStopResponse.getStatusCode();
                 String reason = streamingStopResponse.getReason();
-                logger.debug("[ProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
+                logger.debug("[PreProcessClientChannelHandler] RECV StreamingStopResponse(statusCode={}, reason={})", statusCode, reason);
                 responseByteData = null;
             } else {
-                logger.debug("[ProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);
+                logger.debug("[PreProcessClientChannelHandler] RECV UnknownResponse (header={})", messageHeader);
                 responseByteData = null;
             }
 
@@ -179,19 +179,19 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
                 destinationRecord.getNettyChannel().sendData(responseByteData, responseByteData.length);
             }
         } catch (Exception e) {
-            logger.warn("ProcessServerChannelHandler.channelRead0.Exception", e);
+            logger.warn("PreProcessServerChannelHandler.channelRead0.Exception", e);
         }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        logger.warn("ProcessServerChannelHandler is inactive.");
+        logger.warn("PreProcessServerChannelHandler is inactive.");
         ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.warn("ProcessServerChannelHandler.Exception", cause);
+        logger.warn("PreProcessServerChannelHandler.Exception", cause);
         ctx.close();
     }
 
@@ -258,7 +258,7 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
         File mpdPathFile = new File(mpdPath);
         if (!mpdPathFile.exists()) {
             if (mpdPathFile.mkdirs()) {
-                logger.debug("[ProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, streamUri={}, sourceUri={})", mpdPath, streamUri, sourceUri);
+                logger.debug("[PreProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, streamUri={}, sourceUri={})", mpdPath, streamUri, sourceUri);
             }
         }
 
@@ -268,12 +268,12 @@ public class ProcessServerChannelHandler extends SimpleChannelInboundHandler<Dat
         dashUnit.setOutputFilePath(mpdPath);
 
         if (dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath)) {
-            logger.debug("[ProcessServerChannelHandler] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+            logger.debug("[PreProcessServerChannelHandler] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
                     dashUnit.getId(), mpdPath, streamUri, sourceUri
             );
             return true;
         } else {
-            logger.warn("[ProcessServerChannelHandler] Fail to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+            logger.warn("[PreProcessServerChannelHandler] Fail to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
                     dashUnit.getId(), mpdPath, streamUri, sourceUri
             );
             return false;

@@ -9,6 +9,7 @@ import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import dash.unit.segment.MediaSegmentController;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -90,6 +91,7 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
             byte[] data = new byte[readBytes];
             buf.getBytes(0, data);
 
+            long videoSegmentSeqNum = dashClient.getMpdManager().getVideoSegmentSeqNum();
             String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
             if (curVideoSegmentName == null) {
                 logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] MediaSegment name is not defined. (videoSeqNum={})",
@@ -121,6 +123,11 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
                             curVideoSegmentName
                     );
                     dashClient.getMpdManager().makeMediaSegment(fileManager, targetVideoMediaSegPath, data);
+
+                    MediaSegmentController videoSegmentController = dashClient.getVideoSegmentController();
+                    if (videoSegmentController != null) {
+                        videoSegmentController.getMediaSegmentInfo().setLastSegmentNumber(videoSegmentSeqNum);
+                    }
                     break;
                 default:
                     break;

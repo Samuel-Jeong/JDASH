@@ -116,15 +116,12 @@ public class DashServer {
 
         ///////////////////////////
         // HttpMessageManager 생성
-        httpMessageManager = new HttpMessageManager(
-                baseEnvironment.getScheduleManager(),
-                httpSocketManager
-        );
+        httpMessageManager = new HttpMessageManager(baseEnvironment);
         ///////////////////////////
 
         ///////////////////////////
         // MediaManager 생성
-        mediaManager = new MediaManager(configManager.getMediaListPath());
+        mediaManager = new MediaManager(baseEnvironment, configManager.getMediaListPath());
         ///////////////////////////
 
         ///////////////////////////
@@ -213,7 +210,6 @@ public class DashServer {
         //////////////////////////////////////
         if (configManager.isEnableClient()) {
             DashServer dashServer = ServiceManager.getInstance().getDashServer();
-            DynamicMediaManager dynamicMediaManager = dashServer.getDynamicMediaManager();
             GroupSocket listenSocket = dynamicMediaManager.getLocalGroupSocket();
             if (listenSocket != null) {
                 DestinationRecord target = listenSocket.getDestination(dynamicMediaManager.getSessionId());

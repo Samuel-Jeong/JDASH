@@ -7,6 +7,7 @@ import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
+import instance.BaseEnvironment;
 import network.definition.NetAddress;
 import network.socket.SocketProtocol;
 import org.apache.commons.io.FileUtils;
@@ -25,6 +26,7 @@ public class MediaManager {
     ////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(MediaManager.class);
 
+    private final BaseEnvironment baseEnvironment;
     private final String mediaBasePath;
     private final String mediaListFilePath;
     private final List<MediaInfo> mediaInfoList = new ArrayList<>();
@@ -32,7 +34,8 @@ public class MediaManager {
     private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
     private final FileManager fileManager = new FileManager();
     ////////////////////////////////////////////////////////////
-    public MediaManager(String mediaListFilePath) {
+    public MediaManager(BaseEnvironment baseEnvironment, String mediaListFilePath) {
+        this.baseEnvironment = baseEnvironment;
         this.mediaListFilePath = mediaListFilePath;
         this.mediaBasePath = configManager.getMediaBasePath();
     }
@@ -166,7 +169,7 @@ public class MediaManager {
         String httpPath = makeHttpPath(streamUri);
         DashClient dashClient = new DashClient(
                 dashUnit.getId(),
-                httpPath, fileManager.getParentPathFromUri(mpdPath)
+                mpdPath, httpPath, fileManager.getParentPathFromUri(mpdPath)
         );
 
         // GET STATIC MEDIA SOURCE from remote dash server
@@ -175,7 +178,7 @@ public class MediaManager {
                 configManager.getHttpTargetPort(),
                 true, SocketProtocol.TCP
         );
-        if (dashClient.start(targetAddress)) {
+        if (dashClient.start(baseEnvironment.getScheduleManager(), targetAddress)) {
             dashClient.sendHttpGetRequest(httpPath, MessageType.MPD);
             dashUnit.setDashClient(dashClient);
         }

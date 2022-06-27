@@ -2,23 +2,27 @@ package dash.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import config.ConfigManager;
 import dash.client.fsm.DashClientFsmManager;
 import dash.client.fsm.DashClientState;
 import dash.client.handler.DashHttpMessageSender;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
+import dash.unit.MediaType;
 import dash.unit.StreamType;
+import dash.unit.segment.MediaSegmentController;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import network.definition.NetAddress;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
 import service.ServiceManager;
-import stream.StreamConfigManager;
+import service.scheduler.schedule.ScheduleManager;
 import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
@@ -34,6 +38,7 @@ public class DashClient {
 
     ////////////////////////////////////////////////////////////
     private transient static final Logger logger = LoggerFactory.getLogger(DashClient.class);
+    private final transient ConfigManager configManager = AppInstance.getInstance().getConfigManager();
 
     private boolean isStopped = false;
 
@@ -74,10 +79,13 @@ public class DashClient {
 
     private final transient MpdManager mpdManager;
     private final transient FileManager fileManager = new FileManager();
+
+    private transient MediaSegmentController audioSegmentController = null;
+    private transient MediaSegmentController videoSegmentController = null;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashClient(String dashUnitId, String srcPath, String targetBasePath) {
+    public DashClient(String dashUnitId, String targetMpdPath, String srcPath, String targetBasePath) {
         this.dashUnitId = dashUnitId;
         this.dashClientStateUnitId = "DASH_CLIENT_STATE:" + dashUnitId;
 
@@ -85,7 +93,7 @@ public class DashClient {
         this.srcBasePath = fileManager.getParentPathFromUri(srcPath);
         this.uriFileName = fileManager.getFileNameFromUri(srcPath);
         this.targetBasePath = targetBasePath;
-        this.targetMpdPath = fileManager.concatFilePath(this.targetBasePath, uriFileName + StreamConfigManager.DASH_POSTFIX);
+        this.targetMpdPath = targetMpdPath;
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId);
         this.mpdManager = new MpdManager(dashUnitId, targetMpdPath);
@@ -103,7 +111,7 @@ public class DashClient {
         );
     }
 
-    public boolean start(NetAddress targetAddress) {
+    public boolean start(ScheduleManager scheduleManager, NetAddress targetAddress) {
         //////////////////////////////
         // SETTING : HTTP
         if (!this.dashHttpMessageSender.start(this, targetAddress)) {
@@ -143,11 +151,51 @@ public class DashClient {
         }
         //////////////////////////////
 
+        //////////////////////////////
+        // SETTING : Segment Controller for audio & video
+        String dashPath = targetMpdPath;
+        String dashPathExtension = FileUtils.getExtension(dashPath);
+        if (!dashPathExtension.isEmpty()) {
+            dashPath = fileManager.getParentPathFromUri(dashPath);
+            logger.debug("[DashUnit(id={})] DashPathExtension is [{}]. DashPath is [{}].", dashUnitId, dashPathExtension, dashPath);
+        }
+
+        /**
+         * # 문제
+         * - 일정 시간이 지나면 오디오가 들리지 않는다.
+         *
+         * # 원인
+         * - 비디오가 오디오보다 느리게 수신되기 때문이다.
+         * > 비디오 세그먼트 번호가 오디오 세그먼트 번호보다 느려진다.
+         * > 일정한 간격이 없이 계속해서 느려진다.
+         * > 결국 해당 미디어(음성)는 스트림 참여자가 수신하기 전에 삭제된다. (데이터 유실, 소리가 안들림)
+         * - 흘러가는 시간은 동일하지만 생성되는 비디오 세그먼트 번호는 점점 느려지고, 오디오 세그먼트 번호는 점점 빨라진다.
+         *
+         * # 해결 방안
+         * - 다른 미디어 세그먼트 종류이므로 각 미디어마다 독립적인 삭제를 적용해야 한다. 즉, 흘러가는 시간을 각 미디어 종류마다 적용해야 한다.
+         * - 요청받은 미디어 세그먼트 번호가 첫 번째 세그먼트 번호와 가깝다면(전체 세그먼트 파일 개수의 중간보다 작거나 같으면), 삭제하지 않도록 해서 미디어 연속성을 유지하도록 한다.
+         */
+        audioSegmentController = new MediaSegmentController(dashUnitId, MediaType.AUDIO, scheduleManager);
+        audioSegmentController.start(getMpdManager(), dashPath);
+        if (!configManager.isAudioOnly()) {
+            videoSegmentController = new MediaSegmentController(dashUnitId, MediaType.VIDEO, scheduleManager);
+            videoSegmentController.start(getMpdManager(), dashPath);
+        }
+        //////////////////////////////
+
         logger.debug("[DashClient({})] START", dashUnitId);
         return true;
     }
 
     public void stop() {
+        if (audioSegmentController != null) {
+            audioSegmentController.stop();
+        }
+
+        if (videoSegmentController != null) {
+            videoSegmentController.stop();
+        }
+
         this.dashClientAudioFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
         if (this.dashClientVideoFsmManager != null) {
             dashClientVideoFsmManager.getStateManager().removeStateUnit(dashClientStateUnitId);
@@ -348,6 +396,14 @@ public class DashClient {
 
     public void setIsVideoRetrying(boolean isRetrying) {
         isVideoRetrying.set(isRetrying);
+    }
+
+    public MediaSegmentController getAudioSegmentController() {
+        return audioSegmentController;
+    }
+
+    public MediaSegmentController getVideoSegmentController() {
+        return videoSegmentController;
     }
     ////////////////////////////////////////////////////////////
 

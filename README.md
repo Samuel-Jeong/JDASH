@@ -33,15 +33,15 @@
             (https://github.com/bytedeco/javacv)
 
 ~~~
-
+## MAIN CODE LOGIC
+![스크린샷 2022-06-27 오후 2 23 52](https://user-images.githubusercontent.com/37236920/175865655-878abca9-29db-4b28-9f27-ecdf75bc6cdd.png)
+  
 ## Service
 ![dash_stream_flow](https://user-images.githubusercontent.com/37236920/159614833-43d3128c-fadb-435f-a528-80d496463b57.png)
   
 ![스크린샷 2022-02-15 오후 4 02 51](https://user-images.githubusercontent.com/37236920/154009715-e31fbbd9-d4b9-489d-93ed-ec72d3c00b1a.png)
   
 ![스크린샷 2022-02-10 오전 9 40 31](https://user-images.githubusercontent.com/37236920/153314792-6cc61897-911f-4924-a8fc-79ce2cf6131a.png)
-  
-![스크린샷 2022-02-15 오후 4 00 09](https://user-images.githubusercontent.com/37236920/154009420-a567b62f-65b4-41a2-8f8c-a64962c628d9.png)
   
 ### (1) DRM 적용 전
 ![스크린샷 2022-02-09 오후 3 47 00](https://user-images.githubusercontent.com/37236920/153136606-7c5bbc7c-249f-4b8d-a3ea-3b73cc8277ae.png)

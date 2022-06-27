@@ -27,15 +27,17 @@ public class RemoteCameraTest {
                 .setTotalRunCount(1)
                 .setIsLasted(true)
                 .build();
+
         RemoteStreamService remoteCameraService = new RemoteStreamService(remoteStreamServiceJob);
-        remoteCameraService.init();
-        remoteCameraService.start();
-        if (scheduleManager.startJob(
-                "REMOTE_CAMERA_TEST",
-                remoteCameraService.getJob())) {
-            logger.debug("[RemoteCameraTest] [+RUN] Success to start the remote camera.");
-        } else {
-            logger.warn("[RemoteCameraTest)] [-RUN FAIL] Fail to start the remote camera.");
+        if (remoteCameraService.init()) {
+            remoteCameraService.start();
+            if (scheduleManager.startJob(
+                    "REMOTE_CAMERA_TEST",
+                    remoteCameraService.getJob())) {
+                logger.debug("[RemoteCameraTest] [+RUN] Success to start the remote camera.");
+            } else {
+                logger.warn("[RemoteCameraTest)] [-RUN FAIL] Fail to start the remote camera.");
+            }
         }
     }
 }

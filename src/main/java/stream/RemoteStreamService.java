@@ -88,7 +88,9 @@ public class RemoteStreamService extends JobContainer {
 
             /////////////////////////////////
             // [OUTPUT] REMOTE CAMERA CANVAS CONTROLLER
-            if (configManager.isEnableClient() && configManager.isEnableGui() && !configManager.isAudioOnly()) {
+            if (configManager.isEnableClient()
+                    && configManager.isEnableGui()
+                    && !configManager.isAudioOnly()) {
                 if (scheduleManager.initJob(REMOTE_STREAM_SCHEDULE_KEY, 1, 1)) {
                     logger.debug("[RemoteStreamService] Success to init [{}]", REMOTE_STREAM_SCHEDULE_KEY);
 
@@ -113,6 +115,8 @@ public class RemoteStreamService extends JobContainer {
                         logger.warn("[RemoteStreamService({})] [-RUN FAIL] Fail to start the remote camera.", dashUnitId);
                         return false;
                     }
+
+                    logger.debug("[RemoteStreamService({})] Success to init the remote stream service.", dashUnitId);
                 }
             }
             /////////////////////////////////
@@ -148,7 +152,7 @@ public class RemoteStreamService extends JobContainer {
     ///////////////////////////////////////////////////////////////////////////
     public void start() {
         getJob().setRunnable(() -> {
-            //logger.info("[RemoteStreamService] RUNNING...");
+            logger.info("[RemoteStreamService] RUNNING...");
 
             FFmpegFrameRecorder audioFrameRecorder = null;
             FFmpegFrameRecorder videoFrameRecorder = null;
@@ -220,15 +224,12 @@ public class RemoteStreamService extends JobContainer {
                         //////////////////////////////////////
                         // INTERLEAVED DATA
                         if (capturedFrame.image != null && capturedFrame.samples != null) {
-                            //logger.warn("[INTERLEAVED] FRAME: {} {}", capturedFrame.timestamp, capturedFrame.getTypes());
                             videoFrameRecorder.record(capturedFrame);
-                            if (remoteCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
                         }
                         //////////////////////////////////////
                         // VIDEO DATA
                         else if (capturedFrame.image != null && capturedFrame.image.length > 0) {
                             videoFrameRecorder.record(capturedFrame);
-                            if (remoteCameraCanvasController != null) { frameQueue.offer(capturedFrame); }
                         }
                         //////////////////////////////////////
                         // AUDIO DATA
@@ -236,13 +237,17 @@ public class RemoteStreamService extends JobContainer {
                             videoFrameRecorder.record(capturedFrame);
                         }
                         /////////////////////////////////////
+
+                        // Only use for debugging, Must ignore in the production level
+                        //logger.debug("[{}] FRAME: {}", capturedFrame.getTypes(), capturedFrame.timestamp);
+                        /////////////////////////////////////
                     }
                     /////////////////////////////////////
                 }
                 /////////////////////////////////
             } catch (Exception e) {
-                // ignore
-                //logger.warn("RemoteStreamService.run.Exception", e);
+                // Only use for debugging, Must ignore in the production level
+                logger.warn("RemoteStreamService.run.Exception", e);
             } finally {
                 try {
                     if (videoFrameRecorder != null) {
@@ -259,7 +264,7 @@ public class RemoteStreamService extends JobContainer {
                 }
             }
 
-            //logger.info("[RemoteStreamService] STOPPING...");
+            logger.debug("[RemoteStreamService({}) STOPPING...", dashUnitId);
         });
     }
     ///////////////////////////////////////////////////////////////////////////
