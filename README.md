@@ -34,7 +34,7 @@
 
 ~~~
 ## MAIN CODE LOGIC
-![스크린샷 2022-06-27 오후 2 23 52](https://user-images.githubusercontent.com/37236920/175865655-878abca9-29db-4b28-9f27-ecdf75bc6cdd.png)
+![JDASH_메인코드로직](https://user-images.githubusercontent.com/37236920/176051458-83c6e08c-20d5-4c5f-b63c-a7ed552dc485.png)
   
 ## Service
 ![dash_stream_flow](https://user-images.githubusercontent.com/37236920/159614833-43d3128c-fadb-435f-a528-80d496463b57.png)
