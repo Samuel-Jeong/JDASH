@@ -4,6 +4,7 @@ import config.ConfigManager;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +17,6 @@ import util.module.ConcurrentCyclicFIFO;
 import util.module.FileManager;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
 public class RemoteStreamService extends JobContainer {
 
@@ -65,7 +64,7 @@ public class RemoteStreamService extends JobContainer {
         this.scheduleManager = remoteStreamServiceJob.getScheduleManager();
         this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
 
-        String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+        String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp() + ":" + configManager.getRtmpServerPort();
         FileManager fileManager = new FileManager();
         RTMP_PATH = fileManager.concatFilePath(networkPath, configManager.getCameraPath());
         DASH_PATH = fileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath() + StreamConfigManager.DASH_POSTFIX);
@@ -184,7 +183,10 @@ public class RemoteStreamService extends JobContainer {
                     );
                     videoFrameRecorder.start();
                 }
-                avutil.av_log_set_level(AV_LOG_ERROR);
+
+                avutil.av_log_set_level(configManager.getRtmpLogLevel());
+                System.setProperty("org.bytedeco.javacpp.logger", "slf4j");
+                FFmpegLogCallback.set();
                 /////////////////////////////////
 
                 /////////////////////////////////

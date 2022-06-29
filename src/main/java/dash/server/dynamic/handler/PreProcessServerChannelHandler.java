@@ -245,7 +245,7 @@ public class PreProcessServerChannelHandler extends SimpleChannelInboundHandler<
 
     private String makeNetworkPath() {
         if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-            return StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+            return StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp() + ":" + configManager.getRtmpServerPort();
         } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
             return StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
         }

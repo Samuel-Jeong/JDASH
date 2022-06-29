@@ -61,7 +61,7 @@ public class LocalStreamService extends JobContainer {
         this.configManager = AppInstance.getInstance().getConfigManager();
 
         if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
-            String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpPublishIp() + ":" + configManager.getRtmpPublishPort();
+            String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp() + ":" + configManager.getRtmpServerPort();
             URI = fileManager.concatFilePath(networkPath, configManager.getCameraPath());
         } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
             String uriFileName = fileManager.getFileNameFromUri(configManager.getCameraPath());

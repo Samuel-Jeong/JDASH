@@ -4,6 +4,7 @@ import lombok.Data;
 import org.ini4j.Ini;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stream.AvUtilLogLevelChecker;
 import stream.StreamConfigManager;
 
 import java.io.File;
@@ -113,6 +114,7 @@ public class ConfigManager {
     // RTMP
     public static final String FIELD_RTMP_PUBLISH_IP = "RTMP_PUBLISH_IP";
     public static final String FIELD_RTMP_PUBLISH_PORT = "RTMP_PUBLISH_PORT";
+    public static final String FIELD_RTMP_LOG_LEVEL = "LOG_LEVEL";
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -185,8 +187,16 @@ public class ConfigManager {
     private int windowSize = 0;
 
     // RTMP
-    private String rtmpPublishIp = null;
-    private int rtmpPublishPort = 0;
+    private String rtmpServerIp = null;
+    private int rtmpServerPort = 0;
+
+    /**
+     * AV_LOG_QUIET = -8; AV_LOG_PANIC = 0; AV_LOG_FATAL = 8;
+     * AV_LOG_ERROR = 16; AV_LOG_WARNING = 24; AV_LOG_INFO = 32;
+     * AV_LOG_VERBOSE = 40; AV_LOG_DEBUG = 48; AV_LOG_TRACE = 56;
+     * AV_LOG_MAX_OFFSET = 64;
+     */
+    private int rtmpLogLevel = 16; // default : 16 (AV_LOG_ERROR)
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -818,20 +828,37 @@ public class ConfigManager {
      * @brief RTMP Section 을 로드하는 함수
      */
     private void loadRtmpConfig() {
-        this.rtmpPublishIp = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
-        if (this.rtmpPublishIp == null) {
+        this.rtmpServerIp = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
+        if (this.rtmpServerIp == null) {
             logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_IP);
             System.exit(1);
         }
 
-        String rtmpPublishPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
-        if (rtmpPublishPortString == null) {
+        String rtmpServerPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
+        if (rtmpServerPortString == null) {
             logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
             System.exit(1);
         } else {
-            this.rtmpPublishPort = Integer.parseInt(rtmpPublishPortString);
-            if (this.rtmpPublishPort <= 0 || this.rtmpPublishPort > 65535) {
+            this.rtmpServerPort = Integer.parseInt(rtmpServerPortString);
+            if (this.rtmpServerPort <= 0 || this.rtmpServerPort > 65535) {
                 logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
+                System.exit(1);
+            }
+        }
+
+        String logLevelString = getIniValue(SECTION_RTMP, FIELD_RTMP_LOG_LEVEL);
+        if (logLevelString == null) {
+            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_LOG_LEVEL);
+            System.exit(1);
+        } else {
+            this.rtmpLogLevel = Integer.parseInt(logLevelString);
+            if (this.rtmpLogLevel < -8 || this.rtmpLogLevel > 64) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_LOG_LEVEL);
+                System.exit(1);
+            }
+
+            if (!AvUtilLogLevelChecker.checkLogLevel(rtmpLogLevel)) {
+                logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_LOG_LEVEL);
                 System.exit(1);
             }
         }
