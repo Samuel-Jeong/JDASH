@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
+import dash.mpd.MpdManager;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import instance.BaseEnvironment;
@@ -144,6 +145,7 @@ public class MediaManager {
             String mpdPath = makeMpdPath(localStreamPath);
             dashUnit.setInputFilePath(localStreamPath);
             dashUnit.setOutputFilePath(mpdPath);
+            dashUnit.setMpdParentPath(fileManager.getParentPathFromUri(mpdPath));
 
             if (!configManager.isEnableClient() && configManager.isEnablePreloadWithDash()) {
                 startDashClient(mpdPath, streamUri, dashUnit);
@@ -169,7 +171,8 @@ public class MediaManager {
         String httpPath = makeHttpPath(streamUri);
         DashClient dashClient = new DashClient(
                 dashUnit.getId(),
-                mpdPath, httpPath, fileManager.getParentPathFromUri(mpdPath)
+                mpdPath, httpPath, fileManager.getParentPathFromUri(mpdPath),
+                new MpdManager(dashUnit.getId(), mpdPath)
         );
 
         // GET STATIC MEDIA SOURCE from remote dash server

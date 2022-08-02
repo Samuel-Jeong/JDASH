@@ -35,6 +35,8 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
     private final DashClient dashClient;
     private final FileManager fileManager = new FileManager();
 
+    private String representationId;
+
     public DashVideoHttpMessageHandler(DashClient dashClient) {
         this.dashClient = dashClient;
         this.retryCount = AppInstance.getInstance().getConfigManager().getDownloadChunkRetryCount();
@@ -91,11 +93,13 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
             byte[] data = new byte[readBytes];
             buf.getBytes(0, data);
 
-            long videoSegmentSeqNum = dashClient.getMpdManager().getVideoSegmentSeqNum();
-            String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+            // TODO : Handle multiple representations
+            this.representationId = dashClient.getMpdManager().getFirstRepresentationId(MpdManager.CONTENT_VIDEO_TYPE);
+            long videoSegmentSeqNum = dashClient.getMpdManager().getVideoSegmentSeqNum(representationId);
+            String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName(representationId);
             if (curVideoSegmentName == null) {
                 logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] MediaSegment name is not defined. (videoSeqNum={})",
-                        dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum()
+                        dashClient.getDashUnitId(), dashClient.getMpdManager().getVideoSegmentSeqNum(representationId)
                 );
                 finish(channelHandlerContext);
                 return;
@@ -133,7 +137,7 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
                     break;
             }
 
-            logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
+            //logger.trace("[DashVideoHttpClientHandler({})] [VIDEO] {}", dashClient.getDashUnitId(), data);
             if (httpContent instanceof LastHttpContent) {
                 switch (curVideoState) {
                     case DashClientState.MPD_DONE:
@@ -175,8 +179,8 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
 
     @Override
     protected void sendReqForSegment(ChannelHandlerContext channelHandlerContext, boolean isTrySleep) {
-        long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum();
-        String newVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+        long curSeqNum = dashClient.getMpdManager().incAndGetVideoSegmentSeqNum(representationId);
+        String newVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName(representationId);
         if (newVideoSegmentName == null) {
             logger.warn("[DashVideoHttpClientHandler({})] [+] [VIDEO] Current MediaSegment name is not defined. (videoSeqNum={})",
                     dashClient.getDashUnitId(), curSeqNum
@@ -188,10 +192,10 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
 
         if (isTrySleep) {
             // SegmentDuration 만큼(micro-sec) sleep
-            long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+            long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(representationId); // 1000000
             if (segmentDuration > 0) {
                 try {
-                    segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE);
+                    segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(representationId, segmentDuration, MpdManager.CONTENT_VIDEO_TYPE);
 
                     long videoCompensationTime = dashClient.getVideoCompensationTime();
                     if (videoCompensationTime > 0) {
@@ -212,7 +216,7 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
 
         dashClient.sendHttpGetRequest(
                 fileManager.concatFilePath(
-                        dashClient.getSrcBasePath(),
+                        dashClient.getSrcPath(),
                         newVideoSegmentName
                 ),
                 MessageType.VIDEO
@@ -228,10 +232,10 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
         }
         dashClient.setIsVideoRetrying(true);
 
-        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
+        long segmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(representationId); // 1000000
         if (segmentDuration > 0) {
             try {
-                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
+                segmentDuration = dashClient.getMpdManager().applyAtoIntoDuration(representationId, segmentDuration, MpdManager.CONTENT_VIDEO_TYPE); // 800000
 
                 int retryIntervalFactor = retryCount - (curVideoRetryCount - 1);
                 if (retryIntervalFactor <= 0) { retryIntervalFactor = 1; }
@@ -247,10 +251,10 @@ public class DashVideoHttpMessageHandler extends DashHttpMessageHandler {
             }
         }
 
-        String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName();
+        String curVideoSegmentName = dashClient.getMpdManager().getVideoMediaSegmentName(representationId);
         dashClient.sendHttpGetRequest(
                 fileManager.concatFilePath(
-                        dashClient.getSrcBasePath(),
+                        dashClient.getSrcPath(),
                         curVideoSegmentName
                 ),
                 MessageType.VIDEO

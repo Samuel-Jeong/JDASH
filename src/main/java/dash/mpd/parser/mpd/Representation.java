@@ -49,7 +49,7 @@ public class Representation extends RepresentationBase {
     private final SegmentList segmentList;
 
     @JacksonXmlProperty(localName = "SegmentTemplate", namespace = MPD.NAMESPACE)
-    private final SegmentTemplate segmentTemplate;
+    private SegmentTemplate segmentTemplate;
 
     @JacksonXmlProperty(localName = "ProducerReferenceTime", namespace = MPD.NAMESPACE)
     private final ProducerReferenceTime producerReferenceTime;
@@ -119,6 +119,10 @@ public class Representation extends RepresentationBase {
 
     public SegmentList getSegmentList() {
         return segmentList;
+    }
+
+    public void setSegmentTemplate(SegmentTemplate segmentTemplate) {
+        this.segmentTemplate = segmentTemplate;
     }
 
     public SegmentTemplate getSegmentTemplate() {

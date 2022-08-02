@@ -3,11 +3,11 @@ package dash;
 import config.ConfigManager;
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
+import dash.mpd.MpdManager;
 import instance.BaseEnvironment;
 import instance.DebugLevel;
 import network.definition.NetAddress;
 import network.socket.SocketProtocol;
-import org.junit.Test;
 import service.AppInstance;
 import service.scheduler.schedule.ScheduleManager;
 import service.system.ResourceManager;
@@ -42,7 +42,8 @@ public class DashClientTest {
                         ":" + configManager.getHttpTargetPort() +
                         "/live/jamesj/jamesj.mpd",
                         //"/test/outdoor_market_ambiance_Dolby/outdoor_market_ambiance_Dolby.mpd",
-                targetBasePath
+                targetBasePath,
+                new MpdManager("TEST_1", targetBasePath + "/live/jamesj/jamesj.mpd")
         );
         NetAddress targetAddress = new NetAddress(
                 configManager.getHttpTargetIp(),

@@ -2,6 +2,8 @@ package dash.client.fsm.callback;
 
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
+import dash.mpd.MpdManager;
+import dash.mpd.parser.mpd.Representation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.AppInstance;
@@ -39,23 +41,37 @@ public class DashClientGetVideoInitSegCallBack extends CallBack {
         if (dashClient == null) { return null; }
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
-            long videoSegmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(); // 1000000
-            if (videoSegmentDuration > 0) {
-                try {
-                    timeUnit.sleep(videoSegmentDuration);
-                    logger.trace("[DashClientGetVideoInitSegCallBack({})] [VIDEO] Waiting... ({})", dashClient.getDashUnitId(), videoSegmentDuration);
-                } catch (Exception e) {
-                    //logger.warn("");
+            MpdManager mpdManager = dashClient.getMpdManager();
+            if (mpdManager != null) {
+                for (Representation representation : mpdManager.getRepresentations(MpdManager.CONTENT_VIDEO_TYPE)) {
+                    if (representation == null) { continue; }
+                    logger.debug("VIDEO INIT CALL BACK representation: {}", representation);
+
+                    long videoSegmentDuration = dashClient.getMpdManager().getVideoSegmentDuration(representation.getId()); // 1000000
+                    if (videoSegmentDuration > 0) {
+                        try {
+                            timeUnit.sleep(videoSegmentDuration);
+                            logger.trace("[DashClientGetVideoInitSegCallBack({})] [VIDEO({})] Waiting... ({})",
+                                    dashClient.getDashUnitId(), representation.getId(), videoSegmentDuration
+                            );
+                        } catch (Exception e) {
+                            //logger.warn("");
+                        }
+                    }
+
+                    String videoSegmentName = mpdManager.getVideoMediaSegmentName(representation.getId());
+                    logger.debug("[DashClientGetVideoInitSegCallBack({})] RepresentationId={}, videoSegmentName={}",
+                            dashClient.getDashUnitId(), representation.getId(), videoSegmentName
+                    );
+                    dashClient.sendHttpGetRequest(
+                            fileManager.concatFilePath(
+                                    dashClient.getSrcPath(),
+                                    videoSegmentName
+                            ),
+                            MessageType.VIDEO
+                    );
                 }
             }
-
-            dashClient.sendHttpGetRequest(
-                    fileManager.concatFilePath(
-                            dashClient.getSrcBasePath(),
-                            dashClient.getMpdManager().getVideoMediaSegmentName()
-                    ),
-                    MessageType.VIDEO
-            );
         }
         ////////////////////////////
 

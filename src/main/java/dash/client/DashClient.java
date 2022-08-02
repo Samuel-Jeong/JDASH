@@ -85,7 +85,7 @@ public class DashClient {
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public DashClient(String dashUnitId, String targetMpdPath, String srcPath, String targetBasePath) {
+    public DashClient(String dashUnitId, String targetMpdPath, String srcPath, String targetBasePath, MpdManager mpdManager) {
         this.dashUnitId = dashUnitId;
         this.dashClientStateUnitId = "DASH_CLIENT_STATE:" + dashUnitId;
 
@@ -96,7 +96,8 @@ public class DashClient {
         this.targetMpdPath = targetMpdPath;
 
         this.dashHttpMessageSender = new DashHttpMessageSender(dashUnitId);
-        this.mpdManager = new MpdManager(dashUnitId, targetMpdPath);
+        //this.mpdManager = new MpdManager(dashUnitId, targetMpdPath);
+        this.mpdManager = mpdManager;
 
         if (!AppInstance.getInstance().getConfigManager().isAudioOnly()) {
             dashClientVideoFsmManager = new DashClientFsmManager();
@@ -215,9 +216,9 @@ public class DashClient {
             logger.warn("[DashClient({})] Fail to send the http request. (path={})", dashUnitId, path);
             return;
         } else {
-            if (logger.isTraceEnabled()) {
-                logger.trace("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
-            }
+            //if (logger.isTraceEnabled()) {
+                logger.debug("[DashClient({})] [SEND] Request=\n{}", dashUnitId, httpRequest);
+            //}
         }
 
         switch (messageType) {
@@ -242,7 +243,7 @@ public class DashClient {
         if (additionalPath == null) { return null; }
 
         return fileManager.concatFilePath(
-                getSrcBasePath(),
+                getSrcPath(),
                 additionalPath
         );
     }

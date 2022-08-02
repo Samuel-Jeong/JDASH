@@ -1,5 +1,7 @@
 package dash.client.handler.mpd;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dash.client.DashClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -14,6 +16,7 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
 
     private final DashClient dashClient;
     private final DashMpdHttpMessageHandler dashMpdHttpMessageHandler;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -26,6 +29,7 @@ public class DashMpdHttpClientHandler extends SimpleChannelInboundHandler<HttpOb
     ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        logger.trace("(dashUnitId={}) {}", dashClient.getDashUnitId(), gson.toJson(cause));
         //cause.printStackTrace();
         ctx.close();
     }

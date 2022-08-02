@@ -8,6 +8,7 @@ import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.AppInstance;
 import service.ServiceManager;
 import service.scheduler.job.Job;
 import service.scheduler.job.JobBuilder;
@@ -62,7 +63,7 @@ public class RemoteStreamService extends JobContainer {
         setJob(remoteStreamServiceJob);
         this.dashUnitId = null;
         this.scheduleManager = remoteStreamServiceJob.getScheduleManager();
-        this.configManager = new ConfigManager("/Users/jamesj/GIT_PROJECTS/JDASH/src/main/resources/config/user_conf.ini");
+        this.configManager = AppInstance.getInstance().getConfigManager();
 
         String networkPath = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp() + ":" + configManager.getRtmpServerPort();
         FileManager fileManager = new FileManager();

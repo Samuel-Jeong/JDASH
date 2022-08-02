@@ -25,7 +25,7 @@ public class ServiceManager {
     ////////////////////////////////////////////////////////////////////////////////
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
-    private final static ServiceManager serviceManager = new ServiceManager(); // lazy initialization
+    private static final ServiceManager serviceManager = new ServiceManager(); // lazy initialization
 
     private final ScheduleManager scheduleManager = new ScheduleManager();
     public static final String MAIN_SCHEDULE_JOB = "MAIN";
@@ -47,7 +47,7 @@ public class ServiceManager {
         Runtime.getRuntime().addShutdownHook(new ShutDownHookHandler("ShutDownHookHandler", Thread.currentThread()));
     }
     
-    public static ServiceManager getInstance ( ) {
+    public static ServiceManager getInstance () {
         return serviceManager;
     }
     ////////////////////////////////////////////////////////////////////////////////

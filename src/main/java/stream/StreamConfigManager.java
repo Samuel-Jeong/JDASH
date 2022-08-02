@@ -56,15 +56,15 @@ public class StreamConfigManager {
         fFmpegFrameRecorder.setOption("media_seg_name", uriFileName + MEDIA_SEGMENT_POSTFIX);
         fFmpegFrameRecorder.setOption("use_template", "1");
         fFmpegFrameRecorder.setOption("use_timeline", "0");
-        fFmpegFrameRecorder.setOption("ldash", "1");
-        fFmpegFrameRecorder.setOption("streaming", "1");
+        //fFmpegFrameRecorder.setOption("ldash", "1");
+        //fFmpegFrameRecorder.setOption("streaming", "1");
 
         /**
          * Set an intended target latency in seconds (fractional value can be set) for serving.
          * Applicable only when streaming and write_prft options are enabled.
          * This is an informative fields clients can use to measure the latency of the service.
          */
-        fFmpegFrameRecorder.setOption("target_latency", "3");
+        //fFmpegFrameRecorder.setOption("target_latency", "3");
 
         /**
          * Set the segment length in seconds (fractional value can be set).
@@ -75,12 +75,12 @@ public class StreamConfigManager {
             fFmpegFrameRecorder.setOption("seg_duration", String.valueOf(segmentDuration));
         }
 
-        fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
+        //fFmpegFrameRecorder.setOption("frag_type", "duration"); // Set the type of interval for fragmentation.
         /**
          * Set the length in seconds of fragments within segments (fractional value can be set).
          * Create fragments that are duration microseconds long.
          */
-        fFmpegFrameRecorder.setOption("frag_duration", "0.2");
+        //fFmpegFrameRecorder.setOption("frag_duration", "0.2");
 
         // URL of the page that will return the UTC timestamp in ISO format. Example: "https://time.akamai.com/?iso"
         fFmpegFrameRecorder.setOption("utc_timing_url", "https://time.akamai.com/?iso");
@@ -109,7 +109,7 @@ public class StreamConfigManager {
          * Set container format (mp4/webm) options using a : separated list of key=value parameters.
          * Values containing : special characters must be escaped.
          */
-        fFmpegFrameRecorder.setOption("format_options", "movflags=+cmaf");
+        //fFmpegFrameRecorder.setOption("format_options", "movflags=+cmaf");
 
         /**
          * moov atom is the special part of the file,
@@ -157,7 +157,7 @@ public class StreamConfigManager {
         }
 
         // Bit set of AV_CODEC_EXPORT_DATA_* flags, which affects the kind of metadata exported in frame, packet, or coded stream side data by decoders and encoders.
-        fFmpegFrameRecorder.setOption("export_side_data", "prft");
+        //fFmpegFrameRecorder.setOption("export_side_data", "prft");
 
         /**
          * Write Producer Reference Time elements on supported streams.
@@ -166,7 +166,7 @@ public class StreamConfigManager {
          * It’s set to auto by default,
          *      in which case the muxer will attempt to enable it only in modes that require it.
          */
-        fFmpegFrameRecorder.setOption("write_prft", "1");
+        //fFmpegFrameRecorder.setOption("write_prft", "1");
     }
     ///////////////////////////////////////////////////////////////////////////
 

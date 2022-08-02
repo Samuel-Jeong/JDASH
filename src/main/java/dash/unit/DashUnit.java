@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import config.ConfigManager;
 import dash.client.DashClient;
 import dash.client.handler.base.MessageType;
+import dash.mpd.MpdManager;
 import dash.mpd.parser.mpd.MPD;
 import network.definition.NetAddress;
 import network.socket.SocketProtocol;
@@ -60,16 +61,16 @@ public class DashUnit {
         this.expires = expires;
 
         this.REMOTE_CAMERA_SERVICE_SCHEDULE_KEY = "REMOTE_CAMERA_SERVICE_SCHEDULE_KEY:" + id;
-        if (isDynamic) {
+        //if (isDynamic) {
             if (scheduleManager.initJob(REMOTE_CAMERA_SERVICE_SCHEDULE_KEY, 1, 1)) {
                 logger.debug("[DashUnit(id={})] Success to init job scheduler ({})", id, REMOTE_CAMERA_SERVICE_SCHEDULE_KEY);
             }
-        }
+        //}
     }
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-    public boolean runLiveStreaming(String uriFileName, String sourceUri, String mpdPath) {
+    public boolean runLiveStreaming(String uriFileName, String sourceUri, String mpdPath, MpdManager mpdManager) {
         if (isLiveStreaming.get()) {
             logger.warn("[DashUnit(id={})] runLiveStreaming is already running...", id);
             return false;
@@ -112,7 +113,8 @@ public class DashUnit {
             } else if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_DASH)) {
                 dashClient = new DashClient(
                         id,
-                        mpdPath, sourceUri, fileManager.getParentPathFromUri(mpdPath)
+                        mpdPath, sourceUri, fileManager.getParentPathFromUri(mpdPath),
+                        mpdManager
                 );
 
                 NetAddress targetAddress = new NetAddress(
@@ -129,7 +131,8 @@ public class DashUnit {
                     TimeUnit timeUnit = TimeUnit.SECONDS;
                     try {
                         timeUnit.sleep((long) configManager.getRemoteTimeOffset());
-                        dashClient.sendHttpGetRequest(sourceUri, MessageType.MPD);
+                        String curUri = fileManager.concatFilePath(sourceUri, uriFileName + StreamConfigManager.DASH_POSTFIX);
+                        dashClient.sendHttpGetRequest(curUri, MessageType.MPD);
                     } catch (Exception e) {
                         logger.warn("[DashUnit(id={})] [FAIL] (timeUnit.sleep) or (dashClient.sendHttpGetRequest)", id, e);
                     }
@@ -233,6 +236,14 @@ public class DashUnit {
 
     public void setOutputFilePath(String outputFilePath) {
         this.outputFilePath = outputFilePath;
+    }
+
+    public String getMpdParentPath() {
+        return mpdParentPath;
+    }
+
+    public void setMpdParentPath(String mpdParentPath) {
+        this.mpdParentPath = mpdParentPath;
     }
 
     public boolean getIsRegistered() {

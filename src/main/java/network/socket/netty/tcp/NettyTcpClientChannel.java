@@ -104,6 +104,10 @@ public class NettyTcpClientChannel extends NettyChannel {
         if (bootstrap == null) { return null; }
 
         try {
+            if (port == 0) {
+                port = 80;
+            }
+
             InetAddress address = InetAddress.getByName(ip);
             ChannelFuture channelFuture = bootstrap.connect(address, port).sync();
             Channel channel =  channelFuture.channel();

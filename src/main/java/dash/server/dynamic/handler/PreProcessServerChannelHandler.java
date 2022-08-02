@@ -10,6 +10,7 @@ import dash.server.dynamic.message.StreamingStopResponse;
 import dash.server.dynamic.message.base.MessageHeader;
 import dash.server.dynamic.message.base.MessageType;
 import dash.server.dynamic.message.base.ResponseType;
+import dash.server.handler.DashMessageHandler;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import io.netty.buffer.ByteBuf;
@@ -255,7 +256,9 @@ public class PreProcessServerChannelHandler extends SimpleChannelInboundHandler<
     private boolean startStreaming(String networkPath, String streamUri, DashUnit dashUnit) {
         String sourceUri = fileManager.concatFilePath(networkPath, streamUri);
         String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), streamUri);
-        File mpdPathFile = new File(mpdPath);
+        String mpdParentPath = mpdPath;
+
+        File mpdPathFile = new File(mpdParentPath);
         if (!mpdPathFile.exists()) {
             if (mpdPathFile.mkdirs()) {
                 logger.debug("[PreProcessServerChannelHandler] Parent mpd path is created. (parentMpdPath={}, streamUri={}, sourceUri={})", mpdPath, streamUri, sourceUri);
@@ -266,11 +269,14 @@ public class PreProcessServerChannelHandler extends SimpleChannelInboundHandler<
         mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
         dashUnit.setInputFilePath(sourceUri);
         dashUnit.setOutputFilePath(mpdPath);
+        dashUnit.setMpdParentPath(mpdParentPath);
 
-        if (dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath)) {
+        if (dashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath, dashUnit.getDashClient().getMpdManager())) {
             logger.debug("[PreProcessServerChannelHandler] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
                     dashUnit.getId(), mpdPath, streamUri, sourceUri
             );
+            ServiceManager.getInstance().getDashServer().getHttpMessageManager().get(dashUnit.getMpdParentPath(), new DashMessageHandler(dashUnit.getMpdParentPath()));
+            ServiceManager.getInstance().getDashServer().getHttpMessageManager().get(dashUnit.getOutputFilePath(), new DashMessageHandler(dashUnit.getOutputFilePath()));
             return true;
         } else {
             logger.warn("[PreProcessServerChannelHandler] Fail to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",

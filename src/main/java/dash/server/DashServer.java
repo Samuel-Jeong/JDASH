@@ -40,6 +40,7 @@ import stream.LocalStreamService;
 import stream.StreamConfigManager;
 import util.module.FileManager;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -71,11 +72,14 @@ public class DashServer {
     private final int maxDashUnitLimit;
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    private final ConfigManager configManager = AppInstance.getInstance().getConfigManager();
+
+    private final DashUnit localDashUnit;
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
     public DashServer() {
-        ConfigManager configManager = AppInstance.getInstance().getConfigManager();
         maxDashUnitLimit = configManager.getMaxDashUnitLimit();
 
         ///////////////////////////
@@ -127,9 +131,9 @@ public class DashServer {
         ///////////////////////////
         // MpdManager 생성
         String dashUnitId = configManager.getHttpListenIp() + ":" + configManager.getCameraPath();
-        DashUnit localDashUnit = addDashUnit(
+        localDashUnit = addDashUnit(
                 StreamType.NONE, dashUnitId,
-                null, 0, false
+                null, 0, true
         );
 
         if (localDashUnit == null) {
@@ -137,7 +141,6 @@ public class DashServer {
             System.exit(1);
         }
 
-        FileManager fileManager = new FileManager();
         localDashUnit.setInputFilePath(
                 fileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath())
         );
@@ -194,6 +197,52 @@ public class DashServer {
                 } else {
                     result = false;
                 }
+            }
+        }
+
+        if (localDashUnit.getType() == StreamType.NONE) {
+            String requestUrl;
+            if (configManager.getStreaming().equals(StreamConfigManager.STREAMING_WITH_RTMP)) {
+                if (configManager.getRtmpServerPort() == 0) {
+                    requestUrl = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp();
+                } else {
+                    requestUrl = StreamConfigManager.RTMP_PREFIX + configManager.getRtmpServerIp() + ":" + configManager.getRtmpServerPort();
+                }
+            } else {
+                if (configManager.getHttpTargetPort() == 0) {
+                    requestUrl = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp();
+                } else {
+                    requestUrl = StreamConfigManager.HTTP_PREFIX + configManager.getHttpTargetIp() + ":" + configManager.getHttpTargetPort();
+                }
+            }
+
+            String sourceUri = fileManager.concatFilePath(requestUrl, configManager.getCameraPath());
+            String mpdPath = fileManager.concatFilePath(configManager.getMediaBasePath(), configManager.getCameraPath());
+            String mpdParentPath = mpdPath;
+
+            File mpdPathFile = new File(mpdParentPath);
+            if (!mpdPathFile.exists() && mpdPathFile.mkdirs()) {
+                logger.debug("[DashServer] Parent mpd path is created. (parentMpdPath={}, streamUri={}, sourceUri={})",
+                        mpdPath, configManager.getCameraPath(), sourceUri
+                );
+            }
+
+            String uriFileName = fileManager.getFileNameFromUri(configManager.getCameraPath()); // [Seoul] or [Seoul_chunk_1_00001]
+            mpdPath = fileManager.concatFilePath(mpdPath, uriFileName + StreamConfigManager.DASH_POSTFIX);
+            localDashUnit.setInputFilePath(sourceUri);
+            localDashUnit.setOutputFilePath(mpdPath);
+            localDashUnit.setMpdParentPath(mpdParentPath);
+
+            if (localDashUnit.runLiveStreaming(uriFileName, sourceUri, mpdPath, mpdManager)) {
+                logger.debug("[DashServer] Success to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+                        localDashUnit.getId(), mpdPath, configManager.getCameraPath(), sourceUri
+                );
+                getHttpMessageManager().get(localDashUnit.getMpdParentPath(), new DashMessageHandler(localDashUnit.getMpdParentPath()));
+                getHttpMessageManager().get(localDashUnit.getOutputFilePath(), new DashMessageHandler(localDashUnit.getOutputFilePath()));
+            } else {
+                logger.warn("[DashServer] Fail to run the streaming. (id={}, localMpdPath={}, streamUri={}, sourceUri={})",
+                        localDashUnit.getId(), mpdPath, configManager.getCameraPath(), sourceUri
+                );
             }
         }
 
@@ -337,9 +386,12 @@ public class DashServer {
 
             dashUnit.finishLiveStreaming();
             dashUnit.stop();
-            logger.debug("[DashServer] [(-)DELETED] \n{}", dashUnit);
+            logger.debug("[DashServer] [(*)STOPPED] \n{}", dashUnit);
 
-            dashUnitMap.remove(dashUnitId);
+            if (dashUnit.getType() != StreamType.NONE) {
+                logger.debug("[DashServer] [(-)DELETED] \n{}", dashUnit);
+                dashUnitMap.remove(dashUnitId);
+            }
         } catch (Exception e) {
             logger.warn("Fail to close the dash unit. (id={})", dashUnitId, e);
         } finally {
@@ -505,6 +557,7 @@ public class DashServer {
         headers.set(HttpHeaderNames.DATE, dateTime.format(formatter));
         headers.set(HttpHeaderNames.CONTENT_TYPE, contentType);
         headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
+        headers.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
         // Close the non-keep-alive connection after the write operation is done.
         if (!keepAlive) {

@@ -1,5 +1,7 @@
 package dash.client.handler.audio;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dash.client.DashClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -14,6 +16,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
 
     private final DashClient dashClient;
     private final DashAudioHttpMessageHandler dashAudioHttpMessageHandler;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
@@ -26,6 +29,7 @@ public class DashAudioHttpClientHandler extends SimpleChannelInboundHandler<Http
     ////////////////////////////////////////////////////////////
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        logger.warn("(dashUnitId={}) {}", dashClient.getDashUnitId(), gson.toJson(cause));
         //cause.printStackTrace();
         ctx.close();
     }

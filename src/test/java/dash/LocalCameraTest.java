@@ -1,14 +1,11 @@
 package dash;
 
-import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.bytedeco.ffmpeg.avformat.AVInputFormat;
 import org.bytedeco.ffmpeg.global.avdevice;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class LocalCameraTest {
 

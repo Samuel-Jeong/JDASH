@@ -490,10 +490,7 @@ public class ConfigManager {
         }
 
         String httpTargetPortString = getIniValue(SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
-        if (httpTargetPortString == null) {
-            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
-            System.exit(1);
-        } else {
+        if (httpTargetPortString != null && !httpTargetPortString.isEmpty()) {
             this.httpTargetPort = Integer.parseInt(httpTargetPortString);
             if (this.httpTargetPort <= 0 || this.httpTargetPort > 65535) {
                 logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_CLIENT, FIELD_HTTP_TARGET_PORT);
@@ -835,10 +832,7 @@ public class ConfigManager {
         }
 
         String rtmpServerPortString = getIniValue(SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
-        if (rtmpServerPortString == null) {
-            logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);
-            System.exit(1);
-        } else {
+        if (rtmpServerPortString != null && !rtmpServerPortString.isEmpty()) {
             this.rtmpServerPort = Integer.parseInt(rtmpServerPortString);
             if (this.rtmpServerPort <= 0 || this.rtmpServerPort > 65535) {
                 logger.error(CONSTANT_PRINT_FAIL_LOG_FORMAT_1, SECTION_RTMP, FIELD_RTMP_PUBLISH_PORT);

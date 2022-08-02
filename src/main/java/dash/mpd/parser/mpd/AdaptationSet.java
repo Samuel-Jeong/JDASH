@@ -70,7 +70,7 @@ public class AdaptationSet extends RepresentationBase {
     private final List<String> labels;
 
     @JacksonXmlProperty(localName = "Representation", namespace = MPD.NAMESPACE)
-    private final List<Representation> representations;
+    private List<Representation> representations;
 
     @JacksonXmlProperty(isAttribute = true, namespace = "http://www.w3.org/1999/xlink")
     private final String href;
@@ -245,6 +245,9 @@ public class AdaptationSet extends RepresentationBase {
 
     public List<Representation> getRepresentations() {
         return Utils.unmodifiableList(representations);
+    }
+    public void setRepresentations(List<Representation> representations) {
+        this.representations = representations;
     }
 
     public String getHref() {

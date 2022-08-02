@@ -169,6 +169,13 @@ public class FileManager {
         }
     }
 
+    public String removeString(String source, String target) {
+        if (target.contains(source)) {
+            target = target.replace(source, "");
+        }
+        return target;
+    }
+
     public boolean deleteFile(File file) {
         if (file == null) { return false; }
 

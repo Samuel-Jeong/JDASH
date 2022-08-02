@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * C_I : 25
  * > F_S 삭제한다.
  */
+
+// TODO : Handle multiple representations
 public class MediaSegmentInfo {
 
     private final MediaType mediaType;

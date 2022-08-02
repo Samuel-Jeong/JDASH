@@ -7,6 +7,7 @@ import dash.client.fsm.DashClientState;
 import dash.client.handler.base.DashHttpMessageHandler;
 import dash.client.handler.base.MessageType;
 import dash.mpd.MpdManager;
+import dash.mpd.parser.mpd.Representation;
 import dash.unit.DashUnit;
 import dash.unit.StreamType;
 import dash.unit.segment.MediaSegmentController;
@@ -23,6 +24,7 @@ import util.fsm.unit.StateUnit;
 import util.module.FileManager;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
@@ -75,7 +77,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
 
             //logger.trace("[DashMpdHttpClientHandler({})] [MPD] {}", dashClient.getDashUnitId(), data);
             if (httpContent instanceof LastHttpContent) {
-                //logger.trace("[DashMpdHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
+                logger.trace("[DashMpdHttpClientHandler({})] } END OF CONTENT <", dashClient.getDashUnitId());
 
                 // GET PARSE MPD & GET META DATA
                 if (!parseMpd()) {
@@ -148,7 +150,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
             if (!httpResponse.headers().isEmpty()) {
                 for (CharSequence name : httpResponse.headers().names()) {
                     for (CharSequence value : httpResponse.headers().getAll(name)) {
-                        logger.trace("[DashMpdHttpClientHandler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
+                        logger.trace("[DashMpdHttpClientHdler({})] > HEADER: {} = {}", dashClient.getDashUnitId(), name, value);
                     }
                 }
             }
@@ -222,6 +224,7 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
         // AUDIO FSM
         DashClientFsmManager dashClientAudioFsmManager = dashClient.getDashClientAudioFsmManager();
         if (dashClientAudioFsmManager == null) {
+            logger.warn("[DashMpdHttpClientHandler({})] Fail to process fsm. DashClientFsmManager is not exist. (mpdPath={})", dashClient.getDashUnitId(), dashClient.getTargetMpdPath());
             return false;
         }
 
@@ -234,7 +237,10 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
         StateUnit audioStateUnit = audioStateManager.getStateUnit(dashClient.getDashClientStateUnitId());
         String curAudioState = audioStateUnit.getCurState();
         if (DashClientState.IDLE.equals(curAudioState)) {
-            dashClient.getMpdManager().setSegmentStartNumber(MpdManager.CONTENT_AUDIO_TYPE);
+            List<Representation> representations = dashClient.getMpdManager().getRepresentations(MpdManager.CONTENT_AUDIO_TYPE);
+            for (Representation representation : representations) {
+                dashClient.getMpdManager().setSegmentStartNumber(representation.getId(), MpdManager.CONTENT_AUDIO_TYPE);
+            }
             audioStateHandler.fire(DashClientEvent.GET_MPD_AUDIO, audioStateUnit);
         }
 
@@ -245,7 +251,11 @@ public class DashMpdHttpMessageHandler extends DashHttpMessageHandler {
             StateUnit videoStateUnit = videoStateManager.getStateUnit(dashClient.getDashClientStateUnitId());
             String curVideoState = videoStateUnit.getCurState();
             if (DashClientState.IDLE.equals(curVideoState)) {
-                dashClient.getMpdManager().setSegmentStartNumber(MpdManager.CONTENT_VIDEO_TYPE);
+                List<Representation> representations = dashClient.getMpdManager().getRepresentations(MpdManager.CONTENT_VIDEO_TYPE);
+                for (Representation representation : representations) {
+                    dashClient.getMpdManager().setSegmentStartNumber(representation.getId(), MpdManager.CONTENT_VIDEO_TYPE);
+                }
+
                 videoStateHandler.fire(DashClientEvent.GET_MPD_VIDEO, videoStateUnit);
             }
         }

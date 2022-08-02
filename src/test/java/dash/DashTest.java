@@ -106,7 +106,7 @@ public class DashTest {
     }
 
     public long calculateMediaSegmentNumberTest(MpdManager mpdManager, String contentType) {
-        mpdManager.calculateSegmentNumber(contentType);
+        mpdManager.calculateSegmentNumber(contentType, "0");
         if (contentType.equals(MpdManager.CONTENT_VIDEO_TYPE)) {
             return mpdManager.getVideoSegmentSeqNum();
         } else {
