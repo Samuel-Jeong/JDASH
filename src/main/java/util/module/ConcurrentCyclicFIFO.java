@@ -1,6 +1,7 @@
 package util.module;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -11,10 +12,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ConcurrentCyclicFIFO<E> {
 
     static class Node<E> {
-        volatile E item;
+        AtomicReference<E> item;
         Node<E> next;
 
-        Node(E x) {
+        Node(AtomicReference<E> x) {
             item = x;
         }
     }
@@ -95,7 +96,7 @@ public class ConcurrentCyclicFIFO<E> {
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {
-            insert(new Node<E>(e));
+            insert(new Node<E>(new AtomicReference<>(e)));
             shouldSignal = (count.getAndIncrement() == 0);
         } finally {
             putLock.unlock();
@@ -130,7 +131,7 @@ public class ConcurrentCyclicFIFO<E> {
             takeLock.unlock();
         }
 
-        E result = x.item;
+        E result = x.item.get();
 
         // temporary clearence
         x.item = null;
@@ -161,7 +162,7 @@ public class ConcurrentCyclicFIFO<E> {
         }
 
         if (x != null) {
-            E result = x.item;
+            E result = x.item.get();
 
             // temporary clearence
             x.item = null;
